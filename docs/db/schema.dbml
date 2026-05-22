@@ -329,7 +329,7 @@ Table maintenance_types {
   name varchar [
     not null,
     unique,
-    note: '整備種別（修理 / チューニング / カスタム 等）'
+    note: '整備種別（定期メンテナンス / 車検 / 点検 / 修理 / カスタム / チューニング / セッティング 等）'
   ]
   sort_order int [
     note: '表示順'
@@ -427,7 +427,7 @@ Table maintenance_categories {
   name varchar [
     not null,
     unique,
-    note: '整備カテゴリ（エンジン / ブレーキ系 / 電装系 / 足回り / 板金 / 洗車 / その他 等）'
+    note: '整備カテゴリ（エンジン / 吸排気 / 冷却 / 駆動系 / 足回り / ブレーキ / 電装 / 外装 / 内装 / エアコン / 板金 / 洗浄 / その他 等）'
   ]
   sort_order int [
     note: '表示順'
