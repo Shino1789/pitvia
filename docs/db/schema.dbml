@@ -10,9 +10,9 @@ Table users {
     check: `role IN ('OWNER', 'SHOP', 'ADMIN')`,
     note: 'ユーザーロール'
   ]
-  display_name varchar [
+  user_name varchar [
     not null,
-    note: '表示名'
+    note: 'ユーザー名'
   ]
   email varchar [
     not null,
@@ -108,10 +108,6 @@ Table shops {
     ref: > users.id,
     note: 'ショップアカウントのユーザーID'
   ]
-  shop_name varchar [
-    not null,
-    note: 'ショップ名'
-  ]
   phone_number varchar [
     note: '電話番号'
   ]
@@ -141,10 +137,6 @@ Table shops {
     default: `now()`
   ]
   deleted_at timestamp
-
-  indexes {
-    (shop_name)
-  }
 
 }
 
@@ -203,8 +195,16 @@ Table vehicles {
   model_code varchar [
     note: '型式'
   ]
-  manufacture_year smallint [
-    note: '製造年月'
+  model_year smallint [
+    note: '年式'
+  ]
+  license_plate varchar [
+    note: 'ナンバープレート'
+  ]
+  current_mileage int [
+    not null,
+    check: `current_mileage >= 0`,
+    note: '現在の走行距離'
   ]
   transmission_type varchar [
     check: `transmission_type IN ('MT', 'AT', 'CVT', 'DCT')`,
@@ -213,11 +213,6 @@ Table vehicles {
   drive_type varchar [
     check: `drive_type IN ('FR', 'FF', 'AWD', 'MR', 'RR')`,
     note: '駆動方式'
-  ]
-  current_mileage int [
-    not null,
-    check: `current_mileage >= 0`,
-    note: '現在の走行距離'
   ]
   memo text [
     note: '愛車に関してのメモ'
@@ -383,10 +378,6 @@ Table maintenance_records {
     check: `mileage >= 0`,
     note: '作業時点の走行距離'
   ]
-  performed_by varchar [
-    not null,
-    note: '実際の作業者名（DIY / ショップ名 等）'
-  ]
   remarks text [
     note: '備考'
   ]
@@ -463,15 +454,21 @@ Table maintenance_work_items {
     not null,
     note: '作業内容'
   ]
+  performed_by varchar [
+    not null,
+    note: '実際の作業者名（DIY / ショップ名 等）'
+  ]
   labor_cost decimal(10,2) [
     not null,
     default: 0 ,
     check: `labor_cost >= 0`,
     note: '作業工賃'
   ]
+  /*
   memo text [
     note: '作業に関するメモ'
   ]
+  */
   sort_order int [
     not null,
     default: 0,
