@@ -158,7 +158,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ## Frontend
 
-- React
+- Next.js
 - TypeScript
 - Tailwind CSS
 
@@ -216,9 +216,9 @@ pit-note/
     │   ├── pull_request_template.md
     │   └── workflows/
     ├── apps/
-    │   ├── web/        # React フロント
+    │   ├── web/        # Next.js
     │   ├── api/        # Spring Boot API
-    │   └── mobile/     # 未実装 (今後の課題)
+    │   └── mobile/     # 将来対応予定
     ├── infra/
     │   ├── docker/
     │   │   ├── api/
@@ -228,19 +228,21 @@ pit-note/
     │   └── nginx/
     │       └── nginx.conf
     ├── docs/
+    │   ├── architecture/
+    │   │   └── architecture.drawio  # drow.ioで作成したアプリ構成図
     │   ├── ui/
     │   │   └── figma-link.md
     │   ├── api/
-    │   │   ├── openapi.yml
+    │   │   ├── openapi.yaml
     │   │   └── swagger-link.md
     │   ├── db/
     │   │   └── schema.dbml          # dbdiagram.ioで作成したdbml
     │   └── images/
-    │       ├── architecture.png     # drow.ioで作成したアプリ構成図
+    │       ├── architecture.png
     │       ├── er.png
     │       └── screen-flow.png
     ├── LICENSE
     └── README.md
 ```
 
-※ 詳細な設計・構成については各READMEを参照
+※ 詳細設計については docs 配下を参照
