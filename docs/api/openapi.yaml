@@ -2,10 +2,10 @@
 openapi: 3.0.3
 
 info:
-  title: Pit Note API
+  title: Pitvia API
   version: 0.1.0
   description: |
-    Pit Note ベータ版API仕様書
+    Pitvia ベータ版API仕様書
 
     このAPIは、
     Next.js フロントエンド と Spring Boot バックエンド間の
