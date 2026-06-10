@@ -1,0 +1,393 @@
+# VsCodeで「Shift + Command + P」→「OpenAPI: show preview using Swagger UI」でGUIで確認
+openapi: 3.0.3
+
+info:
+  title: Pitvia API
+  version: 0.1.0
+  description: |
+    Pitvia ベータ版API仕様書
+
+    このAPIは、
+    Next.js フロントエンド と Spring Boot バックエンド間の
+    REST API 通信で使用する。
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: ローカル開発環境
+
+tags:
+  - name: Auth
+    description: 認証API
+
+  - name: Users
+    description: ユーザーAPI
+
+  - name: Vehicles
+    description: 車両API
+
+  - name: MaintenanceRecords
+    description: 整備記録API
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+
+      summary: アカウント登録
+
+      description: |
+        オーナー または ショップアカウントを作成する。
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+
+      responses:
+        "201":
+          description: アカウント作成成功
+
+        "400":
+          description: 入力値不正
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+
+      summary: ログイン
+
+      description: |
+        メールアドレスとパスワードでログインする。
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+
+      responses:
+        "200":
+          description: ログイン成功
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+
+        "401":
+          description: 認証失敗
+
+  /users/me:
+    get:
+      tags:
+        - Users
+
+      summary: 自分のユーザー情報取得
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        "200":
+          description: 取得成功
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+        "401":
+          description: 未認証
+
+    put:
+      tags:
+        - Users
+
+      summary: 自分のユーザー情報更新
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+
+      responses:
+        "200":
+          description: 更新成功
+
+  /vehicles:
+    get:
+      tags:
+        - Vehicles
+
+      summary: 車両一覧取得
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        "200":
+          description: 車両一覧取得成功
+
+          content:
+            application/json:
+              schema:
+                type: array
+
+                items:
+                  $ref: "#/components/schemas/VehicleResponse"
+
+    post:
+      tags:
+        - Vehicles
+
+      summary: 車両登録
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVehicleRequest"
+
+      responses:
+        "201":
+          description: 登録成功
+
+  /vehicles/{vehicleId}:
+    get:
+      tags:
+        - Vehicles
+
+      summary: 車両詳細取得
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+
+          schema:
+            type: integer
+            format: int64
+
+      responses:
+        "200":
+          description: 車両詳細取得成功
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleResponse"
+
+        "404":
+          description: 車両が存在しない
+
+    put:
+      tags:
+        - Vehicles
+
+      summary: 車両更新
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+
+          schema:
+            type: integer
+            format: int64
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVehicleRequest"
+
+      responses:
+        "200":
+          description: 更新成功
+
+    delete:
+      tags:
+        - Vehicles
+
+      summary: 車両削除
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+
+          schema:
+            type: integer
+            format: int64
+
+      responses:
+        "204":
+          description: 削除成功
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+
+      required:
+        - role
+        - userName
+        - email
+        - password
+
+      properties:
+        role:
+          type: string
+          enum:
+            - OWNER
+            - SHOP
+
+        userName:
+          type: string
+
+        email:
+          type: string
+          format: email
+
+        password:
+          type: string
+          format: password
+
+    LoginRequest:
+      type: object
+
+      required:
+        - email
+        - password
+
+      properties:
+        email:
+          type: string
+          format: email
+
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+
+      properties:
+        accessToken:
+          type: string
+
+        refreshToken:
+          type: string
+
+    UserResponse:
+      type: object
+
+      properties:
+        id:
+          type: integer
+          format: int64
+
+        role:
+          type: string
+
+        userName:
+          type: string
+
+        email:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+
+      properties:
+        userName:
+          type: string
+
+    CreateVehicleRequest:
+      type: object
+
+      required:
+        - vehicleType
+        - name
+        - manufacturerId
+        - model
+        - currentMileage
+
+      properties:
+        vehicleType:
+          type: string
+
+        name:
+          type: string
+
+        manufacturerId:
+          type: integer
+          format: int64
+
+        model:
+          type: string
+
+        currentMileage:
+          type: integer
+
+    UpdateVehicleRequest:
+      allOf:
+        - $ref: "#/components/schemas/CreateVehicleRequest"
+
+    VehicleResponse:
+      type: object
+
+      properties:
+        id:
+          type: integer
+          format: int64
+
+        vehicleType:
+          type: string
+
+        name:
+          type: string
+
+        manufacturer:
+          type: string
+
+        model:
+          type: string
+
+        currentMileage:
+          type: integer

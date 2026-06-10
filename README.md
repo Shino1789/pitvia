@@ -1,12 +1,12 @@
-# Pit Note
+# Pitvia
 
 **走るクルマのための整備記録・ショップ連携アプリ**
 
-Pit Note は、スポーツカー・旧車・カスタムカーオーナー向けに、
+Pitvia は、スポーツカー・旧車・カスタムカーオーナー向けに、
 整備履歴・ショップ連携を一元管理できる Web アプリケーションです。
 
 一般的な整備記録アプリが「日常メンテナンス管理」を主軸とする中、
-Pit Note は **走る楽しさ・維持する楽しさ・育てる楽しさ** にフォーカスしたサービスを目指します。
+Pitvia は **走る楽しさ・維持する楽しさ・育てる楽しさ** にフォーカスしたサービスを目指します。
 
 ---
 
@@ -28,7 +28,7 @@ Pit Note は **走る楽しさ・維持する楽しさ・育てる楽しさ** �
 
 といった独自ニーズがあります。
 
-Pit Note は、そうしたユーザー向けに設計されたサービスです。
+Pitvia は、そうしたユーザー向けに設計されたサービスです。
 
 ---
 
@@ -135,7 +135,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ---
 
-# Pit Note の差別化ポイント
+# Pitvia の差別化ポイント
 
 一般的な整備管理アプリとの違いとして、以下を重視します。
 
@@ -145,7 +145,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 - 車検管理
 - 整備記録保存
 
-## Pit Note
+## Pitvia
 
 - スポーツカー特化
 - 旧車特化
@@ -158,7 +158,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ## Frontend
 
-- React
+- Next.js
 - TypeScript
 - Tailwind CSS
 
@@ -202,7 +202,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 ## ディレクトリ構成
 
 ```text
-pit-note/
+pitvia/
     ├── .editorconfig
     ├── .gitattributes
     ├── .gitignore
@@ -216,9 +216,9 @@ pit-note/
     │   ├── pull_request_template.md
     │   └── workflows/
     ├── apps/
-    │   ├── web/        # React フロント
+    │   ├── web/        # Next.js
     │   ├── api/        # Spring Boot API
-    │   └── mobile/     # 未実装 (今後の課題)
+    │   └── mobile/     # 将来対応予定
     ├── infra/
     │   ├── docker/
     │   │   ├── api/
@@ -228,19 +228,21 @@ pit-note/
     │   └── nginx/
     │       └── nginx.conf
     ├── docs/
+    │   ├── architecture/
+    │   │   └── architecture.drawio  # drow.ioで作成したアプリ構成図
     │   ├── ui/
     │   │   └── figma-link.md
     │   ├── api/
-    │   │   ├── openapi.yml
+    │   │   ├── openapi.yaml
     │   │   └── swagger-link.md
     │   ├── db/
     │   │   └── schema.dbml          # dbdiagram.ioで作成したdbml
     │   └── images/
-    │       ├── architecture.png     # drow.ioで作成したアプリ構成図
+    │       ├── architecture.png
     │       ├── er.png
     │       └── screen-flow.png
     ├── LICENSE
     └── README.md
 ```
 
-※ 詳細な設計・構成については各READMEを参照
+※ 詳細設計については docs 配下を参照

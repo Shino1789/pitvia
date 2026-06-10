@@ -1,0 +1,583 @@
+Table users {
+  Note: 'ユーザー情報テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  role varchar [
+    not null,
+    check: `role IN ('OWNER', 'SHOP', 'ADMIN')`,
+    note: 'ユーザーロール'
+  ]
+  user_name varchar [
+    not null,
+    note: 'ユーザー名'
+  ]
+  email varchar [
+    not null,
+    unique,
+    note: 'ログイン用メールアドレス'
+  ]
+  password_hash varchar [
+    not null,
+    note: 'ハッシュ化済みパスワード'
+  ]
+  email_verified_at timestamp [
+    note: 'メール認証日時'
+  ]
+  last_login_at timestamp [
+    note: '最終ログイン日時'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  deleted_at timestamp [
+    note: '論理削除日時'
+  ]
+}
+
+Table refresh_tokens {
+  Note: 'リフレッシュトークン管理テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  user_id bigint [
+    not null,
+    ref: > users.id,
+    note: '認証済みユーザーID'
+  ]
+  token_hash varchar [
+    not null,
+    unique,
+    note: 'リフレッシュトークンハッシュ'
+  ]
+  user_agent varchar [
+    note: 'ユーザーエージェント'
+  ]
+  ip_address varchar [
+    note: 'IPアドレス'
+  ]
+  expires_at timestamp [
+    not null,
+    note: 'トークンの有効期限日時'
+  ]
+  revoked_at timestamp [
+    note: 'トークンの無効化日時'
+  ]
+  last_used_at timestamp [
+    note: '最終使用日時'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+
+  indexes {
+    (user_id)
+    (token_hash)
+  }
+}
+
+Table shops {
+  Note: '整備ショップ情報テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  user_id bigint [
+    not null,
+    unique,
+    ref: > users.id,
+    note: 'ショップアカウントのユーザーID'
+  ]
+  phone_number varchar [
+    note: '電話番号'
+  ]
+  postal_code varchar [
+    note: '郵便番号'
+  ]
+  address varchar [
+    note: '住所'
+  ]
+  website_url varchar [
+    note: 'ショップ公式サイトURL'
+  ]
+  description text [
+    note: 'ショップ説明'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  deleted_at timestamp
+
+}
+
+Table manufacturers {
+  Note: 'メーカーマスタ'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  name varchar [
+    not null,
+    unique,
+    note: 'メーカー名'
+ ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+}
+
+Table vehicles {
+  Note: 'ユーザーが所有する車両情報テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  user_id bigint [
+    not null,
+    ref: > users.id,
+    note: 'ユーザーID'
+  ]
+  vehicle_type varchar [
+    not null,
+    check: `vehicle_type IN ('CAR', 'MOTORCYCLE', 'KART', 'OTHER')`,
+    note: '車両種別'
+  ]
+  name varchar [
+    not null,
+    note: '車両名（愛車名）'
+  ]
+  manufacturer_id bigint [
+    not null,
+    ref: > manufacturers.id,
+    note: 'メーカーID'
+  ]
+  model varchar [
+    not null,
+    note: '車種'
+  ]
+  model_code varchar [
+    note: '型式'
+  ]
+  model_year smallint [
+    note: '年式'
+  ]
+  license_plate varchar [
+    note: 'ナンバープレート'
+  ]
+  current_mileage int [
+    not null,
+    check: `current_mileage >= 0`,
+    note: '現在の走行距離'
+  ]
+  transmission_type varchar [
+    check: `transmission_type IN ('MT', 'AT', 'CVT', 'DCT')`,
+    note: 'ミッション種別'
+  ]
+  drive_type varchar [
+    check: `drive_type IN ('FR', 'FF', 'AWD', 'MR', 'RR')`,
+    note: '駆動方式'
+  ]
+  memo text [
+    note: '愛車に関してのメモ'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  deleted_at timestamp
+
+  indexes {
+    (user_id)
+  }
+
+}
+
+Table vehicle_images {
+  Note: 'ユーザーが所有する車両のアイコン画像管理テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  vehicle_id bigint [
+    not null,
+    ref: > vehicles.id,
+    note: '対象車両ID'
+  ]
+  image_path varchar [
+    not null,
+    note: '画像パス'
+  ]
+  sort_order int [
+    note: '表示順'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+
+  indexes {
+    (vehicle_id)
+  }
+
+}
+
+Table vehicle_shop_links {
+  Note: '車両とショップを繋ぐ中間テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  vehicle_id bigint [
+    not null,
+    ref: > vehicles.id,
+    note: '対象車両ID'
+  ]
+  shop_id bigint [
+    not null,
+    ref: > shops.id,
+    note: '連携ショップID'
+  ]
+  status varchar [
+    not null,
+    check: `status IN ('PENDING', 'APPROVED', 'REJECTED')`,
+    note: '連携状態'
+  ]
+  invite_code varchar [
+    unique,
+    note: '招待コード'
+  ]
+  approved_at timestamp [
+    note: '承認日時'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  deleted_at timestamp
+
+  indexes {
+    (vehicle_id, status)
+    (vehicle_id, shop_id) [unique]
+  }
+
+}
+
+Table maintenance_types {
+  Note: '整備種別マスタ'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  name varchar [
+    not null,
+    unique,
+    note: '整備種別（定期メンテナンス / 車検 / 点検 / 修理 / カスタム / チューニング / セッティング 等）'
+  ]
+  sort_order int [
+    note: '表示順'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+}
+
+Table maintenance_records {
+  Note: '整備記録ヘッダー'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  vehicle_id bigint [
+    not null,
+    ref: > vehicles.id,
+    note: '対象車両ID'
+  ]
+  created_by_user_id bigint [
+    not null,
+    ref: > users.id,
+    note: '記録を作成したユーザーID'
+  ]
+  title varchar [
+    not null,
+    note: '整備タイトル'
+  ]
+  maintenance_type_id bigint [
+    not null,
+    ref: > maintenance_types.id,
+    note: '整備種別ID'
+  ]
+  work_date_from date [
+    not null,
+    note: '作業開始日'
+  ]
+  work_date_to date [
+    check: `work_date_to IS NULL OR work_date_to >= work_date_from`,
+    note: '作業終了日'
+  ]
+  mileage int [
+    not null,
+    check: `mileage >= 0`,
+    note: '作業時点の走行距離'
+  ]
+  remarks text [
+    note: '備考'
+  ]
+  is_draft boolean [
+    not null,
+    default: false,
+    note: '下書きフラグ'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  deleted_at timestamp
+
+  indexes {
+    (vehicle_id, work_date_from)
+    (created_by_user_id)
+  }
+
+}
+
+Table maintenance_categories {
+  Note: '整備カテゴリマスタ'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  name varchar [
+    not null,
+    unique,
+    note: '整備カテゴリ（エンジン / 吸排気 / 冷却 / 駆動系 / 足回り / ブレーキ / 電装 / 外装 / 内装 / エアコン / 板金 / 洗浄 / その他 等）'
+  ]
+  sort_order int [
+    note: '表示順'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+}
+
+Table maintenance_work_items {
+  Note: '整備作業明細'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  maintenance_record_id bigint [
+    not null,
+    ref: > maintenance_records.id,
+    note: '整備記録ID'
+  ]
+  maintenance_category_id bigint [
+    not null,
+    ref: > maintenance_categories.id,
+    note: '整備カテゴリID'
+  ]
+  work_content varchar [
+    not null,
+    note: '作業内容'
+  ]
+  performed_by varchar [
+    not null,
+    note: '実際の作業者名（DIY / ショップ名 等）'
+  ]
+  labor_cost decimal(10,2) [
+    not null,
+    default: 0 ,
+    check: `labor_cost >= 0`,
+    note: '作業工賃'
+  ]
+  /*
+  memo text [
+    note: '作業に関するメモ'
+  ]
+  */
+  sort_order int [
+    not null,
+    default: 0,
+    note: '表示順'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+
+  indexes {
+    (maintenance_record_id)
+  }
+}
+
+Table maintenance_parts {
+  Note: '交換部品明細'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  maintenance_work_item_id bigint [
+    not null,
+    ref: > maintenance_work_items.id,
+    note: '整備作業ID'
+  ]
+  part_condition varchar [
+    check: `part_condition IN ('NEW', 'USED', 'REBUILT')`,
+    note: '部品状態'
+  ]
+  part_name varchar [
+    not null,
+    note: '部品名'
+  ]
+  manufacturer_name varchar [
+    note: '部品メーカー名'
+  ]
+  part_model_number varchar [
+    note: '部品型番'
+  ]
+  quantity decimal(10,2) [
+    not null,
+    default: 1.00,
+    check: `quantity > 0`,
+    note: '数量'
+  ]
+  unit_price decimal(10,2) [
+    not null,
+    default: 0,
+    check: `unit_price >= 0`,
+    note: '単価'
+  ]
+  sort_order int [
+    not null,
+    default: 0,
+    note: '表示順'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+
+  indexes {
+    (maintenance_work_item_id)
+  }
+}
+
+Table maintenance_work_item_images {
+  Note: '整備作業画像'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  maintenance_work_item_id bigint [
+    not null,
+    ref: > maintenance_work_items.id,
+    note: '整備作業ID'
+  ]
+  image_path varchar [
+    not null,
+    note: '整備画像パス'
+  ]
+  sort_order int [
+    not null,
+    default: 0,
+    note: '表示順'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+
+  indexes {
+    (maintenance_work_item_id)
+  }
+
+}
