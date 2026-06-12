@@ -1,7 +1,13 @@
+# ==================================================
+# Spring Bootアプリケーション設定
+# アプリ名・自動設定・DB接続情報などを管理する
+# ==================================================
 spring:
+  # アプリケーション設定
   application:
     name: api
 
+  # データベース接続設定(DB未設定のため一旦無効化)
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
