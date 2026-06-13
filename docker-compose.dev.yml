@@ -1,0 +1,40 @@
+# ==================================================
+# Docker Compose - Development Environment
+# 開発環境用コンテナ定義
+# ==================================================
+
+services:
+  # ==================================================
+  # PostgreSQL
+  # ==================================================
+  db:
+    image: postgres:17-alpine
+    container_name: pitvia-db
+
+    # コンテナ再起動設定
+    restart: unless-stopped
+
+    # 参照する環境変数
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      # DBデータ永続化
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ==================================================
+# Volume定義
+# ==================================================
+volumes:
+  postgres-data:
