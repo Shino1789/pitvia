@@ -5,6 +5,38 @@
 
 services:
   # ==================================================
+  # Spring Boot API
+  # ==================================================
+  api:
+    image: gradle:8.14.0-jdk21
+
+    container_name: pitvia-api
+
+    restart: "no"
+
+    # コンテナ内作業ディレクトリ
+    working_dir: /app
+
+    # 開発環境起動コマンド
+    command: ./gradlew bootRun --no-daemon
+
+    ports:
+      - "${SERVER_PORT}:8080"
+
+    env_file:
+      - .env.dev
+
+    volumes:
+      # ソースコード同期(hot reload)
+      - ./apps/api:/app
+      # Gradleキャッシュ永続化
+      - gradle-cache:/home/gradle/.gradle
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ==================================================
   # PostgreSQL
   # ==================================================
   db:
@@ -12,23 +44,20 @@ services:
     container_name: pitvia-db
 
     # コンテナ再起動設定
-    restart: unless-stopped
-
-    # 参照する環境変数
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: "no"
 
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
+
+    env_file:
+      - .env.dev
 
     volumes:
       # DBデータ永続化
       - postgres-data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,3 +67,4 @@ services:
 # ==================================================
 volumes:
   postgres-data:
+  gradle-cache:

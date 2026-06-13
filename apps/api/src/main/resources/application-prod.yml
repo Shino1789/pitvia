@@ -1,0 +1,12 @@
+# ==================================================
+# Spring Boot 本番環境設定
+# ==================================================
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+logging:
+  level:
+    root: WARN

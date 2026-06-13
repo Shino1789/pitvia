@@ -1,0 +1,13 @@
+# ==================================================
+# Spring Boot 開発環境設定
+# ==================================================
+spring:
+  jpa:
+    hibernate:
+      #ddl-auto: validate
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    root: INFO
