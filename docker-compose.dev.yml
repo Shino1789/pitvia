@@ -5,6 +5,35 @@
 
 services:
   # ==================================================
+  # Next.js
+  # ==================================================
+  web:
+    image: node:22-alpine
+
+    container_name: pitvia-web
+
+    # コンテナ再起動設定
+    restart: "no"
+
+    # コンテナ内作業ディレクトリ
+    working_dir: /app
+
+    # 依存ライブラリがインストールされていない場合はインストールして開発環境起動
+    command: sh -c "if [ ! -d node_modules ]; then npm install; fi && npm run dev"
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env.dev
+
+    volumes:
+      # ソースコード同期(hot reload)
+      - ./apps/web:/app
+      # node_modules 永続化
+      - node-modules:/app/node_modules
+
+  # ==================================================
   # Spring Boot API
   # ==================================================
   api:
@@ -66,5 +95,6 @@ services:
 # Volume定義
 # ==================================================
 volumes:
-  postgres-data:
+  node-modules:
   gradle-cache:
+  postgres-data:

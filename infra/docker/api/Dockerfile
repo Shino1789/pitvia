@@ -29,8 +29,8 @@ WORKDIR /app
 # builderステージからjarコピー
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Spring Boot Port
+# ポート公開
 EXPOSE 8080
 
-# アプリ起動
+# Spring Boot起動
 ENTRYPOINT ["java", "-jar", "app.jar"]
