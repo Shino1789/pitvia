@@ -5,7 +5,7 @@ spring:
   jpa:
     hibernate:
       #ddl-auto: validate
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
 
 logging:

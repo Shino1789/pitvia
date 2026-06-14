@@ -6,21 +6,24 @@ import { useState } from "react";
  * ルートパス (/)
  */
 export default function Home() {
-  // APIからのレスポンスを保存するステート
-  const [healthMessage, setHealthMessage] = useState<string>("");
-  // ローディング状態を管理するステート
+  // APIレスポンスメッセージ
+  const [message, setMessage] = useState<string>("");
+
+  // ローディング状態
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   /**
-   * 疎通確認用API（Spring Boot）を呼び出す関数
+   * 共通ヘルスチェック関数
+   *
+   * @param endpoint APIエンドポイント
    */
-  const checkApiHealth = async () => {
+  const fetchHealth = async (endpoint: string) => {
     setIsLoading(true);
-    setHealthMessage("");
+    setMessage("");
 
     try {
-      // 環境変数からベースURLを取得して結合
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/health`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`;
+
       const response = await fetch(apiUrl);
 
       if (!response.ok) {
@@ -28,10 +31,12 @@ export default function Home() {
       }
 
       const data = await response.text();
-      setHealthMessage(data); // "Pitvia API OK" がセットされる
+
+      setMessage(data);
     } catch (error) {
       console.error("API接続エラー:", error);
-      setHealthMessage("APIへの接続に失敗しました。");
+
+      setMessage("APIへの接続に失敗しました。");
     } finally {
       setIsLoading(false);
     }
@@ -41,26 +46,34 @@ export default function Home() {
     <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
       <h1>Hello, Pitvia.</h1>
 
-      <div style={{ marginTop: "1.5rem" }}>
+      <div
+        style={{
+          marginTop: "1.5rem",
+          display: "flex",
+          gap: "1rem",
+        }}
+      >
+        {/* API疎通確認 */}
         <button
-          onClick={checkApiHealth}
+          onClick={() => fetchHealth("/health")}
           disabled={isLoading}
-          style={{
-            padding: "0.5rem 1rem",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            backgroundColor: "#0070f3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            fontSize: "1rem",
-          }}
+          style={buttonStyle}
         >
           {isLoading ? "接続中..." : "API疎通確認"}
         </button>
+
+        {/* DB疎通確認 */}
+        <button
+          onClick={() => fetchHealth("/health/db")}
+          disabled={isLoading}
+          style={buttonStyle}
+        >
+          {isLoading ? "接続中..." : "DB疎通確認"}
+        </button>
       </div>
 
-      {/* 結果の表示エリア */}
-      {healthMessage && (
+      {/* 結果表示 */}
+      {message && (
         <div
           style={{
             marginTop: "1.5rem",
@@ -70,10 +83,24 @@ export default function Home() {
             borderLeft: "4px solid #0070f3",
           }}
         >
-          <strong>APIレスポンス:</strong>
-          <p style={{ margin: "0.5rem 0 0 0" }}>{healthMessage}</p>
+          <strong>レスポンス:</strong>
+
+          <p style={{ margin: "0.5rem 0 0 0" }}>{message}</p>
         </div>
       )}
     </main>
   );
 }
+
+/**
+ * ボタン共通スタイル
+ */
+const buttonStyle = {
+  padding: "0.5rem 1rem",
+  cursor: "pointer",
+  backgroundColor: "#0070f3",
+  color: "white",
+  border: "none",
+  borderRadius: "4px",
+  fontSize: "1rem",
+};
