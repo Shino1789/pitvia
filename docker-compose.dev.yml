@@ -18,8 +18,8 @@ services:
     # コンテナ内作業ディレクトリ
     working_dir: /app
 
-    # 依存ライブラリがインストールされていない場合はインストールして開発環境起動
-    command: sh -c "if [ ! -d node_modules ]; then npm install; fi && npm run dev"
+    # 依存ライブラリをインストールしてNext.js起動
+    command: sh -c "npm install && npm run dev"
 
     ports:
       - "3000:3000"
@@ -27,11 +27,16 @@ services:
     env_file:
       - .env.dev
 
+    environment:
+      WATCHPACK_POLLING: true
+
     volumes:
       # ソースコード同期(hot reload)
       - ./apps/web:/app
       # node_modules 永続化
       - node-modules:/app/node_modules
+      # 無限リロード防止
+      - /app/.next
 
   # ==================================================
   # Spring Boot API
@@ -46,7 +51,7 @@ services:
     # コンテナ内作業ディレクトリ
     working_dir: /app
 
-    # 開発環境起動コマンド
+    # Spring Boot起動
     command: ./gradlew bootRun --no-daemon
 
     ports:
@@ -80,6 +85,11 @@ services:
 
     env_file:
       - .env.dev
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
     volumes:
       # DBデータ永続化

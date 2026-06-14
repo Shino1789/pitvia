@@ -10,3 +10,4 @@ spring:
 logging:
   level:
     root: WARN
+    "[com.pitvia]": DEBUG
