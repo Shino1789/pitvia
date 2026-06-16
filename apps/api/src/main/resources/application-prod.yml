@@ -6,3 +6,10 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: false
+
+# CORS設定
+app:
+  cors:
+    allowed-origins:
+      - https://pitvia.com
+      - https://www.pitvia.com

@@ -6,3 +6,9 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+
+# CORS設定
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
