@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @version 1.0
  */
 @RestController
-@RequestMapping("/health")
+@RequestMapping("/v1/health")
 @CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
 public class HealthController {

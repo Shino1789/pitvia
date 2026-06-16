@@ -4,46 +4,26 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.slf4j.MDC;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.pitvia.api.common.constant.RequestContextKeys;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * リクエスト単位で一意なリクエストIDを付与するフィルタ
+ * HTTPリクエスト単位のログコンテキストをMDCへ設定するフィルタ
  *
  * @author pitvia
  * @version 1.0
  */
+@Order(1)
 @Component
-public class RequestIdFilter extends OncePerRequestFilter {
-
-    /**
-     * クライアント・外部システムとのHTTPヘッダ名
-     */
-    public static final String REQUEST_ID_HEADER = "X-Request-Id";
-
-    /**
-     * サーバー内部で利用するリクエスト属性キー
-     */
-    public static final String REQUEST_ID_ATTRIBUTE = "requestId";
-
-    /**
-     * リクエストIDをMDCへ格納する際のキー
-     */
-    public static final String MDC_REQUEST_ID = "requestId";
-
-    /**
-     * HTTPメソッドをMDCへ格納する際のキー
-     */
-    private static final String MDC_METHOD = "method";
-
-    /**
-     * リクエストURIをMDCへ格納する際のキー
-     */
-    private static final String MDC_REQUEST_URI = "requestUri";
+public class MdcLoggingFilter extends OncePerRequestFilter {
 
     /**
      * リクエスト単位で一意なリクエストIDを生成し、
@@ -61,35 +41,35 @@ public class RequestIdFilter extends OncePerRequestFilter {
      * @throws IOException      入出力例外
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response,
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
         // 上流からリクエストID取得
-        String requestId = request.getHeader(REQUEST_ID_HEADER);
+        String requestId = request.getHeader(RequestContextKeys.REQUEST_ID_HEADER);
 
         // なければ生成
         if (requestId == null || requestId.isBlank()) {
-            requestId = UUID.randomUUID().toString();
+            requestId = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         } else {
             requestId = requestId.trim();
         }
 
         // API内部で利用するリクエスト属性をセット
-        request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId);
+        request.setAttribute(RequestContextKeys.REQUEST_ID_ATTRIBUTE, requestId);
 
         // クライアント・外部システムとのHTTPヘッダにセット
-        response.setHeader(REQUEST_ID_HEADER, requestId);
+        response.setHeader(RequestContextKeys.REQUEST_ID_HEADER, requestId);
 
-        MDC.put(MDC_REQUEST_ID, requestId);
-        MDC.put(MDC_METHOD, request.getMethod());
-        MDC.put(MDC_REQUEST_URI, request.getRequestURI());
+        MDC.put(RequestContextKeys.MDC_REQUEST_ID, requestId);
+        MDC.put(RequestContextKeys.MDC_METHOD, request.getMethod());
+        MDC.put(RequestContextKeys.MDC_PATH, request.getRequestURI());
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            MDC.remove(MDC_REQUEST_ID);
-            MDC.remove(MDC_METHOD);
-            MDC.remove(MDC_REQUEST_URI);
+            MDC.remove(RequestContextKeys.MDC_REQUEST_ID);
+            MDC.remove(RequestContextKeys.MDC_METHOD);
+            MDC.remove(RequestContextKeys.MDC_PATH);
         }
     }
 }

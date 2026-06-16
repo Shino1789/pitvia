@@ -1,16 +1,18 @@
 package com.pitvia.api.common.factory;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import com.pitvia.api.common.constant.RequestContextKeys;
 import com.pitvia.api.common.dto.response.ApiResponse;
 import com.pitvia.api.common.dto.response.ErrorBody;
 import com.pitvia.api.common.dto.response.ErrorResponse;
 import com.pitvia.api.common.dto.response.Meta;
 import com.pitvia.api.common.dto.response.ValidationError;
-import com.pitvia.api.common.filter.RequestIdFilter;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.stereotype.Component;
 
-import java.time.OffsetDateTime;
-import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * APIレスポンス生成ファクトリ
@@ -75,6 +77,6 @@ public class ResponseFactory {
      */
     private Meta createMeta(HttpServletRequest request) {
 
-        return new Meta((String) request.getAttribute(RequestIdFilter.REQUEST_ID_ATTRIBUTE), OffsetDateTime.now());
+        return new Meta((String) request.getAttribute(RequestContextKeys.REQUEST_ID_ATTRIBUTE), OffsetDateTime.now());
     }
 }

@@ -12,7 +12,7 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-    
+
   # JPA設定
   jpa:
     open-in-view: false
@@ -20,4 +20,4 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   servlet:
-    context-path: /api/v1
+    context-path: /api
