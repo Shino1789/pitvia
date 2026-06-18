@@ -65,27 +65,29 @@ public class ResponseFactory {
     /**
      * バリデーションエラーレスポンスを生成（デフォルトメッセージ）
      *
-     * @param details バリデーションエラー詳細
-     * @param request HTTPリクエスト
+     * @param validationErrors バリデーションエラー詳細
+     * @param request          HTTPリクエスト
      * @return バリデーションエラーレスポンス
      */
-    public ErrorResponse validationError(List<ValidationError> details, HttpServletRequest request) {
+    public ErrorResponse validationError(List<ValidationError> validationErrors, HttpServletRequest request) {
 
-        return createErrorResponse(ErrorCode.VALIDATION_ERROR, ErrorCode.VALIDATION_ERROR.getDefaultMessage(), details,
+        return createErrorResponse(ErrorCode.VALIDATION_ERROR, ErrorCode.VALIDATION_ERROR.getDefaultMessage(),
+                validationErrors,
                 request);
     }
 
     /**
      * バリデーションエラーレスポンス生成（カスタムメッセージ）
      *
-     * @param message クライアント向けメッセージ
-     * @param details バリデーションエラー詳細
-     * @param request HTTPリクエスト
+     * @param message          クライアント向けメッセージ
+     * @param validationErrors バリデーションエラー詳細
+     * @param request          HTTPリクエスト
      * @return バリデーションエラーレスポンス
      */
-    public ErrorResponse validationError(String message, List<ValidationError> details, HttpServletRequest request) {
+    public ErrorResponse validationError(String message, List<ValidationError> validationErrors,
+            HttpServletRequest request) {
 
-        return createErrorResponse(ErrorCode.VALIDATION_ERROR, message, details, request);
+        return createErrorResponse(ErrorCode.VALIDATION_ERROR, message, validationErrors, request);
     }
 
     /**
@@ -93,11 +95,11 @@ public class ResponseFactory {
      *
      * @param errorCode エラーコード
      * @param message   クライアント向けメッセージ
-     * @param details   バリデーションエラー詳細
+     * @param validationErrors   バリデーションエラー詳細
      * @param request   HTTPリクエスト
      * @return エラーレスポンス
      */
-    private ErrorResponse createErrorResponse(ErrorCode errorCode, String message, List<ValidationError> details,
+    private ErrorResponse createErrorResponse(ErrorCode errorCode, String message, List<ValidationError> validationErrors,
             HttpServletRequest request) {
 
         return new ErrorResponse(
@@ -106,7 +108,7 @@ public class ResponseFactory {
                         request.getRequestURI(),
                         errorCode.name(),
                         message,
-                        details));
+                        validationErrors));
     }
 
     /**

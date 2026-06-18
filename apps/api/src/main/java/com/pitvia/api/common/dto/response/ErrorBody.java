@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author pitvia
  * @version 1.0
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorBody(
 
         /**
@@ -31,5 +30,5 @@ public record ErrorBody(
         /**
          * バリデーションエラー詳細
          */
-        List<ValidationError> details) {
+        @JsonInclude(JsonInclude.Include.NON_NULL) List<ValidationError> validationErrors) {
 }
