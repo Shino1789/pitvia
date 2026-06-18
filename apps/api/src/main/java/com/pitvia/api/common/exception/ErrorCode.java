@@ -16,44 +16,35 @@ public enum ErrorCode {
     /**
      * バリデーションエラー
      */
-    VALIDATION_ERROR(
-            "VALIDATION_ERROR",
-            "入力値に誤りがあります"),
+    VALIDATION_ERROR("入力値に誤りがあります"),
+
+    /**
+     * リソース未検出エラー
+     */
+    RESOURCE_NOT_FOUND("リソースが見つかりません"),
 
     /**
      * 想定外エラー
      */
-    INTERNAL_SERVER_ERROR(
-            "INTERNAL_SERVER_ERROR",
-            "予期しないエラーが発生しました"),
+    INTERNAL_SERVER_ERROR("予期しないエラーが発生しました"),
 
     /**
      * ユーザーが存在しない
      */
-    USER_NOT_FOUND(
-            "USER_NOT_FOUND",
-            "ユーザーが存在しません"),
+    USER_NOT_FOUND("ユーザーが存在しません"),
 
     /**
      * ユーザーが既に存在する
      */
-    USER_ALREADY_EXISTS(
-            "USER_ALREADY_EXISTS",
-            "ユーザーは既に存在します");
+    USER_ALREADY_EXISTS("ユーザーは既に存在します");
 
     /**
-     * クライアント向けエラーコード
+     * クライアント向けデフォルトメッセージ
      */
-    private final String code;
+    private final String defaultMessage;
 
-    /**
-     * クライアント向けメッセージ
-     */
-    private final String message;
-
-    ErrorCode(String code, String message) {
-        this.code = code;
-        this.message = message;
+    ErrorCode(String message) {
+        this.defaultMessage = message;
     }
 
 }

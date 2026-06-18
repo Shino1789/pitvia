@@ -2,12 +2,15 @@ package com.pitvia.api.common.dto.response;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * エラー詳細
  *
  * @author pitvia
  * @version 1.0
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorBody(
 
         /**

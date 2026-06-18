@@ -11,6 +11,7 @@ import com.pitvia.api.common.dto.response.ErrorBody;
 import com.pitvia.api.common.dto.response.ErrorResponse;
 import com.pitvia.api.common.dto.response.Meta;
 import com.pitvia.api.common.dto.response.ValidationError;
+import com.pitvia.api.common.exception.ErrorCode;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -37,36 +38,75 @@ public class ResponseFactory {
     }
 
     /**
-     * 異常系レスポンス生成
+     * エラーレスポンスを生成（デフォルトメッセージ）
      *
-     * @param code    エラーコード
-     * @param message クライアント向けメッセージ
-     * @param request HTTPリクエスト
-     * @return 異常系レスポンス
+     * @param errorCode エラーコード
+     * @param request   HTTPリクエスト
+     * @return エラーレスポンス
      */
-    public ErrorResponse error(String code, String message, HttpServletRequest request) {
+    public ErrorResponse error(ErrorCode errorCode, HttpServletRequest request) {
 
-        return error(code, message, List.of(), request);
+        return createErrorResponse(errorCode, errorCode.getDefaultMessage(), null, request);
     }
 
     /**
-     * バリデーションエラーレスポンス生成
+     * エラーレスポンスを生成（カスタムメッセージ）
      *
-     * @param code    エラーコード
+     * @param errorCode エラーコード
+     * @param message   クライアント向けメッセージ
+     * @param request   HTTPリクエスト
+     * @return エラーレスポンス
+     */
+    public ErrorResponse error(ErrorCode errorCode, String message, HttpServletRequest request) {
+
+        return createErrorResponse(errorCode, message, null, request);
+    }
+
+    /**
+     * バリデーションエラーレスポンスを生成（デフォルトメッセージ）
+     *
+     * @param details バリデーションエラー詳細
+     * @param request HTTPリクエスト
+     * @return バリデーションエラーレスポンス
+     */
+    public ErrorResponse validationError(List<ValidationError> details, HttpServletRequest request) {
+
+        return createErrorResponse(ErrorCode.VALIDATION_ERROR, ErrorCode.VALIDATION_ERROR.getDefaultMessage(), details,
+                request);
+    }
+
+    /**
+     * バリデーションエラーレスポンス生成（カスタムメッセージ）
+     *
      * @param message クライアント向けメッセージ
      * @param details バリデーションエラー詳細
      * @param request HTTPリクエスト
      * @return バリデーションエラーレスポンス
      */
-    public ErrorResponse error(String code, String message, List<ValidationError> details, HttpServletRequest request) {
+    public ErrorResponse validationError(String message, List<ValidationError> details, HttpServletRequest request) {
+
+        return createErrorResponse(ErrorCode.VALIDATION_ERROR, message, details, request);
+    }
+
+    /**
+     * エラーレスポンス生成の共通処理
+     *
+     * @param errorCode エラーコード
+     * @param message   クライアント向けメッセージ
+     * @param details   バリデーションエラー詳細
+     * @param request   HTTPリクエスト
+     * @return エラーレスポンス
+     */
+    private ErrorResponse createErrorResponse(ErrorCode errorCode, String message, List<ValidationError> details,
+            HttpServletRequest request) {
 
         return new ErrorResponse(
                 createMeta(request),
                 new ErrorBody(
                         request.getRequestURI(),
-                        code,
+                        errorCode.name(),
                         message,
-                        details == null ? List.of() : details));
+                        details));
     }
 
     /**
@@ -79,4 +119,5 @@ public class ResponseFactory {
 
         return new Meta((String) request.getAttribute(RequestContextKeys.REQUEST_ID_ATTRIBUTE), OffsetDateTime.now());
     }
+
 }

@@ -34,14 +34,29 @@ public class BusinessException extends RuntimeException {
     }
 
     /**
-     * 指定されたHTTPステータスで業務例外を生成する。
+     * 指定されたHTTPステータスで業務例外を生成する（デフォルトメッセージ）
      *
      * @param errorCode エラーコード
      * @param status    HTTPステータス
      */
     public BusinessException(ErrorCode errorCode, HttpStatus status) {
 
-        super(errorCode.getMessage());
+        super(errorCode.getDefaultMessage());
+
+        this.errorCode = errorCode;
+        this.status = status;
+    }
+
+    /**
+     * 指定されたHTTPステータスで業務例外を生成する（カスタムメッセージ）
+     *
+     * @param errorCode エラーコード
+     * @param message   メッセージ
+     * @param status    HTTPステータス
+     */
+    public BusinessException(ErrorCode errorCode, String message, HttpStatus status) {
+
+        super(message);
 
         this.errorCode = errorCode;
         this.status = status;
