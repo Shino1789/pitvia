@@ -68,7 +68,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 # 主な機能
 
-# 1. アカウント機能
+## 1. アカウント機能
 
 - 新規登録 / ログイン
 - ロール権限管理
@@ -80,7 +80,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ---
 
-# 2. 車両管理
+## 2. 車両管理
 
 - 複数台登録対応
 - メーカー
@@ -93,7 +93,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ---
 
-# 3. 整備・カスタム履歴管理
+## 3. 整備・カスタム履歴管理
 
 - 作業日
 - 走行距離
@@ -108,7 +108,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ---
 
-# 4. コスト管理
+## 4. コスト管理
 
 - 月別維持費
 - 年別維持費
@@ -117,14 +117,14 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ---
 
-# 5. ショップ連携
+## 5. ショップ連携
 
 車両単位でオーナーとショップを連携し、
 整備履歴を双方で共有できます。
 
 ---
 
-# 今後実装予定
+## 今後実装予定
 
 - LINE通知連携
 - 車検証OCR読み取り
@@ -178,7 +178,6 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 - AWS (またはRender/Vercel)
 - Docker
 - Docker Compose
-- Nginx
 
 ## 開発ツール
 
@@ -220,16 +219,19 @@ pitvia/
     │   ├── api/        # Spring Boot API
     │   └── mobile/     # 将来対応予定
     ├── infra/
-    │   ├── docker/
-    │   │   ├── api/
-    │   │   │   └── Dockerfile
-    │   │   └── web/
-    │   │       └── Dockerfile
-    │   └── nginx/
-    │       └── nginx.conf
+    │   └── docker/
+    │       ├── api/
+    │       │   └── Dockerfile
+    │       └── web/
+    │           └── Dockerfile
+    ├── scripts/
+    │   ├── up.sh
+    │   ├── down.sh
+    │   ├── logs.sh
+    │   └── reset.sh
     ├── docs/
     │   ├── architecture/
-    │   │   └── architecture.drawio  # drow.ioで作成したアプリ構成図
+    │   │   └── architecture.drawio  # draw.ioで作成したアプリ構成図
     │   ├── ui/
     │   │   └── figma-link.md
     │   ├── api/
@@ -239,8 +241,7 @@ pitvia/
     │   │   └── schema.dbml          # dbdiagram.ioで作成したdbml
     │   └── images/
     │       ├── architecture.png
-    │       ├── er.png
-    │       └── screen-flow.png
+    │       └── er.png
     ├── LICENSE
     └── README.md
 ```

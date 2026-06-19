@@ -3,7 +3,7 @@ openapi: 3.0.3
 
 info:
   title: Pitvia API
-  version: 0.1.0
+  version: 0.2.0
   description: |
     Pitvia ベータ版API仕様書
 
@@ -18,13 +18,10 @@ servers:
 tags:
   - name: Auth
     description: 認証API
-
   - name: Users
     description: ユーザーAPI
-
   - name: Vehicles
     description: 車両API
-
   - name: MaintenanceRecords
     description: 整備記録API
 
@@ -33,222 +30,260 @@ paths:
     post:
       tags:
         - Auth
-
       summary: アカウント登録
-
       description: |
         オーナー または ショップアカウントを作成する。
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/RegisterRequest"
-
       responses:
         "201":
           description: アカウント作成成功
-
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
         "400":
-          description: 入力値不正
+          description: 入力値不正（バリデーションエラーなど）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /auth/login:
     post:
       tags:
         - Auth
-
       summary: ログイン
-
       description: |
         メールアドレスとパスワードでログインする。
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/LoginRequest"
-
       responses:
         "200":
           description: ログイン成功
-
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginResponse"
-
+                $ref: "#/components/schemas/LoginApiResponse"
+        "400":
+          description: 入力値不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /users/me:
     get:
       tags:
         - Users
-
       summary: 自分のユーザー情報取得
-
       security:
         - bearerAuth: []
-
       responses:
         "200":
           description: 取得成功
-
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
-
+                $ref: "#/components/schemas/UserApiResponse"
         "401":
           description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     put:
       tags:
         - Users
-
       summary: 自分のユーザー情報更新
-
       security:
         - bearerAuth: []
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateUserRequest"
-
       responses:
         "200":
           description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: 入力値不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /vehicles:
     get:
       tags:
         - Vehicles
-
       summary: 車両一覧取得
-
       security:
         - bearerAuth: []
-
       responses:
         "200":
           description: 車両一覧取得成功
-
           content:
             application/json:
               schema:
-                type: array
-
-                items:
-                  $ref: "#/components/schemas/VehicleResponse"
+                $ref: "#/components/schemas/VehicleListApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     post:
       tags:
         - Vehicles
-
       summary: 車両登録
-
       security:
         - bearerAuth: []
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/CreateVehicleRequest"
-
       responses:
         "201":
           description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: 入力値不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /vehicles/{vehicleId}:
     get:
       tags:
         - Vehicles
-
       summary: 車両詳細取得
-
       security:
         - bearerAuth: []
-
       parameters:
         - name: vehicleId
           in: path
           required: true
-
           schema:
             type: integer
             format: int64
-
       responses:
         "200":
           description: 車両詳細取得成功
-
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VehicleResponse"
-
+                $ref: "#/components/schemas/VehicleApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: 車両が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     put:
       tags:
         - Vehicles
-
       summary: 車両更新
-
       security:
         - bearerAuth: []
-
       parameters:
         - name: vehicleId
           in: path
           required: true
-
           schema:
             type: integer
             format: int64
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateVehicleRequest"
-
       responses:
         "200":
           description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: 入力値不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 車両が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     delete:
       tags:
         - Vehicles
-
       summary: 車両削除
-
       security:
         - bearerAuth: []
-
       parameters:
         - name: vehicleId
           in: path
           required: true
-
           schema:
             type: integer
             format: int64
-
       responses:
         "204":
           description: 削除成功
@@ -261,109 +296,229 @@ components:
       bearerFormat: JWT
 
   schemas:
+    # --- 共通メタ / レスポンスラッパー定義 ---
+    Meta:
+      type: object
+      required:
+        - requestId
+        - timestamp
+      properties:
+        requestId:
+          type: string
+          example: "de491de047cb"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-06-19T18:00:00Z"
+
+    ValidationError:
+      type: object
+      required:
+        - field
+        - reason
+      properties:
+        field:
+          type: string
+          example: "email"
+        reason:
+          type: string
+          example: "メールアドレス形式ではありません"
+
+    ErrorBody:
+      type: object
+      required:
+        - path
+        - code
+        - message
+      properties:
+        path:
+          type: string
+          example: "/api/v1/auth/login"
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "入力値に誤りがあります"
+        validationErrors:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/ValidationError"
+
+    # 異常系レスポンスのルート
+    ErrorResponse:
+      type: object
+      required:
+        - meta
+        - error
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+
+    # 正常系：中身のデータが空（Void）の場合の共通型
+    EmptyApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    # --- 各正常系APIラップ型定義 ---
+    LoginApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/LoginResponse"
+
+    UserApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/UserResponse"
+
+    VehicleApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/VehicleResponse"
+
+    VehicleListApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleResponse"
+
+    # --- 業務データペイロード定義 ---
     RegisterRequest:
       type: object
-
       required:
         - role
         - userName
         - email
         - password
-
       properties:
         role:
           type: string
           enum:
             - OWNER
             - SHOP
-
         userName:
           type: string
-
+          example: "シノダ リョウタ"
         email:
           type: string
           format: email
-
+          example: "shinoda@example.com"
         password:
           type: string
           format: password
+          example: "password123"
 
     LoginRequest:
       type: object
-
       required:
         - email
         - password
-
       properties:
         email:
           type: string
           format: email
-
+          example: "shinoda@example.com"
         password:
           type: string
           format: password
+          example: "password123"
 
     LoginResponse:
       type: object
-
       properties:
         accessToken:
           type: string
-
+          example: "eyJhbGciOiJIUzI1NiIsIn..."
         refreshToken:
           type: string
+          example: "def502003f41a..."
 
     UserResponse:
       type: object
-
       properties:
         id:
           type: integer
           format: int64
-
+          example: 1
         role:
           type: string
-
+          example: "OWNER"
         userName:
           type: string
-
+          example: "シノダ リョウタ"
         email:
           type: string
+          example: "shinoda@example.com"
 
     UpdateUserRequest:
       type: object
-
       properties:
         userName:
           type: string
+          example: "シノダ 稜太"
 
     CreateVehicleRequest:
       type: object
-
       required:
         - vehicleType
         - name
         - manufacturerId
         - model
         - currentMileage
-
       properties:
         vehicleType:
           type: string
-
+          example: "CAR"
         name:
           type: string
-
+          example: "マイカー"
         manufacturerId:
           type: integer
           format: int64
-
+          example: 12
         model:
           type: string
-
+          example: "ZN6"
         currentMileage:
           type: integer
+          example: 85000
 
     UpdateVehicleRequest:
       allOf:
@@ -371,23 +526,23 @@ components:
 
     VehicleResponse:
       type: object
-
       properties:
         id:
           type: integer
           format: int64
-
+          example: 42
         vehicleType:
           type: string
-
+          example: "CAR"
         name:
           type: string
-
+          example: "マイカー"
         manufacturer:
           type: string
-
+          example: "TOYOTA"
         model:
           type: string
-
+          example: "ZN6"
         currentMileage:
           type: integer
+          example: 85200

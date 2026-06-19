@@ -1,0 +1,74 @@
+// ==================================================
+// Gradleプラグイン定義
+// ==================================================
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.15'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+// ==================================================
+// プロジェクトの基本設定
+// ==================================================
+group = 'com.pitvia'
+version = '0.0.1-SNAPSHOT'
+
+// ==================================================
+// Java設定
+// ==================================================
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+// ==================================================
+// 依存ライブラリ取得先
+// ==================================================
+repositories {
+	mavenCentral()
+}
+
+// ==================================================
+// 依存ライブラリ
+// ==================================================
+dependencies {
+
+	// Spring Boot
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+  // 接続確認のため一時的にコメントアウト
+	// implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// OpenAPI / Swagger
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
+
+	// Database
+	runtimeOnly 'org.postgresql:postgresql'
+
+	// Database Migration
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+  // Configuration Properties Metadata
+  annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	// Development
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+}
+
+// ==================================================
+// テスト設定
+// ==================================================
+tasks.named('test') {
+	useJUnitPlatform()
+}

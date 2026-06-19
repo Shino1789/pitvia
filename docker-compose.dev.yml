@@ -1,0 +1,110 @@
+# ==================================================
+# Docker Compose - Development Environment
+# 開発環境用コンテナ定義
+# ==================================================
+
+services:
+  # ==================================================
+  # Next.js
+  # ==================================================
+  web:
+    image: node:22-alpine
+
+    container_name: pitvia-web
+
+    # コンテナ再起動設定
+    restart: "no"
+
+    # コンテナ内作業ディレクトリ
+    working_dir: /app
+
+    # 依存ライブラリをインストールしてNext.js起動
+    command: sh -c "npm install && npm run dev"
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env.dev
+
+    environment:
+      WATCHPACK_POLLING: true
+
+    volumes:
+      # ソースコード同期(hot reload)
+      - ./apps/web:/app
+      # node_modules 永続化
+      - node-modules:/app/node_modules
+      # 無限リロード防止
+      - /app/.next
+
+  # ==================================================
+  # Spring Boot API
+  # ==================================================
+  api:
+    image: gradle:8.14.0-jdk21
+
+    container_name: pitvia-api
+
+    restart: "no"
+
+    # コンテナ内作業ディレクトリ
+    working_dir: /app
+
+    # Spring Boot起動
+    command: ./gradlew bootRun --no-daemon
+
+    ports:
+      - "${SERVER_PORT}:8080"
+
+    env_file:
+      - .env.dev
+
+    volumes:
+      # ソースコード同期(hot reload)
+      - ./apps/api:/app
+      # Gradleキャッシュ永続化
+      - gradle-cache:/home/gradle/.gradle
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ==================================================
+  # PostgreSQL
+  # ==================================================
+  db:
+    image: postgres:17-alpine
+    container_name: pitvia-db
+
+    # コンテナ再起動設定
+    restart: "no"
+
+    ports:
+      - "${DB_PORT}:5432"
+
+    env_file:
+      - .env.dev
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    volumes:
+      # DBデータ永続化
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ==================================================
+# Volume定義
+# ==================================================
+volumes:
+  node-modules:
+  gradle-cache:
+  postgres-data:

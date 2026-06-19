@@ -1,0 +1,18 @@
+/*
+ * アプリ全体の共通CSS
+ * Tailwind CSSを読み込み、全体共通の基本スタイルを定義する
+ */
+@import "tailwindcss";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: #f8fafc;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+}

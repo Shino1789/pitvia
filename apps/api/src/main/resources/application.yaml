@@ -1,0 +1,32 @@
+# ==================================================
+# Spring Boot 共通設定
+# ==================================================
+spring:
+  # アプリケーション設定
+  application:
+    name: api
+
+  # データベース接続設定
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA設定
+  jpa:
+    open-in-view: false
+
+  web:
+    resources:
+      # 静的リソースの自動マッピングを無効化
+      add-mappings: false
+
+  jackson:
+    # デフォルトタイムゾーン
+    time-zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
