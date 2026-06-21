@@ -1,0 +1,92 @@
+package com.pitvia.api.security.entity;
+
+import java.time.OffsetDateTime;
+
+import com.pitvia.api.common.entity.BaseEntity;
+import com.pitvia.api.security.constant.UserRole;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
+/**
+ * ユーザー情報エンティティ
+ *
+ * @author pitvia
+ * @version 1.0
+ */
+@Entity
+@Table(name = "users")
+@SQLDelete(sql = """
+        UPDATE users
+        SET deleted_at = NOW()
+        WHERE id = ?
+        """)
+@SQLRestriction("deleted_at IS NULL")
+@Getter
+@Setter
+@NoArgsConstructor
+@EqualsAndHashCode(of = "id", callSuper = false)
+public class User extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * ユーザーロール (OWNER, SHOP, ADMIN)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
+
+    /**
+     * ユーザー名
+     */
+    @Column(nullable = false)
+    private String userName;
+
+    /**
+     * ログイン用メールアドレス
+     */
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    /**
+     * ハッシュ化済みパスワード
+     */
+    @Column(nullable = false)
+    private String passwordHash;
+
+    /**
+     * メール認証日時
+     */
+    @Column
+    private OffsetDateTime emailVerifiedAt;
+
+    /**
+     * 最終ログイン日時
+     */
+    @Column
+    private OffsetDateTime lastLoginAt;
+
+    /**
+     * 紐づくショップ情報
+     */
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Shop shop;
+
+}
