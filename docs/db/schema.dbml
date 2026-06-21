@@ -16,7 +16,6 @@ Table users {
   ]
   email varchar [
     not null,
-    unique,
     note: 'ログイン用メールアドレス'
   ]
   password_hash varchar [
