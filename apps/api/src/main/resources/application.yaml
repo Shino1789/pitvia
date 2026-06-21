@@ -30,3 +30,17 @@ server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
+
+app:
+  # CORS設定
+  cors:
+    allowed-origins:
+      - ${FRONTEND_URL}
+
+jwt:
+  # 署名に使用する秘密鍵
+  secret-key: ${JWT_SECRET_KEY}
+  # アクセストークンの有効期限（デフォルトは1時間）
+  expiration: ${JWT_EXPIRES:1h}
+  # リフレッシュトークンの有効期限（デフォルトは7日間）
+  refresh-expiration: ${JWT_REFRESH_EXPIRES:7d}

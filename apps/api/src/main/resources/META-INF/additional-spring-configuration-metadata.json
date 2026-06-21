@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret-key",
+      "type": "java.lang.String",
+      "description": "JWTの署名（改ざん検知）に使用する秘密鍵。"
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.time.Duration",
+      "description": "アクセストークンの有効期限（例: 1h, 30m）。"
+    },
+    {
+      "name": "jwt.refresh-expiration",
+      "type": "java.time.Duration",
+      "description": "リフレッシュトークンの有効期限（例: 7d, 24h）。"
+    }
+  ]
+}
