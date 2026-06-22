@@ -1,6 +1,4 @@
-package com.pitvia.api.security.details;
-
-import com.pitvia.api.security.repository.UserRepository;
+package com.pitvia.api.auth.details;
 
 import lombok.RequiredArgsConstructor;
 
@@ -9,6 +7,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.pitvia.api.user.repository.UserRepository;
 
 /**
  * メールアドレスを基準にユーザー情報をDBから取得し、Spring Securityへ仲介するサービス

@@ -1,4 +1,4 @@
-package com.pitvia.api.security.repository;
+package com.pitvia.api.token.repository;
 
 import java.time.Instant;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.pitvia.api.security.entity.RefreshToken;
+import com.pitvia.api.token.entity.RefreshToken;
 
 /**
  * リフレッシュトークン管理テーブル (refresh_tokens) に対するデータアクセスを管理するリポジトリ

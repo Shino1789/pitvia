@@ -1,9 +1,10 @@
-package com.pitvia.api.security.entity;
+package com.pitvia.api.token.entity;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
 import com.pitvia.api.common.entity.BaseEntity;
+import com.pitvia.api.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,13 +54,11 @@ public class RefreshToken extends BaseEntity {
     /**
      * ユーザーエージェント
      */
-    @Column
     private String userAgent;
 
     /**
      * IPアドレス
      */
-    @Column
     private String ipAddress;
 
     /**
@@ -71,13 +70,11 @@ public class RefreshToken extends BaseEntity {
     /**
      * トークンの無効化日時
      */
-    @Column
     private OffsetDateTime revokedAt;
 
     /**
      * 最終使用日時
      */
-    @Column
     private OffsetDateTime lastUsedAt;
 
 }

@@ -1,9 +1,10 @@
-package com.pitvia.api.security.details;
+package com.pitvia.api.auth.details;
 
-import com.pitvia.api.security.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.pitvia.api.user.entity.User;
 
 import java.util.Collection;
 import java.util.List;

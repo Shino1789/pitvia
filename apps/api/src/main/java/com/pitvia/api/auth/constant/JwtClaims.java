@@ -1,4 +1,4 @@
-package com.pitvia.api.security.constant;
+package com.pitvia.api.auth.constant;
 
 /**
  * JWT ペイロードの中身の各クレーム定義クラス

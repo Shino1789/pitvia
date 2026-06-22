@@ -1,4 +1,4 @@
-package com.pitvia.api.security.service;
+package com.pitvia.api.auth.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -9,10 +9,10 @@ import javax.crypto.SecretKey;
 
 import org.springframework.stereotype.Service;
 
-import com.pitvia.api.security.constant.JwtClaims;
-import com.pitvia.api.security.constant.UserRole;
-import com.pitvia.api.security.exception.InvalidJwtException;
-import com.pitvia.api.security.properties.JwtProperties;
+import com.pitvia.api.auth.constant.JwtClaims;
+import com.pitvia.api.auth.constant.UserRole;
+import com.pitvia.api.auth.exception.InvalidJwtException;
+import com.pitvia.api.auth.properties.JwtProperties;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

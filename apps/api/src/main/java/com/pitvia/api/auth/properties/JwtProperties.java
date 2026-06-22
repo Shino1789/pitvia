@@ -1,4 +1,4 @@
-package com.pitvia.api.security.properties;
+package com.pitvia.api.auth.properties;
 
 import java.time.Duration;
 

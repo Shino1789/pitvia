@@ -1,6 +1,7 @@
-package com.pitvia.api.security.entity;
+package com.pitvia.api.shop.entity;
 
 import com.pitvia.api.common.entity.BaseEntity;
+import com.pitvia.api.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,11 +27,7 @@ import org.hibernate.annotations.SQLRestriction;
  */
 @Entity
 @Table(name = "shops")
-@SQLDelete(sql = """
-        UPDATE shops
-        SET deleted_at = NOW()
-        WHERE id = ?
-        """)
+@SQLDelete(sql = "UPDATE shops SET deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter

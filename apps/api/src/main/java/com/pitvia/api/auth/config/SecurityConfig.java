@@ -1,4 +1,4 @@
-package com.pitvia.api.security.config;
+package com.pitvia.api.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

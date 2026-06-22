@@ -1,4 +1,4 @@
-package com.pitvia.api.security.constant;
+package com.pitvia.api.auth.constant;
 
 import lombok.Getter;
 

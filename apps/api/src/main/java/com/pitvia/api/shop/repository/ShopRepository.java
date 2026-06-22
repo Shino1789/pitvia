@@ -1,7 +1,8 @@
-package com.pitvia.api.security.repository;
+package com.pitvia.api.shop.repository;
 
-import com.pitvia.api.security.entity.Shop;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pitvia.api.shop.entity.Shop;
 
 import java.util.Optional;
 

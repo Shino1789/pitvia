@@ -1,4 +1,4 @@
-package com.pitvia.api.security.exception;
+package com.pitvia.api.auth.exception;
 
 /**
  * JWT不正例外

@@ -1,9 +1,13 @@
-package com.pitvia.api.security.entity;
+package com.pitvia.api.user.entity;
 
 import java.time.OffsetDateTime;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
+import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.common.entity.BaseEntity;
-import com.pitvia.api.security.constant.UserRole;
+import com.pitvia.api.shop.entity.Shop;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,8 +23,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 /**
  * ユーザー情報エンティティ
@@ -30,11 +32,7 @@ import org.hibernate.annotations.SQLRestriction;
  */
 @Entity
 @Table(name = "users")
-@SQLDelete(sql = """
-        UPDATE users
-        SET deleted_at = NOW()
-        WHERE id = ?
-        """)
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
@@ -74,13 +72,11 @@ public class User extends BaseEntity {
     /**
      * メール認証日時
      */
-    @Column
     private OffsetDateTime emailVerifiedAt;
 
     /**
      * 最終ログイン日時
      */
-    @Column
     private OffsetDateTime lastLoginAt;
 
     /**

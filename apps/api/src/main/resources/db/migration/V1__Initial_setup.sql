@@ -15,6 +15,7 @@ CREATE TABLE users (
         CHECK (role IN ('OWNER', 'SHOP', 'ADMIN'))
 );
 
+-- 部分ユニークインデックスで論理削除を考慮
 CREATE UNIQUE INDEX uk_users_email_active
 ON users(email)
 WHERE deleted_at IS NULL;
@@ -39,6 +40,11 @@ CREATE TABLE shops (
     CONSTRAINT uk_shops_user
         UNIQUE(user_id)
 );
+
+-- 部分ユニークインデックスで論理削除を考慮
+CREATE UNIQUE INDEX uk_shops_user_active
+ON shops(user_id)
+WHERE deleted_at IS NULL;
 
 CREATE TABLE refresh_tokens (
     id BIGSERIAL PRIMARY KEY,
@@ -65,3 +71,16 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 CREATE INDEX idx_shops_deleted_at ON shops(deleted_at);
+
+-- 更新日時を自動更新する関数
+CREATE OR REPLACE FUNCTION refresh_updated_at_step()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 各テーブルへのトリガー適用
+CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION refresh_updated_at_step();
+CREATE TRIGGER trg_shops_updated_at BEFORE UPDATE ON shops FOR EACH ROW EXECUTE FUNCTION refresh_updated_at_step();

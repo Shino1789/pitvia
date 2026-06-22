@@ -1,7 +1,8 @@
-package com.pitvia.api.security.repository;
+package com.pitvia.api.user.repository;
 
-import com.pitvia.api.security.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pitvia.api.user.entity.User;
 
 import java.util.Optional;
 

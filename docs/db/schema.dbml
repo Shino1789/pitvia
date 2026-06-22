@@ -103,7 +103,6 @@ Table shops {
   ]
   user_id bigint [
     not null,
-    unique,
     ref: > users.id,
     note: 'ショップアカウントのユーザーID'
   ]
