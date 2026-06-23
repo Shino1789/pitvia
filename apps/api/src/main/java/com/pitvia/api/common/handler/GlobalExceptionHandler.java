@@ -3,14 +3,18 @@ package com.pitvia.api.common.handler;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.pitvia.api.common.dto.response.ErrorResponse;
 import com.pitvia.api.common.dto.response.ValidationError;
 import com.pitvia.api.common.exception.BusinessException;
@@ -43,6 +47,11 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    /**
+     * メッセージソース
+     */
+    private final MessageSource messageSource;
 
     /**
      * APIレスポンス生成ファクトリ
@@ -100,6 +109,52 @@ public class GlobalExceptionHandler {
         log.warn("Constraint violation: {}", validationErrors);
 
         return buildValidationErrorResponse(validationErrors, request);
+    }
+
+    /**
+     * JSONパースエラーをキャッチ
+     *
+     * @param ex      JSONパース例外
+     * @param request HTTPリクエスト
+     * @return 400 Bad Request のレスポンスエンティティ
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+
+        // 例外チェーンの最終到達例外取得
+        Throwable cause = ex.getMostSpecificCause();
+
+        // フィールド型不一致による例外の場合
+        if (cause instanceof InvalidFormatException ife) {
+
+            String fieldName = "";
+            // プロパティからフィールド型不一致用のエラーメッセージを取得する
+            String message = messageSource.getMessage(
+                    "validation.generic.invalid.format",
+                    null,
+                    LocaleContextHolder.getLocale());
+
+            if (!ife.getPath().isEmpty()) {
+                // 原因となった不正なフィールド名を特定
+                fieldName = ife.getPath().get(ife.getPath().size() - 1).getFieldName();
+            }
+
+            List<ValidationError> validationErrors = List.of(new ValidationError(fieldName, message));
+
+            // 型変換失敗フィールドと原因例外種別のみログ出力
+            log.warn("JSON field conversion error field={} cause={}", fieldName, cause.getClass().getSimpleName());
+
+            return buildValidationErrorResponse(validationErrors, request);
+
+        }
+
+        log.warn("Malformed JSON request cause={}", cause.getClass().getSimpleName());
+
+        // JSON構文エラーやDTO構造不一致の場合、validationErrorsは含めずに返却
+        return ResponseEntity.badRequest().body(responseFactory.error(ErrorCode.MALFORMED_JSON, request));
+
     }
 
     /**

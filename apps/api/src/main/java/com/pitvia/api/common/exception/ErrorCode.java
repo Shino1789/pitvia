@@ -19,6 +19,11 @@ public enum ErrorCode {
     VALIDATION_ERROR("入力値に誤りがあります"),
 
     /**
+     * JSONパースエラー
+     */
+    MALFORMED_JSON("JSON形式が不正です"),
+
+    /**
      * リソース未検出エラー
      */
     RESOURCE_NOT_FOUND("リソースが見つかりません"),
