@@ -13,9 +13,9 @@ public final class JwtClaims {
     }
 
     /**
-     * メールアドレス
+     * トークンタイプ
      */
-    public static final String EMAIL = "email";
+    public static final String TOKEN_TYPE = "type";
 
     /**
      * ユーザーロール

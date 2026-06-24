@@ -15,4 +15,16 @@ public final class ApiPaths {
     /** API Version 1 */
     public static final String V1 = "/v1";
 
+    /** 認証系エンドポイントのプレフィックス */
+    public static final String AUTH = "/auth";
+
+    /** ヘルスチェックエンドポイント */
+    public static final String HEALTH = "/health";
+
+    /** Swagger UI 画面パス */
+    public static final String SWAGGER = "/swagger-ui";
+
+    /** OpenAPI ドキュメントJSONパス */
+    public static final String API_DOCS = "/v3/api-docs";
+
 }

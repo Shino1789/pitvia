@@ -20,10 +20,13 @@ import com.pitvia.api.user.repository.UserRepository;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    /**
+     * ユーザー情報アクセス用のリポジトリ
+     */
     private final UserRepository userRepository;
 
     /**
-     * メールアドレスを条件にユーザー情報を検索し、UserDetailsオブジェクトを返却
+     * {@link #loadUserByEmail(String)}を呼び出して処理を委譲する
      *
      * @param email ログイン時に入力されたメールアドレス
      * @return 認証処理に必要なUserDetailsオブジェクト
@@ -32,6 +35,18 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return loadUserByEmail(email);
+    }
+
+    /**
+     * メールアドレスを条件にユーザー情報を検索し、UserDetailsオブジェクトを返却
+     *
+     * @param email ログイン時に入力されたメールアドレス
+     * @return 認証処理に必要なUserDetailsオブジェクト
+     * @throws UsernameNotFoundException 該当ユーザーが存在しない、または論理削除されている場合
+     */
+    @Transactional(readOnly = true)
+    public CustomUserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
                 .map(CustomUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));

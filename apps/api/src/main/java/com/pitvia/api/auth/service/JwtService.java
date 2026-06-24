@@ -1,6 +1,5 @@
 package com.pitvia.api.auth.service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -10,6 +9,7 @@ import javax.crypto.SecretKey;
 import org.springframework.stereotype.Service;
 
 import com.pitvia.api.auth.constant.JwtClaims;
+import com.pitvia.api.auth.constant.TokenType;
 import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.exception.InvalidJwtException;
 import com.pitvia.api.auth.properties.JwtProperties;
@@ -17,6 +17,7 @@ import com.pitvia.api.auth.properties.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 /**
@@ -51,58 +52,76 @@ public class JwtService {
     public JwtService(JwtProperties jwtProperties) {
         this.accessExpiration = jwtProperties.expiration();
         this.refreshExpiration = jwtProperties.refreshExpiration();
-        // JJWTライブラリ専用の「デジタル実印」に鋳造して保存
-        this.signingKey = Keys.hmacShaKeyFor(jwtProperties.secretKey().getBytes(StandardCharsets.UTF_8));
+        // 設定値の秘密鍵をJJWTで利用可能な形式へ変換
+        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.secretKey()));
     }
 
     /**
      * アクセストークン生成
      *
      * @param userId ユーザーID
-     * @param email  メールアドレス
      * @param role   ユーザーロール
      *
      * @return JWT
      */
-    public String generateAccessToken(Long userId, String email, UserRole role) {
-        return generateToken(userId, email, role, accessExpiration);
+    public String generateAccessToken(Long userId, UserRole role) {
+        return generateToken(userId, role, accessExpiration);
     }
 
     /**
      * リフレッシュトークン生成
      *
      * @param userId ユーザーID
-     * @param email  メールアドレス
-     * @param role   ユーザーロール
      *
      * @return JWT
      */
-    public String generateRefreshToken(Long userId, String email, UserRole role) {
-        return generateToken(userId, email, role, refreshExpiration);
+    public String generateRefreshToken(Long userId) {
+        return generateRefreshTokenInternal(userId, refreshExpiration);
     }
 
     /**
      * JWT生成
      *
      * @param userId     ユーザーID
-     * @param email      メールアドレス
      * @param role       ユーザーロール
      * @param expiration 有効期限
      *
      * @return JWT
      */
-    private String generateToken(Long userId, String email, UserRole role, Duration expiration) {
+    private String generateToken(Long userId, UserRole role, Duration expiration) {
         Instant now = Instant.now();
         Instant expireAt = now.plus(expiration);
 
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim(JwtClaims.EMAIL, email)
                 .claim(JwtClaims.ROLE, role.name())
+                .claim(JwtClaims.TOKEN_TYPE, TokenType.ACCESS.value())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expireAt))
                 .signWith(signingKey)
                 .compact();
+    }
+
+    /**
+     * リフレッシュトークン生成
+     *
+     * @param userId     ユーザーID
+     * @param expiration 有効期限
+     *
+     * @return リフレッシュトークン
+     */
+    private String generateRefreshTokenInternal(Long userId, Duration expiration) {
+        Instant now = Instant.now();
+        Instant expireAt = now.plus(expiration);
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim(JwtClaims.TOKEN_TYPE, TokenType.REFRESH.value())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expireAt))
+                .signWith(signingKey)
+                .compact();
+
     }
 
     /**
@@ -114,17 +133,6 @@ public class JwtService {
      */
     public Long extractUserId(Claims claims) {
         return Long.valueOf(claims.getSubject());
-    }
-
-    /**
-     * メールアドレス取得
-     *
-     * @param claims JWTのペイロード（クレーム情報）
-     *
-     * @return メールアドレス
-     */
-    public String extractEmail(Claims claims) {
-        return claims.get(JwtClaims.EMAIL, String.class);
     }
 
     /**
@@ -144,6 +152,24 @@ public class JwtService {
     }
 
     /**
+     * トークンタイプ取得
+     *
+     * @param claims JWTのペイロード（クレーム情報）
+     *
+     * @return トークンタイプ
+     * @throws InvalidJwtException クレーム内のトークンタイプ文字列がEnumに変換できない場合
+     */
+    public TokenType extractTokenType(Claims claims) {
+        String value = claims.get(JwtClaims.TOKEN_TYPE, String.class);
+
+        if (value == null || value.isBlank()) {
+            throw new InvalidJwtException();
+        }
+
+        return TokenType.from(value);
+    }
+
+    /**
      * 有効期限取得
      *
      * @param claims JWTのペイロード（クレーム情報）
@@ -152,34 +178,6 @@ public class JwtService {
      */
     public Instant extractExpiration(Claims claims) {
         return claims.getExpiration().toInstant();
-    }
-
-    /**
-     * JWTの署名改ざんおよび有効期限の検証
-     *
-     * @param token JWT
-     *
-     * @return true:正常、false:不正または期限切れ
-     */
-    public boolean validateToken(String token) {
-
-        try {
-            return !isTokenExpired(parseClaims(token));
-        } catch (InvalidJwtException ex) {
-            return false;
-        }
-
-    }
-
-    /**
-     * トークン期限切れ判定
-     *
-     * @param claims JWTのペイロード（クレーム情報）
-     *
-     * @return true:期限切れ
-     */
-    public boolean isTokenExpired(Claims claims) {
-        return extractExpiration(claims).isBefore(Instant.now());
     }
 
     /**
