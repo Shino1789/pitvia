@@ -4,6 +4,7 @@ CREATE TABLE users (
     user_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(60) NOT NULL,
+    icon_url VARCHAR(500),
     email_verified_at TIMESTAMPTZ,
     last_login_at TIMESTAMPTZ,
     version INTEGER NOT NULL DEFAULT 0,

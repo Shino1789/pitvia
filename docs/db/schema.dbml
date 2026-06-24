@@ -22,6 +22,9 @@ Table users {
     not null,
     note: 'ハッシュ化済みパスワード'
   ]
+  icon_url varchar [
+    note: 'ユーザーアイコン'
+  ]
   email_verified_at timestamp [
     note: 'メール認証日時'
   ]
