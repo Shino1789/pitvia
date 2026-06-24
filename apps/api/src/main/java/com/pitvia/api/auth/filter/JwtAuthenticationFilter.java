@@ -19,9 +19,9 @@ import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.exception.InvalidJwtException;
 import com.pitvia.api.auth.principal.JwtPrincipal;
 import com.pitvia.api.auth.service.JwtService;
-import com.pitvia.api.common.constant.ApiPaths;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,25 +57,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
     /**
-     * スキップするエンドポイントの指定
-     *
-     * @param request HTTPリクエスト
-     * @return true:スキップ対象、false:検証対象
-     * @throws ServletException サーブレット例外が発生した場合
-     */
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-
-        String uri = request.getRequestURI();
-
-        // ログインやヘルスチェックのリクエストはJWT検証をスキップ
-        return uri.startsWith(ApiPaths.AUTH + "/")
-                || uri.equals(ApiPaths.HEALTH)
-                || uri.startsWith(ApiPaths.SWAGGER)
-                || uri.startsWith(ApiPaths.API_DOCS);
-    }
-
-    /**
      * JWT認証フィルター
      *
      * @param request     HTTPリクエスト
@@ -87,6 +68,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        // 認証済みの場合は処理を終了
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         try {
             // AuthorizationヘッダーからBearerトークンを抽出
@@ -110,42 +97,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = jwtService.extractUserId(claims);
                 UserRole role = jwtService.extractRole(claims);
 
-                // すでに認証済みでない場合のみ認証処理を実行
-                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                // JwtPrincipalを生成（ログインユーザー情報）
+                JwtPrincipal principal = new JwtPrincipal(userId, role);
 
-                    // JwtPrincipalを生成（ログインユーザー情報）
-                    JwtPrincipal principal = new JwtPrincipal(userId, role);
+                // ロールからAuthorityを生成
+                Collection<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role.getAuthority()));
 
-                    // ロールからAuthorityを生成
-                    Collection<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role.getAuthority()));
+                // Authenticationを生成
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        principal, // ユーザー情報
+                        null, // パスワードなどは不要なため
+                        authorities // 権限情報
+                );
 
-                    // Authenticationを生成
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            principal, // ユーザー情報
-                            null, // パスワードなどは不要なため
-                            authorities // 権限情報
-                    );
+                // リクエスト詳細(IPなど)を付与
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    // リクエスト詳細(IPなど)を付与
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // SpringのSecurityContextに設定
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    // SpringのSecurityContextに設定
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    // デバッグ用ログ
-                    log.trace("Authenticated userId={}, role={}", userId, role);
-                }
+                // デバッグ用ログ
+                log.trace("Authenticated userId={}, role={}", userId, role);
             }
 
         } catch (InvalidJwtException ex) {
-            // JWTが不正・期限切れの場合は認証をスキップ
+            // トークンタイプが不正（REFRESHトークンが指定された場合など）
             SecurityContextHolder.clearContext();
-            log.debug("Authentication skipped: Invalid or expired JWT token.");
+            log.debug("Invalid JWT");
+
+        } catch (JwtException ex) {
+            // JWTの署名不正・期限切れ・フォーマットエラーなど（JJWT由来の例外）
+            SecurityContextHolder.clearContext();
+            log.debug("JWT validation failed");
 
         } catch (Exception ex) {
-            // DBダウンやシステムエラー時
+            // DBダウンや予期せぬシステム例外
             SecurityContextHolder.clearContext();
-            log.error("Authentication system error occurred", ex);
+            log.error("Unexpected exception during JWT authentication", ex);
         }
 
         // 次のフィルターへ

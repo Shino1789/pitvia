@@ -14,6 +14,16 @@
       "name": "jwt.refresh-expiration",
       "type": "java.time.Duration",
       "description": "リフレッシュトークンの有効期限（例: 7d, 24h）。"
+    },
+    {
+      "name": "app.cors.allowed-origins",
+      "type": "java.util.List<java.lang.String>",
+      "description": "CORSを許可するオリジンのリスト。"
+    },
+    {
+      "name": "app.security.swagger-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Swagger UIおよびAPIドキュメントを公開するかどうか (true/false)。"
     }
   ]
 }

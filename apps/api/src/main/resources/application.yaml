@@ -43,6 +43,9 @@ app:
   cors:
     allowed-origins:
       - ${FRONTEND_URL}
+  # Security設定
+  security:
+    swagger-enabled: false
 
 jwt:
   # 署名に使用する秘密鍵

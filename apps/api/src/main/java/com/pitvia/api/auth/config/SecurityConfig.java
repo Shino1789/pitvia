@@ -5,46 +5,44 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.pitvia.api.auth.constant.PublicEndpoints;
+import com.pitvia.api.auth.filter.JwtAuthenticationFilter;
+import com.pitvia.api.auth.handler.CustomAccessDeniedHandler;
+import com.pitvia.api.auth.handler.CustomAuthenticationEntryPoint;
+import com.pitvia.api.auth.properties.SecurityProperties;
+
+import lombok.RequiredArgsConstructor;
 
 /**
- * Spring Security設定クラス。
+ * Spring Security設定クラス
  *
  * <p>
- * JWT認証を前提としたステートレス構成を採用する。
+ * JWT認証を前提としたステートレス構成
  * </p>
- *
- * <pre>
- * 現時点の認証ポリシー
- * --------------------------------------------------------
- * /health              : 誰でもアクセス可能
- * /auth/**             : 誰でもアクセス可能
- * /swagger-ui/**       : 誰でもアクセス可能
- * /v3/api-docs/**      : 誰でもアクセス可能
- * その他               : 認証必須
- * --------------------------------------------------------
- *
- * 今後追加予定
- * --------------------------------------------------------
- * - JwtAuthenticationFilter
- * - JwtAuthenticationEntryPoint
- * - CustomAccessDeniedHandler
- * - Role権限制御
- * --------------------------------------------------------
- * </pre>
- *
- * @author pitvia
- * @version 1.0
  */
 @Configuration
-@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
+    /** JWT認証フィルタ */
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /** 未認証時ハンドラ(401) */
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    /** 権限不足時ハンドラ(403) */
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+
+    /** Security設定プロパティ */
+    private final SecurityProperties securityProperties;
+
     /**
-     * Spring Securityのフィルタチェーン設定。
+     * Spring Securityのフィルタチェーン設定
      *
      * @param http HttpSecurity
      * @return SecurityFilterChain
@@ -53,37 +51,38 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http.csrf(AbstractHttpConfigurer::disable)
-                // CorsConfigを利用
+        http
+                // CSRF無効(JWTのため不要)
+                .csrf(AbstractHttpConfigurer::disable)
+                // CORS設定を有効化
                 .cors(Customizer.withDefaults())
-                // JWT認証のためセッションを無効化
+                // 完全ステートレス
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 認可設定
-                .authorizeHttpRequests(auth -> auth
-                        // 認証不要API
-                        .requestMatchers("/health", "/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // OPTIONS許可
-                        .requestMatchers(HttpMethod.OPTIONS).permitAll()
-                        // その他は認証必須
-                        .anyRequest()
-                        .authenticated())
+                .authorizeHttpRequests(auth -> {
 
-        /*
-         * JWT導入時に追加予定
-         */
-        // .exceptionHandling(ex -> ex
-        //
-        // .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-        //
-        // .accessDeniedHandler(customAccessDeniedHandler))
-        //
-        // .addFilterBefore(
-        // jwtAuthenticationFilter,
-        // UsernamePasswordAuthenticationFilter.class)
+                    // 常時公開パスを指定
+                    auth.requestMatchers(PublicEndpoints.PUBLIC_URLS).permitAll();
 
-        ;
+                    // Swaggerパスの動的登録（開発環境のみ常時公開）
+                    if (securityProperties.swaggerEnabled()) {
+                        auth.requestMatchers(PublicEndpoints.SWAGGER_URLS).permitAll();
+                    }
+
+                    // CORSプリフライト
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+
+                    // その他はすべて認証必須
+                    auth.anyRequest().authenticated();
+
+                })
+                // 例外ハンドリング
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler))
+                // JWTフィルタを認証フィルタの前に配置
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 }

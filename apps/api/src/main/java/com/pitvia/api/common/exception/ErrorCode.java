@@ -24,7 +24,17 @@ public enum ErrorCode {
     MALFORMED_JSON("JSON形式が不正です"),
 
     /**
-     * リソース未検出エラー
+     * 未認証エラー（401）
+     */
+    UNAUTHORIZED("認証が必要です"),
+
+    /**
+     * 権限不足エラー（403）
+     */
+    FORBIDDEN("この操作を実行する権限がありません"),
+
+    /**
+     * リソース未検出エラー（404）
      */
     RESOURCE_NOT_FOUND("リソースが見つかりません"),
 
