@@ -1,10 +1,11 @@
 package com.pitvia.api.user.repository;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.pitvia.api.user.entity.User;
-
-import java.util.Optional;
 
 /**
  * ユーザー情報テーブル (users) に対するデータアクセスを管理するリポジトリ
@@ -12,7 +13,7 @@ import java.util.Optional;
  * @author pitvia
  * @version 1.0
  */
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * メールアドレスを条件に、論理削除されていない有効なユーザーを検索

@@ -3,6 +3,7 @@ package com.pitvia.api.auth.service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -64,7 +65,7 @@ public class JwtService {
      *
      * @return JWT
      */
-    public String generateAccessToken(Long userId, UserRole role) {
+    public String generateAccessToken(UUID userId, UserRole role) {
         return generateToken(userId, role, accessExpiration);
     }
 
@@ -75,7 +76,7 @@ public class JwtService {
      *
      * @return JWT
      */
-    public String generateRefreshToken(Long userId) {
+    public String generateRefreshToken(UUID userId) {
         return generateRefreshTokenInternal(userId, refreshExpiration);
     }
 
@@ -88,11 +89,14 @@ public class JwtService {
      *
      * @return JWT
      */
-    private String generateToken(Long userId, UserRole role, Duration expiration) {
+    private String generateToken(UUID userId, UserRole role, Duration expiration) {
         Instant now = Instant.now();
         Instant expireAt = now.plus(expiration);
+        // jtiを生成
+        UUID jti = UUID.randomUUID();
 
         return Jwts.builder()
+                .id(jti.toString())
                 .subject(userId.toString())
                 .claim(JwtClaims.ROLE, role.name())
                 .claim(JwtClaims.TOKEN_TYPE, TokenType.ACCESS.value())
@@ -110,11 +114,14 @@ public class JwtService {
      *
      * @return リフレッシュトークン
      */
-    private String generateRefreshTokenInternal(Long userId, Duration expiration) {
+    private String generateRefreshTokenInternal(UUID userId, Duration expiration) {
         Instant now = Instant.now();
         Instant expireAt = now.plus(expiration);
+        // jtiを生成
+        String jti = UUID.randomUUID().toString();
 
         return Jwts.builder()
+                .id(jti)
                 .subject(userId.toString())
                 .claim(JwtClaims.TOKEN_TYPE, TokenType.REFRESH.value())
                 .issuedAt(Date.from(now))
@@ -131,8 +138,8 @@ public class JwtService {
      *
      * @return ユーザーID
      */
-    public Long extractUserId(Claims claims) {
-        return Long.valueOf(claims.getSubject());
+    public UUID extractUserId(Claims claims) {
+        return UUID.fromString(claims.getSubject());
     }
 
     /**
@@ -167,6 +174,17 @@ public class JwtService {
         }
 
         return TokenType.from(value);
+    }
+
+    /**
+     * jti取得
+     *
+     * @param claims JWTのペイロード（クレーム情報）
+     *
+     * @return JWT ID
+     */
+    public UUID extractJti(Claims claims) {
+        return UUID.fromString(claims.getId());
     }
 
     /**

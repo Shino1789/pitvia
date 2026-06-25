@@ -1,6 +1,7 @@
 package com.pitvia.api.auth.principal;
 
 import com.pitvia.api.auth.constant.UserRole;
+import java.util.UUID;
 
 /**
  * 認証済みユーザーの情報を保持するクラス
@@ -13,7 +14,7 @@ public record JwtPrincipal(
         /**
          * ユーザーID
          */
-        Long userId,
+        UUID userId,
 
         /**
          * ユーザー権限

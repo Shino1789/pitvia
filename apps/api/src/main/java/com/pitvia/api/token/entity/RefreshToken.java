@@ -2,6 +2,7 @@ package com.pitvia.api.token.entity;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import com.pitvia.api.common.entity.BaseEntity;
 import com.pitvia.api.user.entity.User;
@@ -46,9 +47,15 @@ public class RefreshToken extends BaseEntity {
     private User user;
 
     /**
+     * JWT ID
+     */
+    @Column(nullable = false, unique = true, updatable = false)
+    private UUID jti;
+
+    /**
      * リフレッシュトークンのハッシュ値
      */
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String tokenHash;
 
     /**

@@ -1,6 +1,7 @@
 package com.pitvia.api.auth.dto.response;
 
 import com.pitvia.api.auth.constant.UserRole;
+import java.util.UUID;
 
 /**
  * ログイン成功時のレスポンスDTO
@@ -13,7 +14,7 @@ public record LoginResponse(
         /**
          * ユーザーID
          */
-        Long userId,
+        UUID userId,
 
         /**
          * ユーザー名

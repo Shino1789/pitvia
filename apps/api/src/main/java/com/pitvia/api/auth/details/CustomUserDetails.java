@@ -8,6 +8,7 @@ import com.pitvia.api.user.entity.User;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Spring Securityの認証・認可処理で利用される独自ユーザー詳細情報クラス
@@ -20,7 +21,7 @@ public class CustomUserDetails implements UserDetails {
     /**
      * ユーザーID
      */
-    private final Long id;
+    private final UUID id;
 
     /**
      * メールアドレス
@@ -52,7 +53,7 @@ public class CustomUserDetails implements UserDetails {
     /**
      * アプリケーション内でユーザーIDを特定するためのカスタムGetter
      */
-    public Long getId() {
+    public UUID getId() {
         return this.id;
     }
 

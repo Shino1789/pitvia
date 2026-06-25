@@ -3,6 +3,7 @@ package com.pitvia.api.auth.filter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -94,7 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 // Claimsからユーザー情報を取得
-                Long userId = jwtService.extractUserId(claims);
+                UUID userId = jwtService.extractUserId(claims);
                 UserRole role = jwtService.extractRole(claims);
 
                 // JwtPrincipalを生成（ログインユーザー情報）

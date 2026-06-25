@@ -1,6 +1,7 @@
 package com.pitvia.api.user.entity;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -41,8 +42,8 @@ import lombok.Setter;
 public class User extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     /**
      * ユーザーロール (OWNER, SHOP, ADMIN)
@@ -60,7 +61,7 @@ public class User extends BaseEntity {
     /**
      * ログイン用メールアドレス
      */
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     /**

@@ -3,6 +3,7 @@ package com.pitvia.api.token.repository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -18,6 +19,23 @@ import com.pitvia.api.token.entity.RefreshToken;
  * @version 1.0
  */
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
+
+    /**
+     * JWT IDを条件にリフレッシュトークンを検索
+     *
+     * @param jti JWT ID
+     * @return 該当するリフレッシュトークン情報（存在しない場合は空）
+     */
+    Optional<RefreshToken> findByJti(UUID jti);
+
+    /**
+     * JWT IDを条件に有効な（無効化されておらず、期限内の）リフレッシュトークンを検索
+     *
+     * @param jti JWT ID
+     * @param now 現在日時
+     * @return 該当する有効なリフレッシュトークン情報（存在しない、または無効な場合は空）
+     */
+    Optional<RefreshToken> findByJtiAndRevokedAtIsNullAndExpiresAtAfter(UUID jti, Instant now);
 
     /**
      * トークンのハッシュ値を条件にリフレッシュトークンを検索
@@ -42,7 +60,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
      * @param userId ユーザーID
      * @return 該当するリフレッシュトークンのリスト（存在しない場合は空）
      */
-    List<RefreshToken> findAllByUser_Id(Long userId);
+    List<RefreshToken> findAllByUser_Id(UUID userId);
 
     /**
      * ユーザーIDに紐づくリフレッシュトークンを全て物理削除
@@ -50,7 +68,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
      * @param userId ユーザーID
      * @return 削除されたレコード件数
      */
-    long deleteAllByUser_Id(Long userId);
+    long deleteAllByUser_Id(UUID userId);
 
     /**
      * 有効期限切れ、もしくは無効化されたリフレッシュトークンを全て物理削除
