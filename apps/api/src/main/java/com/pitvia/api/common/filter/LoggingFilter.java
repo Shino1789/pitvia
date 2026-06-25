@@ -1,16 +1,16 @@
 package com.pitvia.api.common.filter;
 
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
 
 /**
  * リクエスト開始と終了ログ出力フィルタ。
@@ -18,7 +18,6 @@ import java.io.IOException;
  * @author pitvia
  * @version 1.0
  */
-@Order(2)
 @Component
 public class LoggingFilter extends OncePerRequestFilter {
 
@@ -58,9 +57,7 @@ public class LoggingFilter extends OncePerRequestFilter {
             long duration = System.currentTimeMillis() - start;
 
             // リクエスト終了ログ出力
-            log.info("REQUEST END status={} duration={}ms",
-                     response.getStatus(),
-                     duration);
+            log.info("REQUEST END status={} duration={}ms", response.getStatus(), duration);
         }
     }
 }

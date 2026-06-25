@@ -10,7 +10,7 @@
     <!-- ================================================== -->
     <property
         name="LOG_PATTERN"
-        value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [req=%X{requestId:-SYSTEM}] [method=%X{method:-SYSTEM}] [path=%X{path:-SYSTEM}] %logger{36} - %msg%n" />
+        value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [req=%X{requestId:-SYSTEM}] [user=%X{userId:-ANONYMOUS}] [role=%X{role:-ANONYMOUS}] [method=%X{method:-SYSTEM}] [path=%X{path:-SYSTEM}] %logger{36} - %msg%n" />
 
     <!-- ================================================== -->
     <!-- Console -->

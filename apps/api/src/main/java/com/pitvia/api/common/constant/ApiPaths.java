@@ -15,11 +15,11 @@ public final class ApiPaths {
     /** API Version 1 */
     public static final String V1 = "/v1";
 
-    /** 認証系エンドポイントのプレフィックス */
-    public static final String AUTH = "/auth";
-
     /** ヘルスチェックエンドポイント */
-    public static final String HEALTH = "/health";
+    public static final String HEALTH = V1 + "/health";
+
+    /** 認証系エンドポイントのプレフィックス */
+    public static final String AUTH = V1 + "/auth";
 
     /** Swagger UI 画面パス */
     public static final String SWAGGER = "/swagger-ui";

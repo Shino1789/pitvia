@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,6 +21,7 @@ import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.exception.InvalidJwtException;
 import com.pitvia.api.auth.principal.JwtPrincipal;
 import com.pitvia.api.auth.service.JwtService;
+import com.pitvia.api.common.constant.RequestContextKeys;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -117,28 +119,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // SpringのSecurityContextに設定
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
+                // MDCに認証情報をセット
+                MDC.put(RequestContextKeys.MDC_USER_ID, userId.toString());
+                MDC.put(RequestContextKeys.MDC_ROLE, role.name());
+
                 // デバッグ用ログ
-                log.trace("Authenticated userId={}, role={}", userId, role);
+                log.debug("Authenticated userId={}, role={}", userId, role);
             }
 
-        } catch (InvalidJwtException ex) {
-            // トークンタイプが不正（REFRESHトークンが指定された場合など）
-            SecurityContextHolder.clearContext();
-            log.debug("Invalid JWT");
+            // 次のフィルターへ
+            filterChain.doFilter(request, response);
 
         } catch (JwtException ex) {
-            // JWTの署名不正・期限切れ・フォーマットエラーなど（JJWT由来の例外）
-            SecurityContextHolder.clearContext();
+            // JWTの署名不正・期限切れ・フォーマットエラーなど
             log.debug("JWT validation failed");
+            filterChain.doFilter(request, response);
 
         } catch (Exception ex) {
             // DBダウンや予期せぬシステム例外
-            SecurityContextHolder.clearContext();
             log.error("Unexpected exception during JWT authentication", ex);
+            filterChain.doFilter(request, response);
         }
 
-        // 次のフィルターへ
-        filterChain.doFilter(request, response);
     }
 
     /**

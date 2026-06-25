@@ -18,7 +18,7 @@ public final class PublicEndpoints {
      * 常に公開するパスの配列
      */
     public static final String[] PUBLIC_URLS = {
-            ApiPaths.HEALTH,
+            ApiPaths.HEALTH + "/**",
             ApiPaths.AUTH + "/**"
     };
 

@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.pitvia.api.common.entity.BaseEntity;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+
 import com.pitvia.api.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -33,7 +35,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id", callSuper = false)
-public class RefreshToken extends BaseEntity {
+public class RefreshToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -83,5 +85,19 @@ public class RefreshToken extends BaseEntity {
      * 最終使用日時
      */
     private OffsetDateTime lastUsedAt;
+
+    /**
+     * 作成日時
+     */
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    /**
+     * 最終更新日時
+     */
+    @LastModifiedDate
+    @Column(nullable = false)
+    private OffsetDateTime updatedAt;
 
 }

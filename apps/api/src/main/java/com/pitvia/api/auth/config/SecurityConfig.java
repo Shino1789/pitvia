@@ -15,6 +15,8 @@ import com.pitvia.api.auth.filter.JwtAuthenticationFilter;
 import com.pitvia.api.auth.handler.CustomAccessDeniedHandler;
 import com.pitvia.api.auth.handler.CustomAuthenticationEntryPoint;
 import com.pitvia.api.auth.properties.SecurityProperties;
+import com.pitvia.api.common.filter.LoggingFilter;
+import com.pitvia.api.common.filter.MdcLoggingFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +30,12 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    /** MDCロギングフィルタ */
+    private final MdcLoggingFilter mdcLoggingFilter;
+
+    /** ロギングフィルタ */
+    private final LoggingFilter loggingFilter;
 
     /** JWT認証フィルタ */
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -80,8 +88,10 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
-                // JWTフィルタを認証フィルタの前に配置
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // フィルター設定
+                .addFilterBefore(mdcLoggingFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(loggingFilter, MdcLoggingFilter.class)
+                .addFilterAfter(jwtAuthenticationFilter, LoggingFilter.class);
 
         return http.build();
     }

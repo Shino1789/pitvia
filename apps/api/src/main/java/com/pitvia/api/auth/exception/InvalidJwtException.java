@@ -1,12 +1,14 @@
 package com.pitvia.api.auth.exception;
 
+import io.jsonwebtoken.JwtException;
+
 /**
  * JWT不正例外
  *
  * @author pitvia
  * @version 1.0
  */
-public class InvalidJwtException extends RuntimeException {
+public class InvalidJwtException extends JwtException {
 
     /**
      * デフォルト

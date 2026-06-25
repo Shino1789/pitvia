@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.slf4j.MDC;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,7 +20,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * @author pitvia
  * @version 1.0
  */
-@Order(1)
 @Component
 public class MdcLoggingFilter extends OncePerRequestFilter {
 
@@ -67,9 +65,7 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            MDC.remove(RequestContextKeys.MDC_REQUEST_ID);
-            MDC.remove(RequestContextKeys.MDC_METHOD);
-            MDC.remove(RequestContextKeys.MDC_PATH);
+            MDC.clear();
         }
     }
 }

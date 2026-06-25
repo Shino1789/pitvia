@@ -50,7 +50,7 @@ app:
 jwt:
   # 署名に使用する秘密鍵
   secret-key: ${JWT_SECRET_KEY}
-  # アクセストークンの有効期限（デフォルトは1時間）
-  expiration: ${JWT_EXPIRES:1h}
+  # アクセストークンの有効期限（デフォルトは15分）
+  expiration: ${JWT_EXPIRES:15m}
   # リフレッシュトークンの有効期限（デフォルトは7日間）
   refresh-expiration: ${JWT_REFRESH_EXPIRES:7d}
