@@ -189,6 +189,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 - dbdiagram.io (ER図)
 - Figma (画面遷移図、コンポーネント設計)
 - Swagger UI
+- Bruno
 
 ## 生成AI
 
@@ -235,6 +236,7 @@ pitvia/
     │   ├── ui/
     │   │   └── figma-link.md
     │   ├── api/
+    │   │   ├── bruno/
     │   │   ├── openapi.yaml
     │   │   └── swagger-link.md
     │   ├── db/
