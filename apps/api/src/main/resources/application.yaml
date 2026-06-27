@@ -46,6 +46,9 @@ app:
   # Security設定
   security:
     swagger-enabled: false
+    cookie:
+      secure: true
+      same-site: None
 
 jwt:
   # 署名に使用する秘密鍵

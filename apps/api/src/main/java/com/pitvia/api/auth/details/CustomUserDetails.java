@@ -19,19 +19,9 @@ import java.util.UUID;
 public class CustomUserDetails implements UserDetails {
 
     /**
-     * ユーザーID
+     * ユーザーエンティティ
      */
-    private final UUID id;
-
-    /**
-     * メールアドレス
-     */
-    private final String email;
-
-    /**
-     * パスワードハッシュ
-     */
-    private final String passwordHash;
+    private final User user;
 
     /**
      * ユーザーに付与された認可権限リスト
@@ -39,22 +29,29 @@ public class CustomUserDetails implements UserDetails {
     private final Collection<? extends GrantedAuthority> authorities;
 
     /**
-     * UserエンティティからSecurityに必要な情報のみを抽出してセットする
+     * Userエンティティを保持し、Securityに必要な情報をセットする
      *
      * @param user ユーザーエンティティ
      */
     public CustomUserDetails(User user) {
-        this.id = user.getId();
-        this.email = user.getEmail();
-        this.passwordHash = user.getPasswordHash();
+        this.user = user;
         this.authorities = List.of(new SimpleGrantedAuthority(user.getRole().getAuthority()));
+    }
+
+    /**
+     * 認証済みのUserエンティティを直接取得するカスタムGetter
+     *
+     * @return ユーザーエンティティ
+     */
+    public User getUser() {
+        return this.user;
     }
 
     /**
      * アプリケーション内でユーザーIDを特定するためのカスタムGetter
      */
     public UUID getId() {
-        return this.id;
+        return this.user.getId();
     }
 
     @Override
@@ -64,12 +61,12 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return this.passwordHash;
+        return this.user.getPasswordHash();
     }
 
     @Override
     public String getUsername() {
-        return this.email; // PitviaではメールアドレスをログインIDとして扱う
+        return this.user.getEmail(); // PitviaではメールアドレスをログインIDとして扱う
     }
 
     @Override

@@ -1,7 +1,9 @@
 package com.pitvia.api.auth.dto.response;
 
-import com.pitvia.api.auth.constant.UserRole;
 import java.util.UUID;
+
+import com.pitvia.api.auth.constant.UserRole;
+import com.pitvia.api.auth.model.LoginResult;
 
 /**
  * ログイン成功時のレスポンスDTO
@@ -29,10 +31,20 @@ public record LoginResponse(
         /**
          * アクセストークン（JWT）
          */
-        String accessToken,
+        String accessToken) {
 
-        /**
-         * リフレッシュトークン
-         */
-        String refreshToken) {
+    /**
+     * ログイン処理結果モデルからレスポンスDTOを生成する。
+     *
+     * @param result ログイン処理結果
+     * @return ログイン成功レスポンスDTO
+     */
+    public static LoginResponse from(LoginResult result) {
+        return new LoginResponse(
+                result.userId(),
+                result.userName(),
+                result.role(),
+                result.accessToken());
+    }
+
 }

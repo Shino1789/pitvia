@@ -89,4 +89,11 @@ public class User extends BaseEntity {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Shop shop;
 
+    /**
+     * 最終ログイン日時をセットする
+     */
+    public void updateLastLogin() {
+        this.lastLoginAt = Instant.now();
+    }
+
 }

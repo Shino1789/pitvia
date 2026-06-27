@@ -11,3 +11,6 @@ app:
   # Security設定
   security:
     swagger-enabled: true
+    cookie:
+      secure: false
+      same-site: Lax

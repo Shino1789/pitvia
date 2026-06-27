@@ -13,7 +13,9 @@ import com.pitvia.api.auth.constant.JwtClaims;
 import com.pitvia.api.auth.constant.TokenType;
 import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.exception.InvalidJwtException;
+import com.pitvia.api.auth.model.RefreshTokenResult;
 import com.pitvia.api.auth.properties.JwtProperties;
+import com.pitvia.api.user.entity.User;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -58,47 +60,20 @@ public class JwtService {
     }
 
     /**
-     * アクセストークン生成
+     * アクセストークン (JWT) 生成
      *
-     * @param userId ユーザーID
-     * @param role   ユーザーロール
+     * @param user ユーザーエンティティ
      *
      * @return JWT
      */
-    public String generateAccessToken(UUID userId, UserRole role) {
-        return generateToken(userId, role, accessExpiration);
-    }
+    public String generateAccessToken(User user) {
 
-    /**
-     * リフレッシュトークン生成
-     *
-     * @param userId ユーザーID
-     *
-     * @return JWT
-     */
-    public String generateRefreshToken(UUID userId) {
-        return generateRefreshTokenInternal(userId, refreshExpiration);
-    }
-
-    /**
-     * JWT生成
-     *
-     * @param userId     ユーザーID
-     * @param role       ユーザーロール
-     * @param expiration 有効期限
-     *
-     * @return JWT
-     */
-    private String generateToken(UUID userId, UserRole role, Duration expiration) {
         Instant now = Instant.now();
-        Instant expireAt = now.plus(expiration);
-        // jtiを生成
-        UUID jti = UUID.randomUUID();
+        Instant expireAt = now.plus(accessExpiration);
 
         return Jwts.builder()
-                .id(jti.toString())
-                .subject(userId.toString())
-                .claim(JwtClaims.ROLE, role.name())
+                .subject(user.getId().toString())
+                .claim(JwtClaims.ROLE, user.getRole().name())
                 .claim(JwtClaims.TOKEN_TYPE, TokenType.ACCESS.value())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expireAt))
@@ -109,26 +84,25 @@ public class JwtService {
     /**
      * リフレッシュトークン生成
      *
-     * @param userId     ユーザーID
-     * @param expiration 有効期限
-     *
+     * @param user ユーザーエンティティ
      * @return リフレッシュトークン
      */
-    private String generateRefreshTokenInternal(UUID userId, Duration expiration) {
-        Instant now = Instant.now();
-        Instant expireAt = now.plus(expiration);
-        // jtiを生成
-        String jti = UUID.randomUUID().toString();
+    public RefreshTokenResult generateRefreshToken(User user) {
 
-        return Jwts.builder()
-                .id(jti)
-                .subject(userId.toString())
+        UUID jti = UUID.randomUUID();
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(refreshExpiration);
+
+        String token = Jwts.builder()
+                .id(jti.toString())
+                .subject(user.getId().toString())
                 .claim(JwtClaims.TOKEN_TYPE, TokenType.REFRESH.value())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(expireAt))
+                .expiration(Date.from(expiresAt))
                 .signWith(signingKey)
                 .compact();
 
+        return new RefreshTokenResult(token, jti, expiresAt);
     }
 
     /**
@@ -177,17 +151,6 @@ public class JwtService {
     }
 
     /**
-     * jti取得
-     *
-     * @param claims JWTのペイロード（クレーム情報）
-     *
-     * @return JWT ID
-     */
-    public UUID extractJti(Claims claims) {
-        return UUID.fromString(claims.getId());
-    }
-
-    /**
      * 有効期限取得
      *
      * @param claims JWTのペイロード（クレーム情報）
@@ -202,6 +165,7 @@ public class JwtService {
      * JWTの署名検証を行い、Claimsを取得する
      *
      * @param token JWT
+     *
      * @return Claims ペイロードの中身
      * @throws InvalidJwtException 署名検証に失敗、またはトークンが不正な場合
      */

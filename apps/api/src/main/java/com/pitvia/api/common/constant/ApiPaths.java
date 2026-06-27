@@ -12,6 +12,9 @@ public final class ApiPaths {
         // インスタンス化を防止するためのプライベートコンストラクタ
     }
 
+    /** Base Path */
+    public static final String BASE_PATH = "/api";
+
     /** API Version 1 */
     public static final String V1 = "/v1";
 

@@ -56,7 +56,12 @@ public enum ErrorCode {
     /**
      * ユーザーが既に存在する
      */
-    USER_ALREADY_EXISTS("ユーザーは既に存在します");
+    USER_ALREADY_EXISTS("ユーザーは既に存在します"),
+
+    /**
+     * 認証情報の不一致
+     */
+    INVALID_CREDENTIALS("ログインIDまたはパスワードが正しくありません");
 
     /**
      * クライアント向けデフォルトメッセージ
