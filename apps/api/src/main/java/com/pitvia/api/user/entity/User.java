@@ -1,6 +1,6 @@
 package com.pitvia.api.user.entity;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.hibernate.annotations.SQLDelete;
@@ -20,10 +20,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * ユーザー情報エンティティ
@@ -36,8 +38,9 @@ import lombok.Setter;
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
-@Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(of = "id", callSuper = false)
 public class User extends BaseEntity {
 
@@ -73,12 +76,12 @@ public class User extends BaseEntity {
     /**
      * メール認証日時
      */
-    private OffsetDateTime emailVerifiedAt;
+    private Instant emailVerifiedAt;
 
     /**
      * 最終ログイン日時
      */
-    private OffsetDateTime lastLoginAt;
+    private Instant lastLoginAt;
 
     /**
      * 紐づくショップ情報

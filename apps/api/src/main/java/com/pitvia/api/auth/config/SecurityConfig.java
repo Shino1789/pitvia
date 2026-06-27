@@ -3,7 +3,9 @@ package com.pitvia.api.auth.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -95,4 +97,17 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    /**
+     * AuthenticationManagerのBean登録
+     *
+     * @param configuration 認証設定オブジェクト
+     * @return AuthenticationManager 認証マネージャー
+     * @throws Exception マネージャーの取得に失敗した場合
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
 }

@@ -1,6 +1,6 @@
 package com.pitvia.api.common.entity;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -37,19 +37,19 @@ public abstract class BaseEntity {
      */
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
 
     /**
      * 最終更新日時
      */
     @LastModifiedDate
     @Column(nullable = false)
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 
     /**
      * 論理削除日時
      */
     @Column
-    private OffsetDateTime deletedAt;
+    private Instant deletedAt;
 
 }

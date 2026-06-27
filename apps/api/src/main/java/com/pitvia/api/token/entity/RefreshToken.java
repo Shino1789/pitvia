@@ -1,7 +1,6 @@
 package com.pitvia.api.token.entity;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
@@ -79,25 +78,25 @@ public class RefreshToken {
     /**
      * トークンの無効化日時
      */
-    private OffsetDateTime revokedAt;
+    private Instant revokedAt;
 
     /**
      * 最終使用日時
      */
-    private OffsetDateTime lastUsedAt;
+    private Instant lastUsedAt;
 
     /**
      * 作成日時
      */
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
 
     /**
      * 最終更新日時
      */
     @LastModifiedDate
     @Column(nullable = false)
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 
 }

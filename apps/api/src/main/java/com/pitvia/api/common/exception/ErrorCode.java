@@ -44,6 +44,11 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR("予期しないエラーが発生しました"),
 
     /**
+     * 不正なロール指定
+     */
+    INVALID_ROLE("不正なロールが指定されました"),
+
+    /**
      * ユーザーが存在しない
      */
     USER_NOT_FOUND("ユーザーが存在しません"),
