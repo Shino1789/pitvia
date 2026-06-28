@@ -61,7 +61,12 @@ public enum ErrorCode {
     /**
      * 認証情報の不一致
      */
-    INVALID_CREDENTIALS("ログインIDまたはパスワードが正しくありません");
+    INVALID_CREDENTIALS("ログインIDまたはパスワードが正しくありません"),
+
+    /**
+     * 不正または期限切れのリフレッシュトークン
+     */
+    INVALID_REFRESH_TOKEN("セッションの有効期限が切れました。再度ログインしてください");
 
     /**
      * クライアント向けデフォルトメッセージ

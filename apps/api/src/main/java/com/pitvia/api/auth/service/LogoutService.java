@@ -33,6 +33,7 @@ public class LogoutService {
     @Transactional
     public void logout(String refreshToken) {
 
+        // クッキーから取得したトークンの存在チェック
         if (refreshToken == null || refreshToken.isBlank()) {
             log.debug("Logout requested but refresh token cookie is missing.");
             return;

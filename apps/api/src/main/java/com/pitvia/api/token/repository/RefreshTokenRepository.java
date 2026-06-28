@@ -55,6 +55,17 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByTokenHashAndRevokedAtIsNullAndExpiresAtAfter(String tokenHash, Instant now);
 
     /**
+     * トークンのハッシュ値とJWT IDを条件に有効な（無効化されておらず、期限内の）リフレッシュトークンを検索
+     *
+     * @param tokenHash リフレッシュトークンのハッシュ値
+     * @param jti       JWT ID
+     * @param now       現在日時
+     * @return 該当する有効なリフレッシュトークン情報
+     */
+    Optional<RefreshToken> findByTokenHashAndJtiAndRevokedAtIsNullAndExpiresAtAfter(String tokenHash, UUID jti,
+            Instant now);
+
+    /**
      * ユーザーIDに紐づくリフレッシュトークンを全て取得
      *
      * @param userId ユーザーID

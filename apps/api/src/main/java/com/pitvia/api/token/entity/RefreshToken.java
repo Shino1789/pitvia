@@ -87,11 +87,6 @@ public class RefreshToken {
     private Instant revokedAt;
 
     /**
-     * 最終使用日時
-     */
-    private Instant lastUsedAt;
-
-    /**
      * 作成日時
      */
     @CreatedDate
@@ -106,17 +101,14 @@ public class RefreshToken {
     private Instant updatedAt;
 
     /**
-     * トークン失効日時をセットし、更新日時を更新する
+     * トークン失効日時をセットし、最終使用日時を更新する
      */
     public void revoke() {
 
         if (revokedAt != null) {
             return;
         }
-
-        Instant now = Instant.now();
-        revokedAt = now;
-        updatedAt = now;
+        this.revokedAt = Instant.now();
     }
 
 }

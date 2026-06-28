@@ -83,9 +83,6 @@ Table refresh_tokens {
   revoked_at timestamp [
     note: 'トークンの無効化日時'
   ]
-  last_used_at timestamp [
-    note: '最終使用日時'
-  ]
   created_at timestamp [
     not null,
     default: `now()`

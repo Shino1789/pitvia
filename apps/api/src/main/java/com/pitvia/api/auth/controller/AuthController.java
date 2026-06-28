@@ -15,10 +15,13 @@ import com.pitvia.api.auth.constant.CookieConstants;
 import com.pitvia.api.auth.dto.request.LoginRequest;
 import com.pitvia.api.auth.dto.request.RegisterRequest;
 import com.pitvia.api.auth.dto.response.LoginResponse;
+import com.pitvia.api.auth.dto.response.RefreshTokenResponse;
 import com.pitvia.api.auth.factory.RefreshTokenCookieFactory;
 import com.pitvia.api.auth.model.LoginResult;
+import com.pitvia.api.auth.model.RefreshResult;
 import com.pitvia.api.auth.service.LoginService;
 import com.pitvia.api.auth.service.LogoutService;
+import com.pitvia.api.auth.service.RefreshService;
 import com.pitvia.api.auth.service.RegisterService;
 import com.pitvia.api.common.constant.ApiPaths;
 import com.pitvia.api.common.dto.response.ApiResponse;
@@ -45,6 +48,9 @@ public class AuthController {
 
     /** ログインサービス */
     private final LoginService loginService;
+
+    /** トークンリフレッシュサービス */
+    private final RefreshService refreshService;
 
     /** ログアウトサービス */
     private final LogoutService logoutService;
@@ -99,6 +105,35 @@ public class AuthController {
 
         // 正常終了レスポンスの生成
         ApiResponse<LoginResponse> response = responseFactory.success(httpRequest, loginResponse);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
+    }
+
+    /**
+     * トークンリフレッシュ要求
+     *
+     * @param refreshToken クッキーから自動抽出した古いリフレッシュトークン
+     * @param httpRequest  HTTPリクエスト
+     * @return 200 OK ステータス、新しいSet-Cookieヘッダー、および新しいアクセストークンを含むレスポンス
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(
+            @CookieValue(name = CookieConstants.REFRESH_TOKEN, required = false) String refreshToken,
+            HttpServletRequest httpRequest) {
+
+        // リフレッシュ処理の実行
+        RefreshResult result = refreshService.refresh(refreshToken, httpRequest);
+
+        // 新しいリフレッシュトークンを載せたCookieを生成
+        ResponseCookie cookie = cookieFactory.create(result.refreshToken());
+
+        // 処理結果モデルからレスポンスDTOへの変換
+        RefreshTokenResponse refreshResponse = RefreshTokenResponse.from(result);
+
+        // 正常終了レスポンスの生成
+        ApiResponse<RefreshTokenResponse> response = responseFactory.success(httpRequest, refreshResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
