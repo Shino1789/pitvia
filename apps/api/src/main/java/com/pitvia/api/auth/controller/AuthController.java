@@ -5,17 +5,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pitvia.api.auth.constant.CookieConstants;
 import com.pitvia.api.auth.dto.request.LoginRequest;
 import com.pitvia.api.auth.dto.request.RegisterRequest;
 import com.pitvia.api.auth.dto.response.LoginResponse;
 import com.pitvia.api.auth.factory.RefreshTokenCookieFactory;
 import com.pitvia.api.auth.model.LoginResult;
 import com.pitvia.api.auth.service.LoginService;
+import com.pitvia.api.auth.service.LogoutService;
 import com.pitvia.api.auth.service.RegisterService;
 import com.pitvia.api.common.constant.ApiPaths;
 import com.pitvia.api.common.dto.response.ApiResponse;
@@ -42,6 +45,9 @@ public class AuthController {
 
     /** ログインサービス */
     private final LoginService loginService;
+
+    /** ログアウトサービス */
+    private final LogoutService logoutService;
 
     /** リフレッシュトークンクッキー生成ファクトリ */
     private final RefreshTokenCookieFactory cookieFactory;
@@ -80,7 +86,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest) { // ★ httpResponse を削除！
+            HttpServletRequest httpRequest) {
 
         // ログイン認証の実行
         LoginResult result = loginService.login(request, httpRequest);
@@ -91,11 +97,38 @@ public class AuthController {
         // 処理結果モデルからレスポンスDTOへの変換
         LoginResponse loginResponse = LoginResponse.from(result);
 
-        // 共通正常レスポンスの生成
+        // 正常終了レスポンスの生成
         ApiResponse<LoginResponse> response = responseFactory.success(httpRequest, loginResponse);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
+    }
+
+    /**
+     * ログアウト
+     *
+     * @param refreshToken クッキーから自動抽出したリフレッシュトークン
+     * @param httpRequest  HTTPリクエスト
+     * @return 200 OK ステータスとクッキー削除ヘッダー
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @CookieValue(name = CookieConstants.REFRESH_TOKEN, required = false) String refreshToken,
+            HttpServletRequest httpRequest) {
+
+        // ログアウト処理
+        logoutService.logout(refreshToken);
+
+        // ブラウザのクッキーを削除するためのリフレッシュトークンCookieの生成
+        ResponseCookie deleteCookie = cookieFactory.delete();
+
+        // 正常終了レスポンスの生成
+        ApiResponse<Void> response = responseFactory.success(httpRequest, null);
+
+        // クッキー削除ヘッダーを載せて返却
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                 .body(response);
     }
 

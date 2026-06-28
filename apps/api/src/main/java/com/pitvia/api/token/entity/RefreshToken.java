@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener; // ← 追加
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.pitvia.api.user.entity.User;
 
@@ -104,5 +104,19 @@ public class RefreshToken {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
+
+    /**
+     * トークン失効日時をセットし、更新日時を更新する
+     */
+    public void revoke() {
+
+        if (revokedAt != null) {
+            return;
+        }
+
+        Instant now = Instant.now();
+        revokedAt = now;
+        updatedAt = now;
+    }
 
 }

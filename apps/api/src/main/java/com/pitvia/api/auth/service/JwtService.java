@@ -106,6 +106,17 @@ public class JwtService {
     }
 
     /**
+     * jti取得
+     *
+     * @param claims JWTのペイロード（クレーム情報）
+     *
+     * @return JWT ID
+     */
+    public UUID extractJti(Claims claims) {
+        return UUID.fromString(claims.getId());
+    }
+
+    /**
      * ユーザーID取得
      *
      * @param claims JWTのペイロード（クレーム情報）
