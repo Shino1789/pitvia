@@ -1,0 +1,27 @@
+# ==================================================
+# Spring Boot テスト設定
+# ==================================================
+spring:
+  # データベース接続設定
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA設定
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+jwt:
+  # 署名に使用する秘密鍵
+  secret-key: SAMPLEa9h6Y4xvN2B+R5q9P4P1vQ9w5G8iA3qS1Y2VQ=
+  # アクセストークンの有効期限
+  expiration: 15m
+  # リフレッシュトークンの有効期限
+  refresh-expiration: 7d
