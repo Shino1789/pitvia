@@ -49,6 +49,9 @@ app:
     cookie:
       secure: true
       same-site: None
+  # スケジューラ設定
+  scheduler:
+    refresh-token-cron: "0 0 3 * * *"
 
 jwt:
   # 署名に使用する秘密鍵

@@ -34,6 +34,11 @@
       "name": "app.security.cookie.same-site",
       "type": "java.lang.String",
       "description": "リフレッシュトークンCookieのSameSite属性値（Lax, None, Strict）。クロスドメインでCookieを送受信する場合はNone（かつSecure=true）が必要。"
+    },
+    {
+      "name": "app.scheduler.refresh-token-cron",
+      "type": "java.lang.String",
+      "description": "リフレッシュトークンの定期クリーンアップを実行するCron式（例: \"0 0 3 * * *\" で毎日午前3時実行）。"
     }
   ]
 }
