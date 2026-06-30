@@ -76,7 +76,7 @@ public class LoginService {
         // アクセストークン (JWT) の生成
         String accessToken = jwtService.generateAccessToken(user);
 
-        // リフレッシュトークンの生成と永続化
+        // リフレッシュトークンの生成とハッシュ値計算
         RefreshTokenResult refreshResult = jwtService.generateRefreshToken(user);
         String refreshTokenHash = DigestUtils.sha256Hex(refreshResult.token());
 

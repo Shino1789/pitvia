@@ -39,7 +39,7 @@ public class LogoutService {
             return;
         }
 
-        // リフレッシュトークンからSHA-256ハッシュ値を生成
+        // リフレッシュトークンからSHA-256ハッシュ値を計算
         String tokenHash = DigestUtils.sha256Hex(refreshToken);
 
         // DBから有効な（失効しておらず、期限内の）トークンのみを検索して失効させる

@@ -102,7 +102,7 @@ public class RefreshService {
         // アクセストークン (JWT) の生成
         String newAccessToken = jwtService.generateAccessToken(user);
 
-        // リフレッシュトークンの生成と永続化
+        // リフレッシュトークンの生成とハッシュ値計算
         RefreshTokenResult newRefreshResult = jwtService.generateRefreshToken(user);
         String newRefreshTokenHash = DigestUtils.sha256Hex(newRefreshResult.token());
 
