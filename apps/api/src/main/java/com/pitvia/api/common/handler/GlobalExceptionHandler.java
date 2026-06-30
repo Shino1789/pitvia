@@ -132,7 +132,7 @@ public class GlobalExceptionHandler {
             String fieldName = "";
             // プロパティからフィールド型不一致用のエラーメッセージを取得する
             String message = messageSource.getMessage(
-                    "validation.generic.invalid.format",
+                    "validation.json.invalid.format",
                     null,
                     LocaleContextHolder.getLocale());
 
