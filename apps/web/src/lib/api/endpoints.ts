@@ -14,5 +14,8 @@ export const ENDPOINTS = {
 
     /** ログアウトAPI */
     logout: "/auth/logout",
+
+    /** ユーザー情報取得API */
+    me: "/auth/me",
   },
 } as const;

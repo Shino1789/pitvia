@@ -1,8 +1,5 @@
-/**
- * ルートレイアウト
- * 全ページ共通のHTML構造とメタ情報を定義する
- */
 import type { Metadata } from "next";
+import { ApiProvider } from "@/providers/api-provider";
 import "./globals.css";
 
 /**
@@ -23,7 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        <ApiProvider>{children}</ApiProvider>
+      </body>
     </html>
   );
 }

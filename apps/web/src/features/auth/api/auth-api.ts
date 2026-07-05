@@ -1,36 +1,47 @@
 import { ENDPOINTS } from "@/lib/api/endpoints";
-import { apiFetch } from "@/lib/api/client";
-import {
+import { apiClient } from "@/lib/api/axios";
+import type { ApiResponse } from "@/shared/types/response";
+import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
+  RefreshTokenResponse,
 } from "@/features/auth/types/auth";
 
 /**
- * 認証APIサービス
+ * 認証系APIクライアント
  */
 export const authApi = {
   /**
-   * ログインAPIリクエスト
+   * ログイン認証APIリクエスト
    *
-   * @param body リクエストボディ
-   * @returns レスポンスオブジェクト
+   * @param body ログインリクエスト
+   * @returns APIレスポンス
    */
   login: (body: LoginRequest) =>
-    apiFetch<LoginResponse>(ENDPOINTS.auth.login, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+    apiClient.post<ApiResponse<LoginResponse>>(ENDPOINTS.auth.login, body),
 
   /**
-   * アカウント作成APIリクエスト
+   * アカウント登録APIリクエスト
    *
-   * @param body リクエストボディ
-   * @returns レスポンスオブジェクト
+   * @param body アカウント登録リクエスト
+   * @returns APIレスポンス
    */
   register: (body: RegisterRequest) =>
-    apiFetch<void>(ENDPOINTS.auth.register, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+    apiClient.post<ApiResponse<void>>(ENDPOINTS.auth.register, body),
+
+  /**
+   * ログアウトAPIリクエスト
+   *
+   * @returns APIレスポンス
+   */
+  logout: () => apiClient.post<ApiResponse<void>>(ENDPOINTS.auth.logout),
+
+  /**
+   * トークンのリフレッシュAPIリクエスト
+   *
+   * @returns APIレスポンス
+   */
+  refresh: () =>
+    apiClient.post<ApiResponse<RefreshTokenResponse>>(ENDPOINTS.auth.refresh),
 };

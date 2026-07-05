@@ -1,44 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { authApi } from "../api/auth-api";
+import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
+import { authSession } from "../services/auth-session";
 import { LoginRequest } from "../types/auth";
+import { ROUTES } from "@/shared/constants/routes";
+import { ERROR_MESSAGES } from "@/shared/constants/messages";
 import { ErrorResponse } from "@/shared/types/response";
 
+/**
+ * ログイン処理を行うカスタムフック
+ *
+ * @returns ログイン処理関数、ローディング状態、エラー状態
+ */
 export function useLogin() {
+  // Next.jsのルーターを取得
   const router = useRouter();
+  // クエリパラメータを取得
+  const searchParams = useSearchParams();
+  // ローディング状態を管理するstate
   const [isLoading, setIsLoading] = useState(false);
+  // エラー状態を管理するstate
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (data: LoginRequest) => {
+  /**
+   * ログイン処理
+   *
+   * @param data ログインリクエスト
+   * @returns ログイン成否のフラグ
+   */
+  const login = async (data: LoginRequest): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // apiFetchの仕様により、2xx系（成功）のときだけ response が戻る
-      const response = await authApi.login(data);
+      // ログイン認証処理実行
+      await authSession.login(data);
 
-      // response.data には LoginResponse (userId, userName, role, accessToken) が型安全に入っています
-      console.log("Login success:", response.data);
+      // クエリパラメータから callbackUrl を取得
+      const callbackUrl = searchParams.get("callbackUrl");
 
-      // クッキーやローカルストレージへのトークン保存、認証コンテキストへの反映などは
-      // 必要に応じてここ（または apiFetch 内のインターセプター）で行います
+      // リダイレクト先のURLを決定。callbackUrlが存在しない場合はダッシュボードに遷移
+      const redirectUrl = callbackUrl ?? ROUTES.DASHBOARD;
 
-      router.push("/dashboard"); // ログイン後のダッシュボードへ遷移
+      // 外部サイトへの不正リダイレクトを防ぐため、遷移先が自ドメイン内の相対パスであることを保証
+      const safeRedirectUrl = redirectUrl.startsWith("/")
+        ? redirectUrl
+        : ROUTES.DASHBOARD;
+
+      // 履歴ループを防ぐため、pushではなくreplaceで遷移
+      router.replace(safeRedirectUrl);
+
       return true;
     } catch (e) {
-      // サーバー側（Spring Boot）から throw された ErrorResponse を型安全にハンドリング
-      const errorResponse = e as ErrorResponse;
-
-      if (errorResponse?.error?.message) {
-        setError(errorResponse.error.message);
-      } else {
-        setError("通信エラーが発生しました。時間をおいて再度お試しください。");
+      // Axiosのエラーの場合、エラーメッセージを取得してstateにセットする
+      if (axios.isAxiosError<ErrorResponse>(e)) {
+        const message = e.response?.data?.error?.message;
+        if (message) {
+          setError(message);
+          setIsLoading(false);
+          return false;
+        }
       }
-      return false;
-    } finally {
+
+      // Axiosのエラーでない場合、通信エラーとしてエラーメッセージをセットする
+      setError(ERROR_MESSAGES.NETWORK);
       setIsLoading(false);
+      return false;
     }
   };
 

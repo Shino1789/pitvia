@@ -1,3 +1,4 @@
+import { User } from "../../../shared/types/user";
 import { UserRole } from "@/shared/constants/role";
 
 /**
@@ -22,20 +23,11 @@ export interface RegisterRequest {
 }
 
 /**
- * リフレッシュトークンリクエスト
- */
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
-/**
  * ログインレスポンス
  * Spring: LoginResponse
  */
 export interface LoginResponse {
-  userId: string;
-  userName: string;
-  role: UserRole;
+  user: User;
   accessToken: string;
 }
 
@@ -44,5 +36,6 @@ export interface LoginResponse {
  * Spring: RefreshTokenResponse
  */
 export interface RefreshTokenResponse {
+  user: User;
   accessToken: string;
 }

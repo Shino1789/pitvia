@@ -1,5 +1,10 @@
 import { redirect } from "next/navigation";
+import { ROUTES } from "@/shared/constants/routes";
 
+/**
+ * ルートページコンポーネント
+ */
 export default function RootPage() {
-  redirect("/login");
+  // ログイン画面にリダイレクト
+  redirect(ROUTES.LOGIN);
 }
