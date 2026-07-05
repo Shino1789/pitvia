@@ -74,6 +74,12 @@ public class User extends BaseEntity {
     private String passwordHash;
 
     /**
+     * アイコン画像URL
+     */
+    @Column(length = 500)
+    private String iconUrl;
+
+    /**
      * メール認証日時
      */
     private Instant emailVerifiedAt;

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import com.pitvia.api.auth.constant.CookieConstants;
 import com.pitvia.api.auth.properties.JwtProperties;
 import com.pitvia.api.auth.properties.SecurityProperties;
-import com.pitvia.api.common.constant.ApiPaths;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,7 +36,7 @@ public class RefreshTokenCookieFactory {
                 .httpOnly(true)
                 .secure(securityProperties.cookie().secure())
                 .sameSite(securityProperties.cookie().sameSite())
-                .path(ApiPaths.BASE_PATH + ApiPaths.AUTH)
+                .path("/")
                 .maxAge(jwtProperties.refreshExpiration())
                 .build();
     }
@@ -52,7 +51,7 @@ public class RefreshTokenCookieFactory {
                 .httpOnly(true)
                 .secure(securityProperties.cookie().secure())
                 .sameSite(securityProperties.cookie().sameSite())
-                .path(ApiPaths.BASE_PATH + ApiPaths.AUTH)
+                .path("/")
                 .maxAge(0) // 有効期限を0秒にすることでブラウザに即時削除させる
                 .build();
     }

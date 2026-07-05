@@ -128,7 +128,7 @@ public class RefreshService {
 
         log.info("Token refresh successful. userId={}, newJti={}", user.getId(), newRefreshResult.jti());
 
-        return new RefreshResult(newAccessToken, newRefreshResult.token());
+        return new RefreshResult(user, newAccessToken, newRefreshResult.token());
     }
 
 }

@@ -103,9 +103,7 @@ public class LoginService {
         log.info("Login successful. userId={}, jti={}", user.getId(), refreshResult.jti());
 
         return new LoginResult(
-                user.getId(),
-                user.getUserName(),
-                user.getRole(),
+                user,
                 accessToken,
                 refreshResult.token());
     }

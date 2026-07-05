@@ -61,7 +61,7 @@ public enum ErrorCode {
     /**
      * 認証情報の不一致
      */
-    INVALID_CREDENTIALS("ログインIDまたはパスワードが正しくありません"),
+    INVALID_CREDENTIALS("メールアドレスまたはパスワードが正しくありません"),
 
     /**
      * 不正または期限切れのリフレッシュトークン

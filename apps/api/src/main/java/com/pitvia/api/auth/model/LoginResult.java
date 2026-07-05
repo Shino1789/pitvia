@@ -1,7 +1,6 @@
 package com.pitvia.api.auth.model;
 
-import java.util.UUID;
-import com.pitvia.api.auth.constant.UserRole;
+import com.pitvia.api.user.entity.User;
 
 /**
  * ログイン認証処理結果
@@ -12,19 +11,9 @@ import com.pitvia.api.auth.constant.UserRole;
 public record LoginResult(
 
         /**
-         * ユーザーID
+         * ログインユーザー
          */
-        UUID userId,
-
-        /**
-         * ユーザー名
-         */
-        String userName,
-
-        /**
-         * ユーザー権限
-         */
-        UserRole role,
+        User user,
 
         /**
          * アクセストークン（JWT）

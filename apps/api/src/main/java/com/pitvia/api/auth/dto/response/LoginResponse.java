@@ -1,9 +1,7 @@
 package com.pitvia.api.auth.dto.response;
 
-import java.util.UUID;
-
-import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.model.LoginResult;
+import com.pitvia.api.user.dto.response.UserResponse;
 
 /**
  * ログイン成功時のレスポンスDTO
@@ -14,19 +12,9 @@ import com.pitvia.api.auth.model.LoginResult;
 public record LoginResponse(
 
         /**
-         * ユーザーID
+         * ユーザー情報
          */
-        UUID userId,
-
-        /**
-         * ユーザー名
-         */
-        String userName,
-
-        /**
-         * ユーザー権限
-         */
-        UserRole role,
+        UserResponse user,
 
         /**
          * アクセストークン（JWT）
@@ -41,9 +29,7 @@ public record LoginResponse(
      */
     public static LoginResponse from(LoginResult result) {
         return new LoginResponse(
-                result.userId(),
-                result.userName(),
-                result.role(),
+                UserResponse.from(result.user()),
                 result.accessToken());
     }
 
