@@ -6,6 +6,10 @@ export const ROUTES = {
   REGISTER: "/register",
   HEALTH: "/health",
   DASHBOARD: "/dashboard",
+  VEHICLES: "/vehicles",
+  SHOPS: "/shops",
+  CUSTOMERS: "/customers",
+  SETTINGS: "/settings",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
