@@ -6,7 +6,7 @@ import axios from "axios";
 import { authSession } from "../services/auth-session";
 import { RegisterRequest } from "../types/auth";
 import { ROUTES } from "@/shared/constants/routes";
-import { ERROR_MESSAGES } from "@/shared/constants/messages";
+import { ERROR_MESSAGES } from "@/shared/messages/error";
 import { ErrorResponse } from "@/shared/types/response";
 
 /**

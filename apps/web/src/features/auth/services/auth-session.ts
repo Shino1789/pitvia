@@ -13,30 +13,8 @@ export const authSession = {
    * @returns {Promise<void>}
    */
   restoreSession: async (): Promise<void> => {
-    // Zustandのストアインスタンスを取得
-    const store = useAuthStore.getState();
-    try {
-      // リフレッシュAPIリクエスト実行
-      const response = await authApi.refresh();
-      const data = response.data?.data;
-
-      // トークンとユーザー情報の両方が正しく取得できた場合
-      if (data?.accessToken && data.user) {
-        // グローバルストアに認証情報をセットして、ログイン状態にする
-        store.setAuth(data.accessToken, data.user);
-      } else {
-        // データが不完全な場合は、未ログイン状態にする
-        store.clearAuth();
-      }
-    } catch (error) {
-      // 400または401エラーが返ってきた場合
-      if (
-        axios.isAxiosError(error) &&
-        (error.response?.status === 401 || error.response?.status === 400)
-      ) {
-        store.clearAuth();
-      }
-    }
+    // サイレントリフレッシュ処理を呼び出してセッションを復元
+    await authSession.refresh();
   },
 
   /**
@@ -111,10 +89,11 @@ export const authSession = {
       // インターセプター側が再試行リクエストで使えるように、新トークンを呼び出し元に返す
       return data.accessToken;
     } catch (error) {
-      // 400または401エラーが返ってきた場合
+      // 400または401エラー、またはデータ不正による明示的エラーの場合
       if (
-        axios.isAxiosError(error) &&
-        (error.response?.status === 401 || error.response?.status === 400)
+        !axios.isAxiosError(error) ||
+        error.response?.status === 401 ||
+        error.response?.status === 400
       ) {
         // ストア情報をクリアして未ログイン状態にする
         store.clearAuth();

@@ -6,8 +6,12 @@ import axios from "axios";
 import { authSession } from "../services/auth-session";
 import { LoginRequest } from "../types/auth";
 import { ROUTES } from "@/shared/constants/routes";
-import { ERROR_MESSAGES } from "@/shared/constants/messages";
+import { ERROR_MESSAGES } from "@/shared/messages/error";
 import { ErrorResponse } from "@/shared/types/response";
+import {
+  AUTH_FAILURE_MESSAGES,
+  isAuthFailureReason,
+} from "@/shared/constants/auth-failure";
 
 /**
  * ログイン処理を行うカスタムフック
@@ -23,6 +27,14 @@ export function useLogin() {
   const [isLoading, setIsLoading] = useState(false);
   // エラー状態を管理するstate
   const [error, setError] = useState<string | null>(null);
+
+  // URLのクエリパラメータから、ログイン画面に遷移した理由を取得（例: セッション切れなど）
+  const reason = searchParams.get("reason");
+  // reasonに対応するメッセージを取得（なければnull）
+  const reasonMessage =
+    reason && isAuthFailureReason(reason)
+      ? AUTH_FAILURE_MESSAGES[reason]
+      : null;
 
   /**
    * ログイン処理
@@ -71,5 +83,12 @@ export function useLogin() {
     }
   };
 
-  return { login, isLoading, error };
+  // 自発的なエラーメッセージがあればそれを優先し、なければURL由来のエラーメッセージを適用する
+  const displayMessage = error ?? reasonMessage;
+
+  return {
+    login,
+    isLoading,
+    error: displayMessage,
+  };
 }

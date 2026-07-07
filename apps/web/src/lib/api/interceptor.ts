@@ -2,6 +2,8 @@ import { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { apiClient } from "./axios";
 import { authSession } from "@/features/auth/services/auth-session";
 import { ENDPOINTS } from "./endpoints";
+import { ROUTES } from "@/shared/constants/routes";
+import { AUTH_FAILURE_REASON } from "@/shared/constants/auth-failure";
 
 /**
  * リクエスト設定カスタムインターフェース
@@ -115,6 +117,10 @@ export const setupResponseInterceptor = () => {
         } catch (refreshError) {
           // リフレッシュ自体が失敗（リフレッシュトークンも期限切れなど）した場合、待機中のリクエスト群もすべてエラーとして却下する
           processQueue(refreshError, null);
+
+          // RefreshTokenも期限切れの場合、セッション切れの理由をクエリパラメーターとしてログイン画面へ遷移させる。
+          window.location.href = `${ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASON.SESSION_EXPIRED}`;
+
           return Promise.reject(refreshError);
         } finally {
           // 成功・失敗に関わらず、リフレッシュ処理が終了したためフラグを戻す

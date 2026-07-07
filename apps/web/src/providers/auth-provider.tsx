@@ -1,0 +1,79 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import axios from "axios";
+import { setupResponseInterceptor } from "@/lib/api/interceptor";
+import { authSession } from "@/features/auth/services/auth-session";
+import { ROUTES } from "@/shared/constants/routes";
+import { AUTH_FAILURE_REASON } from "@/shared/constants/auth-failure";
+
+/**
+ * 認証セッションの復元を管理するプロバイダーコンポーネント
+ *
+ * @param children 子コンポーネント
+ * @returns 初期化完了時は子コンポーネント、初期化中はローディング画面のJSX
+ */
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // アプリケーションの初期化（認証復元）が完了したかどうかを判定するstate
+  const [isInitialized, setIsInitialized] = useState(false);
+  // Next.jsのルーターを取得
+  const router = useRouter();
+  // 現在のURLパスを取得
+  const pathname = usePathname();
+
+  // APIレスポンスインターセプターのセットアップ
+  useEffect(() => {
+    setupResponseInterceptor();
+  }, []);
+
+  // アプリ起動時の認証セッション復元処理
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // ログインページ、または新規アカウント登録ページであるか判定
+      const isAuthPage =
+        pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER;
+
+      try {
+        // ログイン・新規アカウント登録ページ以外のページであれば、認証セッションを復元する
+        if (!isAuthPage) {
+          // アクセストークンを再取得してセッションを復元
+          await authSession.restoreSession();
+        }
+
+        // 復元成功の場合初期化を完了状態にする
+        setIsInitialized(true);
+      } catch (error) {
+        // トークンの期限切れでセッションの復元に失敗した場合はログイン画面に遷移
+        if (
+          axios.isAxiosError(error) &&
+          (error.response?.status === 400 || error.response?.status === 401)
+        ) {
+          router.replace(
+            `${ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASON.SESSION_EXPIRED}`,
+          );
+          return;
+        }
+        // 予期せぬエラーでセッション復元に失敗した場合
+        console.error("Unexpected error during auth initialization.", error);
+        // TODO: ログイン画面にメッセージ付きで飛ばすのではなく、エラー画面に飛ばす方がいいかも(エラーページの実装が完了次第要検討)
+        router.replace(`${ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASON.NETWORK}`);
+        return;
+      }
+    };
+
+    initializeAuth();
+  }, [router, pathname]);
+
+  // 初期化が完了するまでは、未ログイン判定による一瞬の画面チラつきを防ぐためローディング画面を表示
+  // TODO: ローディング画面はカスタマイズ要検討
+  if (!isInitialized) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-muted-foreground text-sm">
+        Loading...
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}

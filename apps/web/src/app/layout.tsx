@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ApiProvider } from "@/providers/api-provider";
+import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
 /**
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <ApiProvider>{children}</ApiProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
