@@ -1,34 +1,47 @@
 import { z } from "zod";
 import { USER_ROLES } from "@/shared/constants/role";
+import { VALIDATION_MESSAGES } from "@/shared/messages/validation";
+import { FIELD } from "@/shared/constants/field";
 
+/**
+ * 新規アカウント登録フォームのバリデーションスキーマ
+ */
 export const registerSchema = z
   .object({
+    /** ユーザー権限の必須チェック */
     role: z.enum(USER_ROLES),
 
+    /** ユーザー名のバリデーション */
     userName: z
       .string()
-      .min(1, "ユーザー名は必須です")
-      .max(100, "ユーザー名は100文字以内で入力してください"),
+      .min(1, VALIDATION_MESSAGES.required(FIELD.USER_NAME))
+      .max(100, VALIDATION_MESSAGES.maxLength(FIELD.USER_NAME, 100)),
 
+    /** メールアドレスのバリデーション */
     email: z
       .string()
-      .min(1, "メールアドレスは必須です")
-      .email("メールアドレスの形式が正しくありません"),
+      .min(1, VALIDATION_MESSAGES.required(FIELD.EMAIL))
+      .email(VALIDATION_MESSAGES.invalidFormat(FIELD.EMAIL)),
 
+    /** パスワードのバリデーション */
     password: z
       .string()
-      .min(8, "パスワードは8文字以上で入力してください")
-      .max(128, "パスワードは128文字以内です")
-      .regex(
-        /^(?=.*[A-Za-z])(?=.*\d).+$/,
-        "英字と数字を少なくとも1文字ずつ含めてください",
-      ),
+      .min(8, VALIDATION_MESSAGES.minLength(FIELD.PASSWORD, 8))
+      .max(128, VALIDATION_MESSAGES.maxLength(FIELD.PASSWORD, 128))
+      .regex(/^(?=.*[A-Za-z])(?=.*\d).+$/, VALIDATION_MESSAGES.passwordRule),
 
-    confirmPassword: z.string().min(1, "確認用パスワードは必須です"),
+    /** 確認用パスワードのバリデーション */
+    confirmPassword: z
+      .string()
+      .min(1, VALIDATION_MESSAGES.required(FIELD.CONFIRM_PASSWORD)),
   })
+  /** パスワードと確認用パスワードの一致チェック */
   .refine((data) => data.password === data.confirmPassword, {
-    message: "パスワードが一致しません",
-    path: ["confirmPassword"],
+    message: VALIDATION_MESSAGES.passwordMismatch,
+    path: ["confirmPassword"], // エラーを confirmPassword フィールドに紐付ける
   });
 
-export type RegisterSchema = z.infer<typeof registerSchema>;
+/**
+ * 新規アカウント登録フォームの入力値の型定義
+ */
+export type RegisterFormValues = z.infer<typeof registerSchema>;

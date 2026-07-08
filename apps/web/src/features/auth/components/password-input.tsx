@@ -1,31 +1,32 @@
 "use client";
 
+import { forwardRef } from "react";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 
 interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   id?: string;
-  label?: string;
 }
 
-export function PasswordInput({
-  id = "password",
-  label = "パスワード",
-  placeholder = "••••••••",
-  ...props
-}: PasswordInputProps) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-sm">
-        {label}
-      </Label>
+/**
+ * パスワード入力フィールドコンポーネント
+ */
+export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
+  (
+    { id = "password", placeholder = "••••••••", ...props },
+    ref, // React Hook Form から渡されてくる ref をキャッチ
+  ) => {
+    return (
       <Input
         id={id}
         type="password"
         placeholder={placeholder}
         className="bg-input border-border"
+        ref={ref} // 実際の input 要素に ref をバインド
         {...props}
       />
-    </div>
-  );
-}
+    );
+  },
+);
+
+// デバッグや開発者ツールでコンポーネント名が正しく表示されるように displayName を設定
+PasswordInput.displayName = "PasswordInput";

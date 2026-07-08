@@ -1,14 +1,12 @@
 import { User } from "../../../shared/types/user";
 import { UserRole } from "@/shared/constants/role";
+import { LoginFormValues } from "../schemas/login.schema";
 
 /**
  * ログインリクエスト
  * Spring: LoginRequest
  */
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
+export type LoginRequest = LoginFormValues;
 
 /**
  * アカウント登録リクエスト
