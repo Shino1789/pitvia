@@ -1,11 +1,11 @@
+// apps/web/src/features/auth/components/register-form.tsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form"; // ★ useWatch をインポート
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { ArrowRight } from "lucide-react";
@@ -18,6 +18,14 @@ import {
   type RegisterFormValues,
 } from "../schemas/register.schema";
 import type { UserRole } from "@/shared/constants/role";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/shared/ui/form";
 
 export function RegisterForm() {
   const {
@@ -27,13 +35,7 @@ export function RegisterForm() {
   } = useRegister();
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    control,
-    formState: { errors },
-  } = useForm<RegisterFormValues>({
+  const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       role: "OWNER",
@@ -44,24 +46,21 @@ export function RegisterForm() {
     },
   });
 
+  // ★ form.watch の代わりに useWatch を使用（React Compiler の警告を回避）
   const currentRole = useWatch({
-    control,
+    control: form.control,
     name: "role",
   });
 
   /** ロール選択が変更された際のハンドラー */
   const handleRoleChange = (role: UserRole) => {
-    setValue("role", role, { shouldValidate: true });
+    form.setValue("role", role, { shouldValidate: true });
   };
 
   /**
    * フォーム送信時のハンドラー
-   * バリデーションおよびパスワード一致検証を通過した安全なデータのみが渡される
-   *
-   * @param data フォームの入力値
    */
   const onSubmit = async (data: RegisterFormValues) => {
-    // 利用規約の同意チェック（チェックされていない場合は処理を中断）
     if (!agreeTerms) return;
 
     await submitRegister({
@@ -73,131 +72,158 @@ export function RegisterForm() {
     });
   };
 
+  // 共通の入力枠スタイル
+  const inputClassName =
+    "bg-input border-border focus-visible:ring-primary focus-visible:border-border aria-invalid:border-destructive/80 aria-invalid:focus-visible:ring-destructive/50 aria-invalid:focus-visible:ring-2 aria-invalid:focus-visible:shadow-[0_0_15px_-2px_rgba(239,68,68,0.6)] transition-all duration-200";
+
   return (
     <AuthLayout title="アカウント作成" description="Pitviaへようこそ">
-      {/* handleSubmit で onSubmit をラップ。noValidate でブラウザ標準検証を無効化 */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-        {/* API通信エラーの表示 */}
-        {apiError && (
-          <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
-            {apiError}
-          </div>
-        )}
-
-        {/* ロール選択コンポーネントの繋ぎ込み */}
-        <RoleSelector value={currentRole} onChange={handleRoleChange} />
-        {errors.role && (
-          <p className="text-xs text-destructive mt-1">{errors.role.message}</p>
-        )}
-
-        {/* ユーザー名 / 会社名入力フィールド */}
-        <div className="space-y-2">
-          <Label htmlFor="userName" className="text-sm">
-            {currentRole === "SHOP" ? "会社名 / ショップ名" : "お名前"}
-          </Label>
-          <Input
-            id="userName"
-            type="text"
-            placeholder={
-              currentRole === "SHOP" ? "○○自動車整備工場" : "山田 太郎"
-            }
-            className="bg-input border-border"
-            {...register("userName")} // React Hook Form への登録
-          />
-          {errors.userName && (
-            <p className="text-xs text-destructive mt-1">
-              {errors.userName.message}
-            </p>
-          )}
-        </div>
-
-        {/* メールアドレス入力フィールド */}
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm">
-            メールアドレス
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="example@email.com"
-            className="bg-input border-border"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-xs text-destructive mt-1">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
-
-        {/* パスワード入力フィールド */}
-        <div className="space-y-2">
-          <PasswordInput
-            id="password"
-            placeholder="8文字以上"
-            {...register("password")} // forwardRef を経由した自動 ref バインド
-          />
-          {errors.password && (
-            <p className="text-xs text-destructive mt-1">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
-
-        {/* 確認用パスワード入力フィールド */}
-        <div className="space-y-2">
-          <PasswordInput
-            id="confirmPassword"
-            label="パスワード（確認）"
-            placeholder="パスワードを再入力"
-            {...register("confirmPassword")}
-          />
-          {/* Zod の refine((data) => data.password === data.confirmPassword) の結果がここに届く */}
-          {errors.confirmPassword && (
-            <p className="text-xs text-destructive mt-1">
-              {errors.confirmPassword.message}
-            </p>
-          )}
-        </div>
-
-        {/* 利用規約同意チェックボックス */}
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="terms"
-            checked={agreeTerms}
-            onCheckedChange={(c) => setAgreeTerms(c === true)}
-          />
-          <Label
-            htmlFor="terms"
-            className="text-sm text-muted-foreground cursor-pointer"
-          >
-            <Link href="#" className="text-primary hover:underline">
-              利用規約
-            </Link>{" "}
-            と{" "}
-            <Link href="#" className="text-primary hover:underline">
-              プライバシーポリシー
-            </Link>{" "}
-            に同意します
-          </Label>
-        </div>
-
-        {/* 送信ボタン */}
-        <Button
-          type="submit"
-          className="w-full gap-2 bg-gradient-to-r from-primary to-blue-600 text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-[0_0_20px_-4px] shadow-primary/50"
-          disabled={isLoading || !agreeTerms} // 規約未同意時は押せないように制御して堅牢性をアップ
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+          noValidate
         >
-          {isLoading ? (
-            <span>処理中...</span>
-          ) : (
-            <>
-              アカウントを作成
-              <ArrowRight className="h-4 w-4" />
-            </>
+          {/* API通信エラーの表示 */}
+          {apiError && (
+            <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
+              {apiError}
+            </div>
           )}
-        </Button>
-      </form>
+
+          {/* ロール選択コンポーネント */}
+          <FormField
+            control={form.control}
+            name="role"
+            render={() => (
+              <FormItem className="space-y-2">
+                <RoleSelector value={currentRole} onChange={handleRoleChange} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* ユーザー名 / 会社名入力フィールド */}
+          <FormField
+            control={form.control}
+            name="userName"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-sm">
+                  {currentRole === "SHOP" ? "会社名 / ショップ名" : "お名前"}
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    placeholder={
+                      currentRole === "SHOP" ? "○○自動車整備工場" : "山田 太郎"
+                    }
+                    className={inputClassName}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* メールアドレス入力フィールド */}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-sm">メールアドレス</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="example@email.com"
+                    className={inputClassName}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* パスワード入力フィールド */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-sm">パスワード</FormLabel>
+                <FormControl>
+                  <PasswordInput
+                    placeholder="8文字以上"
+                    className={inputClassName}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* 確認用パスワード入力フィールド */}
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel className="text-sm">パスワード（確認）</FormLabel>
+                <FormControl>
+                  <PasswordInput
+                    placeholder="パスワードを再入力"
+                    className={inputClassName}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* 利用規約同意チェックボックス */}
+          <div className="flex items-center gap-2 pt-1">
+            <Checkbox
+              id="terms"
+              checked={agreeTerms}
+              onCheckedChange={(c) => setAgreeTerms(c === true)}
+            />
+            <FormLabel
+              htmlFor="terms"
+              className="text-sm text-muted-foreground cursor-pointer font-normal"
+            >
+              <Link href="#" className="text-primary hover:underline">
+                利用規約
+              </Link>{" "}
+              と{" "}
+              <Link href="#" className="text-primary hover:underline">
+                プライバシーポリシー
+              </Link>{" "}
+              に同意します
+            </FormLabel>
+          </div>
+
+          {/* 送信ボタン */}
+          <Button
+            type="submit"
+            className="w-full gap-2 bg-gradient-to-r from-primary to-blue-600 text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-[0_0_20px_-4px] shadow-primary/50 pt-1"
+            disabled={isLoading || !agreeTerms}
+          >
+            {isLoading ? (
+              <span>処理中...</span>
+            ) : (
+              <>
+                アカウントを作成
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </form>
+      </Form>
 
       <div className="flex items-center gap-4 my-5">
         <div className="flex-1 h-px bg-border" />
