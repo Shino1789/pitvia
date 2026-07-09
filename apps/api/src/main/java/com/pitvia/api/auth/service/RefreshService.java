@@ -54,7 +54,7 @@ public class RefreshService {
         // クッキーから取得したトークンの存在チェック
         if (requestToken == null || requestToken.isBlank()) {
             log.warn("Refresh requested but refresh token cookie is missing.");
-            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN, HttpStatus.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.NO_REFRESH_TOKEN, HttpStatus.UNAUTHORIZED);
         }
 
         Claims claims;

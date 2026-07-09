@@ -6,11 +6,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.pitvia.api.token.entity.RefreshToken;
+
+import jakarta.persistence.LockModeType;
 
 /**
  * リフレッシュトークン管理テーブル (refresh_tokens) に対するデータアクセスを管理するリポジトリ
@@ -62,6 +65,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
      * @param now       現在日時
      * @return 該当する有効なリフレッシュトークン情報
      */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RefreshToken> findByTokenHashAndJtiAndRevokedAtIsNullAndExpiresAtAfter(String tokenHash, UUID jti,
             Instant now);
 

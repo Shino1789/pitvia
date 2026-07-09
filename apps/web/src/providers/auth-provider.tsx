@@ -7,6 +7,7 @@ import { setupResponseInterceptor } from "@/lib/api/interceptor";
 import { authSession } from "@/features/auth/services/auth-session";
 import { ROUTES } from "@/shared/constants/routes";
 import { AUTH_FAILURE_REASON } from "@/shared/constants/auth-failure";
+import { ERROR_CODE } from "@/shared/constants/error-code";
 
 /**
  * 認証セッションの復元を管理するプロバイダーコンポーネント
@@ -44,15 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 復元成功の場合初期化を完了状態にする
         setIsInitialized(true);
       } catch (error) {
-        // トークンの期限切れでセッションの復元に失敗した場合はログイン画面に遷移
-        if (
-          axios.isAxiosError(error) &&
-          (error.response?.status === 400 || error.response?.status === 401)
-        ) {
-          router.replace(
-            `${ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASON.SESSION_EXPIRED}`,
-          );
-          return;
+        // APIエラーの場合
+        if (axios.isAxiosError(error)) {
+          const code = error.response?.data?.error?.code;
+
+          // 失敗した理由がリフレッシュトークンが存在しない（未ログイン）だった場合
+          if (code === ERROR_CODE.NO_REFRESH_TOKEN) {
+            router.replace(ROUTES.LOGIN);
+            return;
+          }
+
+          // 失敗した理由がリフレッシュトークンの期限切れや改ざんの場合
+          if (code === ERROR_CODE.INVALID_REFRESH_TOKEN) {
+            router.replace(
+              `${ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASON.SESSION_EXPIRED}`,
+            );
+            return;
+          }
         }
         // 予期せぬエラーでセッション復元に失敗した場合
         console.error("Unexpected error during auth initialization.", error);
