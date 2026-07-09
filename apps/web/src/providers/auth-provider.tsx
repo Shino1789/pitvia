@@ -1,13 +1,15 @@
+// apps/web/src/providers/auth-provider.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation"; // usePathname は不要になったため削除
 import axios from "axios";
 import { setupResponseInterceptor } from "@/lib/api/interceptor";
 import { authSession } from "@/features/auth/services/auth-session";
 import { ROUTES } from "@/shared/constants/routes";
 import { AUTH_FAILURE_REASON } from "@/shared/constants/auth-failure";
 import { ERROR_CODE } from "@/shared/constants/error-code";
+import { useAuthStore } from "@/stores/auth-store"; // グローバルステートを参照するために追加
 
 /**
  * 認証セッションの復元を管理するプロバイダーコンポーネント
@@ -20,27 +22,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   // Next.jsのルーターを取得
   const router = useRouter();
-  // 現在のURLパスを取得
-  const pathname = usePathname();
+  // ストアから現在のアクセストークンの有無を取得
+  const accessToken = useAuthStore((state) => state.accessToken);
 
   // APIレスポンスインターセプターのセットアップ
   useEffect(() => {
     setupResponseInterceptor();
   }, []);
 
-  // アプリ起動時の認証セッション復元処理
+  // アプリ起動時（保護ルート侵入時）の認証セッション復元処理
   useEffect(() => {
     const initializeAuth = async () => {
-      // ログインページ、または新規アカウント登録ページであるか判定
-      const isAuthPage =
-        pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER;
+      // すでにメモリ上に認証情報が存在する場合は即座に初期化を完了させる
+      if (accessToken) {
+        setIsInitialized(true);
+        return;
+      }
 
       try {
-        // ログイン・新規アカウント登録ページ以外のページであれば、認証セッションを復元する
-        if (!isAuthPage) {
-          // アクセストークンを再取得してセッションを復元
-          await authSession.restoreSession();
-        }
+        // アクセストークンを再取得してセッションを復元
+        await authSession.restoreSession();
 
         // 復元成功の場合初期化を完了状態にする
         setIsInitialized(true);
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [router, pathname]);
+  }, [router, accessToken]);
 
   // 初期化が完了するまでは、未ログイン判定による一瞬の画面チラつきを防ぐためローディング画面を表示
   // TODO: ローディング画面はカスタマイズ要検討

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AuthProvider } from "@/providers/auth-provider";
 import "./globals.css";
 
 /**
@@ -12,6 +11,9 @@ export const metadata: Metadata = {
 
 /**
  * アプリケーション共通レイアウト
+ *
+ * @param props.children 子コンポーネント
+ * @returns 子コンポーネントのJSX
  */
 export default function RootLayout({
   children,
@@ -20,9 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
