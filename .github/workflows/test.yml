@@ -15,42 +15,60 @@ on:
     branches: [main, development]
 
 jobs:
-  test:
-    # ==================================================
-    # 実行環境（GitHub提供のUbuntu）
-    # ==================================================
+  # ==================================================
+  # フロントエンドテスト (Next.js + Vitest)
+  # ==================================================
+  frontend:
+    # 実行環境（GitHub提供 of Ubuntu）
     runs-on: ubuntu-latest
+
     steps:
-      # ==================================================
       # リポジトリのソースコードを取得
-      # ==================================================
       - uses: actions/checkout@v4
 
-      # ==================================================
+      # Node.js環境のセットアップ
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # npm依存パッケージをインストール
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      # 構文・コードスタイルチェック (ESLint)
+      - name: Run ESLint
+        working-directory: apps/web
+        run: npm run lint
+
+      # テスト実行（Next.js + Vitest）
+      - name: Run frontend tests
+        working-directory: apps/web
+        run: npm test
+
+  # ==================================================
+  # バックエンドテスト (Spring Boot + JUnit)
+  # ==================================================
+  backend:
+    # 実行環境（GitHub提供 of Ubuntu）
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのソースコードを取得
+      - uses: actions/checkout@v4
+
       # Java環境のセットアップ（Spring Boot用）
-      # ==================================================
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: temurin
+          cache: gradle
 
-      # ==================================================
-      # Gradleキャッシュ設定
-      # ==================================================
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      # ==================================================
       # テスト実行（Spring Boot + JUnit）
-      # ==================================================
-      - name: Run tests
+      - name: Run backend tests
         working-directory: apps/api
         run: ./gradlew test

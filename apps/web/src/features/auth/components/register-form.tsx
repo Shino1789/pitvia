@@ -13,6 +13,7 @@ import { PasswordInput } from "./password-input";
 import { useRegister } from "../hooks/use-register";
 import { USER_ROLE } from "@/shared/constants/role";
 import { ROUTES } from "@/shared/constants/routes";
+import type { RegisterRequest } from "../types/auth";
 import {
   registerSchema,
   type RegisterFormValues,
@@ -70,7 +71,15 @@ export function RegisterForm() {
    * @param data バリデーション済みのフォーム入力値
    */
   const onSubmit = async (data: RegisterFormValues) => {
-    await submitRegister(data);
+    const request: RegisterRequest = {
+      role: data.role,
+      userName: data.userName,
+      email: data.email,
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+    };
+
+    await submitRegister(request);
   };
 
   return (
