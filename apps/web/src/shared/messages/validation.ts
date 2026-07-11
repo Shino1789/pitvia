@@ -39,4 +39,7 @@ export const VALIDATION_MESSAGES = {
 
   /** パスワード一致チェックのエラーメッセージ */
   passwordMismatch: "パスワードが一致しません",
+
+  /** 利用規約同意チェックボックスのエラーメッセージ */
+  agreeTermsRequired: "利用規約とプライバシーポリシーへの同意が必要です",
 } as const;

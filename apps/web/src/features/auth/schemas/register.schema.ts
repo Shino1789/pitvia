@@ -34,6 +34,11 @@ export const registerSchema = z
     confirmPassword: z
       .string()
       .min(1, VALIDATION_MESSAGES.required(FIELD.CONFIRM_PASSWORD)),
+
+    /** 利用規約同意チェックボックスのバリデーション */
+    agreeTerms: z.boolean().refine((val) => val === true, {
+      message: VALIDATION_MESSAGES.agreeTermsRequired,
+    }),
   })
   /** パスワードと確認用パスワードの一致チェック */
   .refine((data) => data.password === data.confirmPassword, {

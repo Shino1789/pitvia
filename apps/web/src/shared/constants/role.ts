@@ -1,9 +1,18 @@
 /**
- * ユーザーロール一覧
+ * ユーザーロール定数
  */
-export const USER_ROLES = ["OWNER", "SHOP", "ADMIN"] as const;
+export const USER_ROLE = {
+  OWNER: "OWNER",
+  SHOP: "SHOP",
+  ADMIN: "ADMIN",
+} as const;
 
 /**
- * ユーザーロール
+ * ユーザーロールの型定義
  */
-export type UserRole = (typeof USER_ROLES)[number];
+export type UserRole = keyof typeof USER_ROLE;
+
+/**
+ * Zodのenumなどで使うための配列
+ */
+export const USER_ROLES = Object.values(USER_ROLE) as [UserRole, ...UserRole[]];

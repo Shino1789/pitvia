@@ -1,11 +1,9 @@
-// apps/web/src/app/(public)/register/page.tsx
-"use client";
-
 import { RegisterForm } from "@/features/auth/components/register-form";
 
 /**
  * 新規アカウント作成ページコンポーネント
  *
+ * @component
  * @returns アカウント作成ページのJSX要素
  */
 export default function RegisterPage() {

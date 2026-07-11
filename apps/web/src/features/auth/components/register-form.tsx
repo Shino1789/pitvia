@@ -1,9 +1,7 @@
-// apps/web/src/features/auth/components/register-form.tsx
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useForm, useWatch } from "react-hook-form"; // ★ useWatch をインポート
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
@@ -13,11 +11,12 @@ import { AuthLayout } from "./auth-layout";
 import { RoleSelector } from "./role-selector";
 import { PasswordInput } from "./password-input";
 import { useRegister } from "../hooks/use-register";
+import { USER_ROLE } from "@/shared/constants/role";
+import { ROUTES } from "@/shared/constants/routes";
 import {
   registerSchema,
   type RegisterFormValues,
 } from "../schemas/register.schema";
-import type { UserRole } from "@/shared/constants/role";
 import {
   Form,
   FormControl,
@@ -27,54 +26,52 @@ import {
   FormMessage,
 } from "@/shared/ui/form";
 
+/**
+ * 新規ユーザー登録フォームコンポーネント
+ *
+ * @component
+ */
 export function RegisterForm() {
+  // アカウント登録処理カスタムフックから状態と関数を取得
   const {
     register: submitRegister,
     isLoading,
     error: apiError,
   } = useRegister();
-  const [agreeTerms, setAgreeTerms] = useState(false);
 
+  // フォームバリデーションスキーマの初期化
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      role: "OWNER",
+      role: USER_ROLE.OWNER,
       userName: "",
       email: "",
       password: "",
       confirmPassword: "",
+      agreeTerms: false,
     },
   });
 
-  // ★ form.watch の代わりに useWatch を使用（React Compiler の警告を回避）
+  // 選択されているユーザーロールをリアルタイム監視（入力ラベルの切り替え用）
   const currentRole = useWatch({
     control: form.control,
     name: "role",
   });
 
-  /** ロール選択が変更された際のハンドラー */
-  const handleRoleChange = (role: UserRole) => {
-    form.setValue("role", role, { shouldValidate: true });
-  };
+  // 利用規約チェックボックスの同意状態をリアルタイム監視（送信ボタンの非活性制御用）
+  const isAccepted = useWatch({
+    control: form.control,
+    name: "agreeTerms",
+  });
 
   /**
-   * フォーム送信時のハンドラー
+   * フォーム送信時のイベントハンドラー
+   *
+   * @param data バリデーション済みのフォーム入力値
    */
   const onSubmit = async (data: RegisterFormValues) => {
-    if (!agreeTerms) return;
-
-    await submitRegister({
-      role: data.role,
-      userName: data.userName,
-      email: data.email,
-      password: data.password,
-      confirmPassword: data.confirmPassword,
-    });
+    await submitRegister(data);
   };
-
-  // 共通の入力枠スタイル
-  const inputClassName =
-    "bg-input border-border focus-visible:ring-primary focus-visible:border-border aria-invalid:border-destructive/80 aria-invalid:focus-visible:ring-destructive/50 aria-invalid:focus-visible:ring-2 aria-invalid:focus-visible:shadow-[0_0_15px_-2px_rgba(239,68,68,0.6)] transition-all duration-200";
 
   return (
     <AuthLayout title="アカウント作成" description="Pitviaへようこそ">
@@ -84,20 +81,20 @@ export function RegisterForm() {
           className="space-y-5"
           noValidate
         >
-          {/* API通信エラーの表示 */}
+          {/* APIエラーが発生した際のエラーメッセージ表示 */}
           {apiError && (
             <div className="p-3 text-xs bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
               {apiError}
             </div>
           )}
 
-          {/* ロール選択コンポーネント */}
+          {/* ロール選択（ユーザー種別）フィールド */}
           <FormField
             control={form.control}
             name="role"
-            render={() => (
+            render={({ field }) => (
               <FormItem className="space-y-2">
-                <RoleSelector value={currentRole} onChange={handleRoleChange} />
+                <RoleSelector value={field.value} onChange={field.onChange} />
                 <FormMessage />
               </FormItem>
             )}
@@ -110,15 +107,18 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem className="space-y-2">
                 <FormLabel className="text-sm">
-                  {currentRole === "SHOP" ? "会社名 / ショップ名" : "お名前"}
+                  {currentRole === USER_ROLE.SHOP
+                    ? "会社名 / ショップ名"
+                    : "お名前"}
                 </FormLabel>
                 <FormControl>
                   <Input
                     type="text"
                     placeholder={
-                      currentRole === "SHOP" ? "○○自動車整備工場" : "山田 太郎"
+                      currentRole === USER_ROLE.SHOP
+                        ? "○○自動車整備工場"
+                        : "山田 太郎"
                     }
-                    className={inputClassName}
                     {...field}
                   />
                 </FormControl>
@@ -138,7 +138,6 @@ export function RegisterForm() {
                   <Input
                     type="email"
                     placeholder="example@email.com"
-                    className={inputClassName}
                     {...field}
                   />
                 </FormControl>
@@ -155,11 +154,7 @@ export function RegisterForm() {
               <FormItem className="space-y-2">
                 <FormLabel className="text-sm">パスワード</FormLabel>
                 <FormControl>
-                  <PasswordInput
-                    placeholder="8文字以上"
-                    className={inputClassName}
-                    {...field}
-                  />
+                  <PasswordInput placeholder="8文字以上" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -174,11 +169,7 @@ export function RegisterForm() {
               <FormItem className="space-y-2">
                 <FormLabel className="text-sm">パスワード（確認）</FormLabel>
                 <FormControl>
-                  <PasswordInput
-                    placeholder="パスワードを再入力"
-                    className={inputClassName}
-                    {...field}
-                  />
+                  <PasswordInput placeholder="パスワードを再入力" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -186,32 +177,43 @@ export function RegisterForm() {
           />
 
           {/* 利用規約同意チェックボックス */}
-          <div className="flex items-center gap-2 pt-1">
-            <Checkbox
-              id="terms"
-              checked={agreeTerms}
-              onCheckedChange={(c) => setAgreeTerms(c === true)}
-            />
-            <FormLabel
-              htmlFor="terms"
-              className="text-sm text-muted-foreground cursor-pointer font-normal"
-            >
-              <Link href="#" className="text-primary hover:underline">
-                利用規約
-              </Link>{" "}
-              と{" "}
-              <Link href="#" className="text-primary hover:underline">
-                プライバシーポリシー
-              </Link>{" "}
-              に同意します
-            </FormLabel>
-          </div>
+          <FormField
+            control={form.control}
+            name="agreeTerms"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <div className="flex items-center gap-2 pt-1">
+                  <FormControl>
+                    <Checkbox
+                      id="terms"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel
+                    htmlFor="terms"
+                    className="text-sm text-muted-foreground cursor-pointer font-normal"
+                  >
+                    <Link href="#" className="text-primary hover:underline">
+                      利用規約
+                    </Link>{" "}
+                    と{" "}
+                    <Link href="#" className="text-primary hover:underline">
+                      プライバシーポリシー
+                    </Link>{" "}
+                    に同意します
+                  </FormLabel>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {/* 送信ボタン */}
           <Button
             type="submit"
-            className="w-full gap-2 bg-gradient-to-r from-primary to-blue-600 text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-[0_0_20px_-4px] shadow-primary/50 pt-1"
-            disabled={isLoading || !agreeTerms}
+            className="w-full gap-2 bg-gradient-to-r from-primary to-blue-600 text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-[0_0_20px_-4px] shadow-primary/50 pt-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+            disabled={isLoading || !isAccepted}
           >
             {isLoading ? (
               <span>処理中...</span>
@@ -225,17 +227,19 @@ export function RegisterForm() {
         </form>
       </Form>
 
+      {/* 区切り線 */}
       <div className="flex items-center gap-4 my-5">
         <div className="flex-1 h-px bg-border" />
         <span className="text-xs text-muted-foreground">または</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
+      {/* フッターリンク（ログインへの導線） */}
       <div className="text-center text-sm">
         <p className="text-muted-foreground">
           既にアカウントをお持ちですか？{" "}
           <Link
-            href="/login"
+            href={ROUTES.LOGIN}
             className="text-primary hover:underline font-medium"
           >
             ログイン
