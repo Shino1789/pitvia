@@ -194,11 +194,17 @@ export function RegisterForm() {
                     htmlFor="terms"
                     className="text-sm text-muted-foreground cursor-pointer font-normal"
                   >
-                    <Link href="#" className="text-primary hover:underline">
+                    <Link
+                      href={ROUTES.TERMS}
+                      className="text-primary hover:underline"
+                    >
                       利用規約
                     </Link>{" "}
                     と{" "}
-                    <Link href="#" className="text-primary hover:underline">
+                    <Link
+                      href={ROUTES.PRIVACY}
+                      className="text-primary hover:underline"
+                    >
                       プライバシーポリシー
                     </Link>{" "}
                     に同意します

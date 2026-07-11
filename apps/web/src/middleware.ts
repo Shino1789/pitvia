@@ -7,15 +7,22 @@ import { ROUTES } from "@/shared/constants/routes";
  */
 const publicRoutes = [
   "/",
+  ROUTES.HEALTH,
   ROUTES.LOGIN,
   ROUTES.REGISTER,
-  ROUTES.HEALTH,
+  ROUTES.TERMS,
+  ROUTES.PRIVACY,
 ] as string[];
 
 /**
  * ログイン済みのユーザーにはアクセスさせないルート群
  */
-const authRoutes = [ROUTES.LOGIN, ROUTES.REGISTER] as string[];
+const authRoutes = [
+  ROUTES.LOGIN,
+  ROUTES.REGISTER,
+  ROUTES.TERMS,
+  ROUTES.PRIVACY,
+] as string[];
 
 /**
  * アプリケーション共通のルーティング・認証ガードミドルウェア

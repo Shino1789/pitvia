@@ -2,9 +2,11 @@
  * アプリケーションのルート定義
  */
 export const ROUTES = {
+  HEALTH: "/health",
   LOGIN: "/login",
   REGISTER: "/register",
-  HEALTH: "/health",
+  TERMS: "/terms",
+  PRIVACY: "/privacy",
   DASHBOARD: "/dashboard",
   VEHICLES: "/vehicles",
   SHOPS: "/shops",
