@@ -17,12 +17,7 @@ const publicRoutes = [
 /**
  * ログイン済みのユーザーにはアクセスさせないルート群
  */
-const authRoutes = [
-  ROUTES.LOGIN,
-  ROUTES.REGISTER,
-  ROUTES.TERMS,
-  ROUTES.PRIVACY,
-] as string[];
+const authRoutes = [ROUTES.LOGIN, ROUTES.REGISTER] as string[];
 
 /**
  * アプリケーション共通のルーティング・認証ガードミドルウェア
