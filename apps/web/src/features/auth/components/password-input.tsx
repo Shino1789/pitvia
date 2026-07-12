@@ -6,7 +6,7 @@ import { Input } from "@/shared/ui/input";
 import { cn } from "@/lib/utils";
 
 /**
- * Props の型定義
+ * Props型定義
  */
 type PasswordInputProps = React.ComponentProps<typeof Input> & {
   /**

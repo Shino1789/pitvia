@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/shared/constants/role";
 
 /**
- * コンポーネントのProps型定義
+ * Props型定義
  */
 type Props = {
   /** アクセスを許可するユーザーロールの配列 */
@@ -17,8 +17,7 @@ type Props = {
 /**
  * ログインユーザーの権限に基づいて表示を制御する認可ガードコンポーネント
  *
- * @param allow 許可するロールの配列
- * @param children 子コンポーネント
+ * @component
  * @returns 認可成功時は子コンポーネント、認可失敗時はForbidden画面
  */
 export function RoleGuard({ allow, children }: Props) {

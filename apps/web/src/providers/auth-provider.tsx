@@ -1,19 +1,19 @@
-// apps/web/src/providers/auth-provider.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // usePathname は不要になったため削除
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { setupResponseInterceptor } from "@/lib/api/interceptor";
 import { authSession } from "@/features/auth/services/auth-session";
 import { ROUTES } from "@/shared/constants/routes";
 import { AUTH_FAILURE_REASON } from "@/shared/constants/auth-failure";
 import { ERROR_CODE } from "@/shared/constants/error-code";
-import { useAuthStore } from "@/stores/auth-store"; // グローバルステートを参照するために追加
+import { useAuthStore } from "@/stores/auth-store";
 
 /**
  * 認証セッションの復元を管理するプロバイダーコンポーネント
  *
+ * @component
  * @param children 子コンポーネント
  * @returns 初期化完了時は子コンポーネント、初期化中はローディング画面のJSX
  */
