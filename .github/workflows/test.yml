@@ -6,13 +6,15 @@ name: test
 
 # ==================================================
 # 実行タイミング
+# ・GitHub画面からの手動実行時
 # ・PR作成時
-# ・main / development へのpush時
+# ・main / develop へのpush時
 # ==================================================
 on:
+  workflow_dispatch:
   pull_request:
   push:
-    branches: [main, development]
+    branches: [main, develop]
 
 jobs:
   # ==================================================
@@ -67,6 +69,11 @@ jobs:
           java-version: 21
           distribution: temurin
           cache: gradle
+
+      # Linux環境での Gradle Wrapper 実行権限の付与
+      - name: Grant execute permission for gradlew
+        working-directory: apps/api
+        run: chmod +x gradlew
 
       # テスト実行（Spring Boot + JUnit）
       - name: Run backend tests
