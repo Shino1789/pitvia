@@ -24,6 +24,9 @@ public final class ApiPaths {
     /** 認証系エンドポイントのプレフィックス */
     public static final String AUTH = V1 + "/auth";
 
+    /** ダッシュボードエンドポイントのプレフィックス */
+    public static final String DASHBOARD = V1 + "/dashboard";
+
     /** Swagger UI 画面パス */
     public static final String SWAGGER = "/swagger-ui";
 
