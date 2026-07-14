@@ -1,8 +1,5 @@
-/**
- * ルートレイアウト
- * 全ページ共通のHTML構造とメタ情報を定義する
- */
 import type { Metadata } from "next";
+import { Toaster } from "@/shared/ui/sonner";
 import "./globals.css";
 
 /**
@@ -15,6 +12,10 @@ export const metadata: Metadata = {
 
 /**
  * アプリケーション共通レイアウト
+ *
+ * @component
+ * @param props.children 子コンポーネント
+ * @returns アプリケーションのルート構造を表すJSX
  */
 export default function RootLayout({
   children,
@@ -23,7 +24,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {/* メインコンテンツ */}
+        {children}
+
+        {/*
+          アプリケーション共通のトースト表示コンポーネント
+          richColors: 成功(緑)/エラー(赤)などのカラーリングを有効化
+          position: 画面右上に出現
+          closeButton: ユーザーが手動で閉じられる×ボタンを付与
+         */}
+        <Toaster richColors position="top-right" closeButton />
+      </body>
     </html>
   );
 }

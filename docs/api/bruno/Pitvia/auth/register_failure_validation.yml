@@ -1,0 +1,38 @@
+info:
+  name: ユーザー登録：異常系（バリデーションエラー）
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/auth/register
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "role": "OWNER",
+        "userName": "",
+        "email": "abc",
+        "password": "123",
+        "confirmPassword": "123"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト：Bean Validation】
+  不正な形式の値を送信した際、Spring BootのBean Validationが正常に作動し、
+  400 Bad Request と共に `validationErrors` 配列に各フィールドのエラーが返ることを確認する。
+
+  【テスト項目】
+  1. userName: 空文字（@NotBlank違反）
+  2. email: 不正な形式（@Email違反）
+  3. password: 文字数不足かつ英数字混在ルール違反（@Size, @Pattern違反）

@@ -1,0 +1,32 @@
+info:
+  name: ユーザー登録：正常系（SHOP）
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/auth/register
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "role": "SHOP",
+        "userName": "テスト整備工場",
+        "email": "shop-test@example.com",
+        "password": "Password456",
+        "confirmPassword": "Password456"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  「SHOP」アカウントの作成

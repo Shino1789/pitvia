@@ -3,7 +3,7 @@
 // ==================================================
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.5.15'
+	id 'org.springframework.boot' version '3.5.16'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -36,8 +36,7 @@ dependencies {
 
 	// Spring Boot
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-  // 接続確認のため一時的にコメントアウト
-	// implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
@@ -55,8 +54,8 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
-  // Configuration Properties Metadata
-  annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	// Configuration Properties Metadata
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
 	// Development
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -64,6 +63,16 @@ dependencies {
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+  testRuntimeOnly 'com.h2database:h2'
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'
+
+	// Utility
+	implementation 'commons-codec:commons-codec:1.16.1'
+
 }
 
 // ==================================================

@@ -1,9 +1,8 @@
 Table users {
   Note: 'ユーザー情報テーブル'
 
-  id bigint [
+  id uuid [
     pk,
-    increment
   ]
   role varchar [
     not null,
@@ -16,12 +15,14 @@ Table users {
   ]
   email varchar [
     not null,
-    unique,
     note: 'ログイン用メールアドレス'
   ]
   password_hash varchar [
     not null,
     note: 'ハッシュ化済みパスワード'
+  ]
+  icon_url varchar [
+    note: 'ユーザーアイコン'
   ]
   email_verified_at timestamp [
     note: 'メール認証日時'
@@ -54,10 +55,15 @@ Table refresh_tokens {
     pk,
     increment
   ]
-  user_id bigint [
+  user_id uuid [
     not null,
     ref: > users.id,
     note: '認証済みユーザーID'
+  ]
+  jti uuid [
+    not null,
+    unique,
+    note: 'JWT ID'
   ]
   token_hash varchar [
     not null,
@@ -77,9 +83,6 @@ Table refresh_tokens {
   revoked_at timestamp [
     note: 'トークンの無効化日時'
   ]
-  last_used_at timestamp [
-    note: '最終使用日時'
-  ]
   created_at timestamp [
     not null,
     default: `now()`
@@ -91,20 +94,15 @@ Table refresh_tokens {
 
   indexes {
     (user_id)
-    (token_hash)
+    (expires_at)
   }
 }
 
 Table shops {
   Note: '整備ショップ情報テーブル'
 
-  id bigint [
+  id uuid [
     pk,
-    increment
-  ]
-  user_id bigint [
-    not null,
-    unique,
     ref: > users.id,
     note: 'ショップアカウントのユーザーID'
   ]
@@ -165,11 +163,10 @@ Table manufacturers {
 Table vehicles {
   Note: 'ユーザーが所有する車両情報テーブル'
 
-  id bigint [
+  id uuid [
     pk,
-    increment
   ]
-  user_id bigint [
+  user_id uuid [
     not null,
     ref: > users.id,
     note: 'ユーザーID'
@@ -245,7 +242,7 @@ Table vehicle_images {
     pk,
     increment
   ]
-  vehicle_id bigint [
+  vehicle_id uuid [
     not null,
     ref: > vehicles.id,
     note: '対象車両ID'
@@ -275,12 +272,12 @@ Table vehicle_shop_links {
     pk,
     increment
   ]
-  vehicle_id bigint [
+  vehicle_id uuid [
     not null,
     ref: > vehicles.id,
     note: '対象車両ID'
   ]
-  shop_id bigint [
+  shop_id uuid [
     not null,
     ref: > shops.id,
     note: '連携ショップID'
@@ -342,16 +339,15 @@ Table maintenance_types {
 Table maintenance_records {
   Note: '整備記録ヘッダー'
 
-  id bigint [
+  id uuid [
     pk,
-    increment
   ]
-  vehicle_id bigint [
+  vehicle_id uuid [
     not null,
     ref: > vehicles.id,
     note: '対象車両ID'
   ]
-  created_by_user_id bigint [
+  created_by_user_id uuid [
     not null,
     ref: > users.id,
     note: '記録を作成したユーザーID'
@@ -440,7 +436,7 @@ Table maintenance_work_items {
     pk,
     increment
   ]
-  maintenance_record_id bigint [
+  maintenance_record_id uuid [
     not null,
     ref: > maintenance_records.id,
     note: '整備記録ID'

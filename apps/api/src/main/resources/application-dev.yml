@@ -7,8 +7,10 @@ spring:
       ddl-auto: validate
     show-sql: false
 
-# CORS設定
 app:
-  cors:
-    allowed-origins:
-      - http://localhost:3000
+  # Security設定
+  security:
+    swagger-enabled: true
+    cookie:
+      secure: false
+      same-site: Lax

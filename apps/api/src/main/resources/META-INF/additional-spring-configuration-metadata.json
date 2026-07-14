@@ -1,0 +1,44 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret-key",
+      "type": "java.lang.String",
+      "description": "JWTの署名（改ざん検知）に使用する秘密鍵。"
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.time.Duration",
+      "description": "アクセストークンの有効期限（例: 1h, 30m）。"
+    },
+    {
+      "name": "jwt.refresh-expiration",
+      "type": "java.time.Duration",
+      "description": "リフレッシュトークンの有効期限（例: 7d, 24h）。"
+    },
+    {
+      "name": "app.cors.allowed-origins",
+      "type": "java.util.List<java.lang.String>",
+      "description": "CORSを許可するオリジンのリスト。"
+    },
+    {
+      "name": "app.security.swagger-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Swagger UIおよびAPIドキュメントを公開するかどうか (true/false)。"
+    },
+    {
+      "name": "app.security.cookie.secure",
+      "type": "java.lang.Boolean",
+      "description": "リフレッシュトークンCookieにSecure属性を付与するかどうか (true/false)。ローカル環境(HTTP)ではfalse、本番環境(HTTPS)ではtrueを推奨。"
+    },
+    {
+      "name": "app.security.cookie.same-site",
+      "type": "java.lang.String",
+      "description": "リフレッシュトークンCookieのSameSite属性値（Lax, None, Strict）。クロスドメインでCookieを送受信する場合はNone（かつSecure=true）が必要。"
+    },
+    {
+      "name": "app.scheduler.refresh-token-cron",
+      "type": "java.lang.String",
+      "description": "リフレッシュトークンの定期クリーンアップを実行するCron式（例: \"0 0 3 * * *\" で毎日午前3時実行）。"
+    }
+  ]
+}

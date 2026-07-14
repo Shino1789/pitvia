@@ -19,7 +19,22 @@ public enum ErrorCode {
     VALIDATION_ERROR("入力値に誤りがあります"),
 
     /**
-     * リソース未検出エラー
+     * JSONパースエラー
+     */
+    MALFORMED_JSON("JSON形式が不正です"),
+
+    /**
+     * 未認証エラー（401）
+     */
+    UNAUTHORIZED("認証が必要です"),
+
+    /**
+     * 権限不足エラー（403）
+     */
+    FORBIDDEN("この操作を実行する権限がありません"),
+
+    /**
+     * リソース未検出エラー（404）
      */
     RESOURCE_NOT_FOUND("リソースが見つかりません"),
 
@@ -29,6 +44,11 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR("予期しないエラーが発生しました"),
 
     /**
+     * 不正なロール指定
+     */
+    INVALID_ROLE("不正なロールが指定されました"),
+
+    /**
      * ユーザーが存在しない
      */
     USER_NOT_FOUND("ユーザーが存在しません"),
@@ -36,7 +56,22 @@ public enum ErrorCode {
     /**
      * ユーザーが既に存在する
      */
-    USER_ALREADY_EXISTS("ユーザーは既に存在します");
+    USER_ALREADY_EXISTS("ユーザーは既に存在します"),
+
+    /**
+     * 認証情報の不一致
+     */
+    INVALID_CREDENTIALS("メールアドレスまたはパスワードが正しくありません"),
+
+    /**
+     * リフレッシュトークンが存在しない
+     */
+    NO_REFRESH_TOKEN("ログインしてください"),
+
+    /**
+     * リフレッシュトークンが不正
+     */
+    INVALID_REFRESH_TOKEN("無効なリフレッシュトークンです");
 
     /**
      * クライアント向けデフォルトメッセージ

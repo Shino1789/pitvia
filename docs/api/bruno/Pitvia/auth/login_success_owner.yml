@@ -1,0 +1,32 @@
+info:
+  name: ログイン認証：正常系（OWNER）
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/auth/login
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "email": "owner-test@example.com",
+        "password": "Password123"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  登録済みのメールアドレスとパスワードでログイン要求を行い、以下を確認する。
+  1. ステータスコードが 200 OK であること。
+  2. レンスポンスBodyに AccessToken が含まれること。
+  3. レスポンスHeaderの `Set-Cookie` に `refreshToken` が HttpOnly 属性付きで設定されていること。

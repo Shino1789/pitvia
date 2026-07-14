@@ -1,0 +1,21 @@
+info:
+  name: ログアウト：正常系（Cookieなし）
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/auth/logout
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【エッジケース確認テスト】
+  Cookie（refresh_token）がブラウザに存在しない、またはすでに消えている状態でログアウトを要求し、OWASP推奨の安全な挙動（冪等性と情報隠蔽）を確認する。
+  1. クッキーがなくてもエラーにならず、ステータスコードが 200 OK であること。
+  2. レスポンスHeaderに一貫してクッキー削除用の `Set-Cookie` (Max-Age=0) が載って返却されること。

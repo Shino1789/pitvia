@@ -22,6 +22,13 @@ spring:
       # 静的リソースの自動マッピングを無効化
       add-mappings: false
 
+  # メッセージソース設定
+  messages:
+    encoding: UTF-8
+    basename:
+      - messages
+      - ValidationMessages
+
   jackson:
     # デフォルトタイムゾーン
     time-zone: UTC
@@ -30,3 +37,26 @@ server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
+
+app:
+  # CORS設定
+  cors:
+    allowed-origins:
+      - ${FRONTEND_URL}
+  # Security設定
+  security:
+    swagger-enabled: false
+    cookie:
+      secure: true
+      same-site: None
+  # スケジューラ設定
+  scheduler:
+    refresh-token-cron: "0 0 3 * * *"
+
+jwt:
+  # 署名に使用する秘密鍵
+  secret-key: ${JWT_SECRET_KEY}
+  # アクセストークンの有効期限（デフォルトは15分）
+  expiration: ${JWT_EXPIRES:15m}
+  # リフレッシュトークンの有効期限（デフォルトは7日間）
+  refresh-expiration: ${JWT_REFRESH_EXPIRES:7d}

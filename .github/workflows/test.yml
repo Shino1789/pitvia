@@ -1,0 +1,81 @@
+# ==================================================
+# CI(テスト自動実行)
+# ==================================================
+
+name: test
+
+# ==================================================
+# 実行タイミング
+# ・GitHub画面からの手動実行時
+# ・PR作成時
+# ・main / develop へのpush時
+# ==================================================
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  # ==================================================
+  # フロントエンドテスト (Next.js + Vitest)
+  # ==================================================
+  frontend:
+    # 実行環境（GitHub提供 of Ubuntu）
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのソースコードを取得
+      - uses: actions/checkout@v4
+
+      # Node.js環境のセットアップ
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # npm依存パッケージをインストール
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      # 構文・コードスタイルチェック (ESLint)
+      - name: Run ESLint
+        working-directory: apps/web
+        run: npm run lint
+
+      # テスト実行（Next.js + Vitest）
+      - name: Run frontend tests
+        working-directory: apps/web
+        run: npm test
+
+  # ==================================================
+  # バックエンドテスト (Spring Boot + JUnit)
+  # ==================================================
+  backend:
+    # 実行環境（GitHub提供 of Ubuntu）
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのソースコードを取得
+      - uses: actions/checkout@v4
+
+      # Java環境のセットアップ（Spring Boot用）
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      # Linux環境での Gradle Wrapper 実行権限の付与
+      - name: Grant execute permission for gradlew
+        working-directory: apps/api
+        run: chmod +x gradlew
+
+      # テスト実行（Spring Boot + JUnit）
+      - name: Run backend tests
+        working-directory: apps/api
+        run: ./gradlew test

@@ -37,4 +37,14 @@ public final class RequestContextKeys {
      */
     public static final String MDC_PATH = "path";
 
+    /**
+     * ユーザーIDをMDCへ格納する際のキー
+     */
+    public static final String MDC_USER_ID = "userId";
+
+    /**
+     * ユーザー権限をMDCへ格納する際のキー
+     */
+    public static final String MDC_ROLE = "role";
+
 }

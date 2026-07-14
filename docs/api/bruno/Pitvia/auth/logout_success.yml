@@ -1,0 +1,24 @@
+info:
+  name: ログアウト：正常系
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/auth/logout
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+
+  ログイン済み状態でログアウトを実行し、以下を確認する。
+
+  1. 200 OK が返ること。
+  2. Set-Cookie に Max-Age=0 が設定されること。
+  3. DBの refresh_tokens.revoked_at が更新されること。
