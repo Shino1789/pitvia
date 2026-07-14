@@ -318,6 +318,11 @@ Table maintenance_types {
     pk,
     increment
   ]
+  code varchar [
+    not null,
+    unique,
+    note: 'プログラム連携用一意ラベルコード（PERIODIC_MAINTENANCE 等）'
+  ]
   name varchar [
     not null,
     unique,

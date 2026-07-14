@@ -1,6 +1,6 @@
 package com.pitvia.api.dashboard.dto.response;
 
-import com.pitvia.api.dashboard.constant.DashboardChartCategory;
+import com.pitvia.api.maintenance.constant.MaintenanceType;
 
 /**
  * グラフの項目別内訳データ
@@ -11,9 +11,9 @@ import com.pitvia.api.dashboard.constant.DashboardChartCategory;
 public record ChartValue(
 
         /**
-         * ラベルコード
+         * 整備種別
          */
-        DashboardChartCategory category,
+        MaintenanceType category,
 
         /**
          * 集計値
