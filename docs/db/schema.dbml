@@ -2,7 +2,7 @@ Table users {
   Note: 'ユーザー情報テーブル'
 
   id uuid [
-    pk,
+    pk
   ]
   role varchar [
     not null,
@@ -49,7 +49,7 @@ Table users {
 }
 
 Table refresh_tokens {
-  Note: 'リフレッシュトークン管理テーブル'
+    Note: 'リフレッシュトークン管理テーブル'
 
   id bigint [
     pk,
@@ -99,7 +99,7 @@ Table refresh_tokens {
 }
 
 Table shops {
-  Note: '整備ショップ情報テーブル'
+    Note: '整備ショップ情報テーブル'
 
   id uuid [
     pk,
@@ -139,11 +139,16 @@ Table shops {
 }
 
 Table manufacturers {
-  Note: 'メーカーマスタ'
+    Note: 'メーカーマスタ'
 
   id bigint [
     pk,
     increment
+  ]
+  code varchar [
+    not null,
+    unique,
+    note: 'メーカーコード（TOYOTA 等）'
   ]
   name varchar [
     not null,
@@ -164,7 +169,7 @@ Table vehicles {
   Note: 'ユーザーが所有する車両情報テーブル'
 
   id uuid [
-    pk,
+    pk
   ]
   user_id uuid [
     not null,
@@ -197,6 +202,9 @@ Table vehicles {
   ]
   license_plate varchar [
     note: 'ナンバープレート'
+  ]
+  image_url varchar [
+    note: '車両アイコン画像URL'
   ]
   current_mileage int [
     not null,
@@ -231,36 +239,7 @@ Table vehicles {
 
   indexes {
     (user_id)
-  }
-
-}
-
-Table vehicle_images {
-  Note: 'ユーザーが所有する車両のアイコン画像管理テーブル'
-
-  id bigint [
-    pk,
-    increment
-  ]
-  vehicle_id uuid [
-    not null,
-    ref: > vehicles.id,
-    note: '対象車両ID'
-  ]
-  image_path varchar [
-    not null,
-    note: '画像パス'
-  ]
-  sort_order int [
-    note: '表示順'
-  ]
-  created_at timestamp [
-    not null,
-    default: `now()`
-  ]
-
-  indexes {
-    (vehicle_id)
+    (deleted_at)
   }
 
 }
@@ -345,7 +324,7 @@ Table maintenance_records {
   Note: '整備記録ヘッダー'
 
   id uuid [
-    pk,
+    pk
   ]
   vehicle_id uuid [
     not null,
@@ -416,6 +395,11 @@ Table maintenance_categories {
     pk,
     increment
   ]
+  code varchar [
+    not null,
+    unique,
+    note: '整備カテゴリコード（ENGINE 等）'
+  ]
   name varchar [
     not null,
     unique,
@@ -435,7 +419,7 @@ Table maintenance_categories {
 }
 
 Table maintenance_work_items {
-  Note: '整備作業明細'
+    Note: '整備作業明細'
 
   id bigint [
     pk,
@@ -461,15 +445,10 @@ Table maintenance_work_items {
   ]
   labor_cost decimal(10,2) [
     not null,
-    default: 0 ,
+    default: 0.00,
     check: `labor_cost >= 0`,
     note: '作業工賃'
   ]
-  /*
-  memo text [
-    note: '作業に関するメモ'
-  ]
-  */
   sort_order int [
     not null,
     default: 0,
