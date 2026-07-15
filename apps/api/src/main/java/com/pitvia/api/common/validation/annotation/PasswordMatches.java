@@ -1,12 +1,15 @@
-package com.pitvia.api.common.validation;
+package com.pitvia.api.common.validation.annotation;
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import com.pitvia.api.common.validation.validator.PasswordMatchesValidator;
+
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 
 /**
  * パスワードと確認用パスワードの一致を検証するカスタムアノテーション

@@ -2,7 +2,8 @@ package com.pitvia.api.dashboard.dto.response;
 
 import java.util.List;
 
-import com.pitvia.api.dashboard.constant.DashboardPeriodType;
+import com.pitvia.api.common.constant.PeriodType;
+import com.pitvia.api.dashboard.constant.DashboardChartType;
 
 /**
  * ダッシュボードグラフレスポンス
@@ -13,14 +14,14 @@ import com.pitvia.api.dashboard.constant.DashboardPeriodType;
 public record DashboardChartResponse(
 
         /**
-         * グラフタイトル
+         * グラフタイトル種別
          */
-        String title,
+        DashboardChartType chartType,
 
         /**
          * 集計単位
          */
-        DashboardPeriodType periodType,
+        PeriodType periodType,
 
         /**
          * 集計開始期間

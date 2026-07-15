@@ -1,7 +1,5 @@
 package com.pitvia.api.dashboard.dto.response;
 
-import java.util.List;
-
 /**
  * オーナーロール用ダッシュボードレスポンス
  *
@@ -28,7 +26,7 @@ public record OwnerDashboardResponse(
         /**
          * 整備費用推移グラフ
          */
-        List<ChartPoint> maintenanceCostTrend
+        DashboardChartResponse maintenanceCostChart
 
 // /**
 // * 最近の整備履歴

@@ -1,6 +1,10 @@
 package com.pitvia.api.dashboard.dto.param;
 
-import com.pitvia.api.dashboard.constant.DashboardPeriodType;
+import com.pitvia.api.common.constant.PeriodType;
+import com.pitvia.api.common.validation.annotation.PeriodFormat;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * グラフデータ取得リクエストパラメータ
@@ -8,12 +12,13 @@ import com.pitvia.api.dashboard.constant.DashboardPeriodType;
  * @author pitvia
  * @version 1.0
  */
+@PeriodFormat
 public record DashboardChartParam(
 
         /**
          * 集計単位（月か年）
          */
-        DashboardPeriodType period,
+        @NotNull PeriodType period,
 
         /**
          * 集計の終了基準期間
@@ -21,9 +26,9 @@ public record DashboardChartParam(
         String endPeriod,
 
         /**
-         * データ取得件数
+         * endPeriodを基準に、過去方向へ取得する期間数
          */
-        Integer size) {
+        @Min(1) Integer size) {
 
     /**
      * デフォルトのデータ取得件数

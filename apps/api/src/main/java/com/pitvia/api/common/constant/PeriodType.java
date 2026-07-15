@@ -1,4 +1,4 @@
-package com.pitvia.api.dashboard.constant;
+package com.pitvia.api.common.constant;
 
 /**
  * ダッシュボードグラフの集計単位
@@ -6,7 +6,7 @@ package com.pitvia.api.dashboard.constant;
  * @author pitvia
  * @version 1.0
  */
-public enum DashboardPeriodType {
+public enum PeriodType {
 
     /** 月次単位 */
     MONTH,

@@ -16,6 +16,7 @@ import com.pitvia.api.dashboard.dto.response.DashboardResponse;
 import com.pitvia.api.dashboard.service.DashboardService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -59,7 +60,7 @@ public class DashboardController {
     @GetMapping("/chart")
     public ApiResponse<DashboardChartResponse> getChart(
             @AuthenticationPrincipal JwtPrincipal principal,
-            @ModelAttribute DashboardChartParam param,
+            @Valid @ModelAttribute DashboardChartParam param,
             HttpServletRequest httpRequest) {
 
         DashboardChartResponse response = dashboardService.getChart(principal, param);

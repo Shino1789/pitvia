@@ -1,7 +1,7 @@
 package com.pitvia.api.auth.dto.request;
 
 import com.pitvia.api.auth.constant.UserRole;
-import com.pitvia.api.common.validation.PasswordMatches;
+import com.pitvia.api.common.validation.annotation.PasswordMatches;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
