@@ -1,4 +1,4 @@
-package com.pitvia.api.maintenance.constant;
+package com.pitvia.api.maintenance.enums;
 
 import java.util.Arrays;
 import java.util.Map;

@@ -1,6 +1,6 @@
 package com.pitvia.api.dashboard.dto.response;
 
-import com.pitvia.api.maintenance.constant.MaintenanceType;
+import com.pitvia.api.maintenance.enums.MaintenanceType;
 
 /**
  * グラフの項目別内訳データ

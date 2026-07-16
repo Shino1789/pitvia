@@ -181,6 +181,7 @@ CREATE TABLE vehicle_shop_links (
     status VARCHAR(50) NOT NULL,
     invite_code VARCHAR(100),
     approved_at TIMESTAMPTZ,
+    version INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ,
@@ -209,6 +210,11 @@ CREATE UNIQUE INDEX uk_vehicle_shop_links_pair_active
 ON vehicle_shop_links(vehicle_id, shop_id)
 WHERE deleted_at IS NULL;
 
+-- ショップIDとステータスによる車両連携情報の検索・集計を高速化する部分インデックス
+CREATE INDEX idx_vehicle_shop_links_shop_status
+ON vehicle_shop_links(shop_id, status)
+WHERE deleted_at IS NULL;
+
 -- ==========================================
 -- MAINTENANCE RECORDS (整備記録ヘッダーテーブル)
 -- ==========================================
@@ -216,6 +222,7 @@ CREATE TABLE maintenance_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     vehicle_id UUID NOT NULL,
     created_by_user_id UUID NOT NULL,
+    shop_id UUID,
     title VARCHAR(255) NOT NULL,
     maintenance_type_id BIGINT NOT NULL,
     work_date_from DATE NOT NULL,
@@ -236,6 +243,10 @@ CREATE TABLE maintenance_records (
         FOREIGN KEY (created_by_user_id)
         REFERENCES users(id)
         ON DELETE RESTRICT,
+    CONSTRAINT fk_maintenance_records_shop
+        FOREIGN KEY (shop_id)
+        REFERENCES shops(id)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_maintenance_records_type
         FOREIGN KEY (maintenance_type_id)
         REFERENCES maintenance_types(id)
@@ -249,6 +260,11 @@ CREATE TABLE maintenance_records (
 -- 削除されていない整備記録だけを対象にし、「日付が新しい順（DESC）」で並び替えておく部分インデックス
 CREATE INDEX idx_maintenance_records_vehicle_date
 ON maintenance_records(vehicle_id, work_date_from DESC)
+WHERE deleted_at IS NULL;
+
+-- 削除されていない整備記録だけを対象にし、ショップごとの売上集計や期間絞り込みを高速化する複合部分インデックス
+CREATE INDEX idx_maintenance_records_shop_date
+ON maintenance_records(shop_id, work_date_from)
 WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_maintenance_records_creator ON maintenance_records(created_by_user_id);
