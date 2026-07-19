@@ -9,10 +9,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pitvia.api.auth.constant.UserRole;
+import com.pitvia.api.common.constant.PageConstants;
 import com.pitvia.api.common.constant.PeriodType;
 import com.pitvia.api.dashboard.constant.DashboardChartType;
 import com.pitvia.api.dashboard.dto.param.DashboardChartParam;
@@ -21,6 +23,7 @@ import com.pitvia.api.dashboard.dto.response.ChartValue;
 import com.pitvia.api.dashboard.dto.response.DashboardChartResponse;
 import com.pitvia.api.dashboard.dto.response.DashboardResponse;
 import com.pitvia.api.dashboard.dto.response.OwnerDashboardResponse;
+import com.pitvia.api.dashboard.dto.response.RecentMaintenance;
 import com.pitvia.api.dashboard.model.ChartAggregationResult;
 import com.pitvia.api.dashboard.repository.DashboardRepository;
 import com.pitvia.api.maintenance.enums.MaintenanceType;
@@ -66,6 +69,9 @@ public class OwnerDashboardQuery implements DashboardQuery {
         long maintenanceCount = maintenanceRecordRepository.countByVehicle_User_Id(userId);
         long linkedShopCount = vehicleShopLinkRepository.countLinkedShops(userId);
 
+        // 最近の整備履歴を取得
+        List<RecentMaintenance> recentMaintenances = createRecentMaintenances(userId);
+
         // 初期表示用チャートを生成
         DashboardChartResponse chartResponse = createChart(userId, param);
 
@@ -74,13 +80,37 @@ public class OwnerDashboardQuery implements DashboardQuery {
                 vehicleCount,
                 maintenanceCount,
                 linkedShopCount,
-                chartResponse);
+                chartResponse,
+                recentMaintenances);
     }
 
     @Override
     public DashboardChartResponse getChart(UUID userId, DashboardChartParam param) {
         // チャート生成メソッドを呼び出し結果を返却
         return createChart(userId, param);
+    }
+
+    /**
+     * オーナーユーザー向けの最近の整備履歴リストを取得
+     *
+     * @param userId 対象ユーザーID
+     * @return 変換済みの最近の整備履歴リスト
+     */
+    private List<RecentMaintenance> createRecentMaintenances(UUID userId) {
+        return maintenanceRecordRepository
+                .findRecentOwnerMaintenances(userId, PageRequest.of(0, PageConstants.DASHBOARD_RECENT_MAINTENANCE_SIZE))
+                .stream()
+                .map(result -> new RecentMaintenance(
+                        result.getId(),
+                        result.getVehicleName(),
+                        result.getOwnerName(),
+                        MaintenanceType.fromCode(result.getMaintenanceTypeCode()),
+                        result.getTitle(),
+                        result.getWorkDateFrom(),
+                        result.getWorkDateTo(),
+                        result.getTotalCost().longValue(),
+                        result.getShopName()))
+                .toList();
     }
 
     /**

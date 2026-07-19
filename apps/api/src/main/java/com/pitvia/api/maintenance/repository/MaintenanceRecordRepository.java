@@ -112,10 +112,12 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
     @Query("""
             SELECT
                 mr.id AS id,
-                mr.title AS title,
-                mt.name AS maintenanceTypeName,
-                mr.workDateFrom AS workDateFrom,
                 v.name AS vehicleName,
+                owner.userName AS ownerName,
+                mt.code AS maintenanceTypeCode,
+                mr.title AS title,
+                mr.workDateFrom AS workDateFrom,
+                mr.workDateTo AS workDateTo,
                 u.userName AS shopName,
                 COALESCE(
                     (
@@ -133,6 +135,7 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
                     ), 0) AS totalCost
             FROM MaintenanceRecord mr
             JOIN mr.vehicle v
+            JOIN v.user owner
             JOIN mr.maintenanceType mt
             LEFT JOIN mr.shop s
             LEFT JOIN s.user u
@@ -152,10 +155,12 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
     @Query("""
             SELECT
                 mr.id AS id,
-                mr.title AS title,
-                mt.name AS maintenanceTypeName,
-                mr.workDateFrom AS workDateFrom,
                 v.name AS vehicleName,
+                owner.userName AS ownerName,
+                mt.code AS maintenanceTypeCode,
+                mr.title AS title,
+                mr.workDateFrom AS workDateFrom,
+                mr.workDateTo AS workDateTo,
                 u.userName AS shopName,
                 COALESCE(
                     (
@@ -173,6 +178,7 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
                     ), 0) AS totalCost
             FROM MaintenanceRecord mr
             JOIN mr.vehicle v
+            JOIN v.user owner
             JOIN mr.maintenanceType mt
             JOIN mr.shop s
             JOIN s.user u

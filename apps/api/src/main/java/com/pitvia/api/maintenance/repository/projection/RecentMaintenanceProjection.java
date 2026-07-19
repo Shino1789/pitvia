@@ -18,14 +18,24 @@ public interface RecentMaintenanceProjection {
     UUID getId();
 
     /**
+     * 車両表示名（愛称など）を取得する
+     */
+    String getVehicleName();
+
+    /**
+     * 車両保有者のユーザー名を取得する
+     */
+    String getOwnerName();
+
+    /**
+     * 整備種別コードを取得する
+     */
+    String getMaintenanceTypeCode();
+
+    /**
      * 整備タイトルを取得する
      */
     String getTitle();
-
-    /**
-     * 整備種別名（例: '車検', '定期メンテナンス'）を取得する
-     */
-    String getMaintenanceTypeName();
 
     /**
      * 整備開始日を取得する
@@ -33,17 +43,17 @@ public interface RecentMaintenanceProjection {
     LocalDate getWorkDateFrom();
 
     /**
-     * 車両表示名（愛称など）を取得する
+     * 整備終了日を取得する（単日作業の場合は null）
      */
-    String getVehicleName();
-
-    /**
-     * 整備を実施したショップ名（DIYの場合は null）
-     */
-    String getShopName();
+    LocalDate getWorkDateTo();
 
     /**
      * 整備にかかった総費用（工賃＋部品代）を取得する
      */
     BigDecimal getTotalCost();
+
+    /**
+     * 整備を実施したショップ名（DIYの場合は null）
+     */
+    String getShopName();
 }

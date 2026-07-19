@@ -21,7 +21,7 @@ public record ChartPoint(
         long totalValue,
 
         /**
-         * 期間内の項目別集計値
+         * 期間内のカテゴリ別集計値（内訳）
          */
-        List<ChartValue> values) {
+        List<ChartValue> breakdown) {
 }
