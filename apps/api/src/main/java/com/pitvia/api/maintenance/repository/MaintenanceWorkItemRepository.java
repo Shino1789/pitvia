@@ -30,16 +30,26 @@ public interface MaintenanceWorkItemRepository extends JpaRepository<Maintenance
             SELECT
                 COALESCE(
                     SUM(
-                        wi.laborCost +
-                        COALESCE(
-                            (
-                                SELECT SUM(p.unitPrice * p.quantity)
-                                FROM MaintenancePart p
-                                WHERE p.maintenanceWorkItem = wi
-                            ), 0)
+                        COALESCE(wiSum.totalLabor, 0) + COALESCE(partSum.totalParts, 0)
                     ), 0) AS totalSales
-            FROM MaintenanceWorkItem wi
-                JOIN wi.maintenanceRecord mr
+            FROM MaintenanceRecord mr
+            LEFT JOIN (
+                SELECT
+                    wi.maintenanceRecord.id AS maintenanceRecordId,
+                    SUM(wi.laborCost) AS totalLabor
+                FROM MaintenanceWorkItem wi
+                GROUP BY wi.maintenanceRecord.id
+            ) wiSum
+                ON wiSum.maintenanceRecordId = mr.id
+            LEFT JOIN (
+                SELECT
+                    wi.maintenanceRecord.id AS maintenanceRecordId,
+                    SUM(p.unitPrice * p.quantity) AS totalParts
+                FROM MaintenancePart p
+                JOIN p.maintenanceWorkItem wi
+                GROUP BY wi.maintenanceRecord.id
+            ) partSum
+                ON partSum.maintenanceRecordId = mr.id
             WHERE mr.shop.id = :shopId
               AND mr.workDateFrom BETWEEN :startDate AND :endDate
               AND mr.isDraft = false

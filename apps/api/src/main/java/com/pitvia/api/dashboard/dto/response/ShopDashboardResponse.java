@@ -1,5 +1,7 @@
 package com.pitvia.api.dashboard.dto.response;
 
+import java.util.List;
+
 /**
  * ショップロール用ダッシュボード情報
  *
@@ -26,11 +28,10 @@ public record ShopDashboardResponse(
         /**
          * 整備件数推移グラフ
          */
-        DashboardChartResponse maintenanceCountChart
+        DashboardChartResponse maintenanceCountChart,
 
-// /**
-// * 最近の整備履歴
-// */
-// List<RecentMaintenance> recentMaintenances
-) implements DashboardResponse {
+        /**
+         * 最近の整備履歴
+         */
+        List<RecentMaintenance> recentMaintenances) implements DashboardResponse {
 }
