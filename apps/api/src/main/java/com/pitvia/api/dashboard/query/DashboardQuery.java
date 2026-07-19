@@ -23,15 +23,16 @@ public interface DashboardQuery {
      * 指定したユーザーのダッシュボード情報を取得する
      *
      * @param userId 対象ユーザーのID
-     * @return ダッシュボード情報
+     * @param param  グラフデータの取得条件
+     * @return ダッシュボードチャート情報
      */
-    DashboardResponse execute(UUID userId);
+    DashboardResponse execute(UUID userId, DashboardChartParam param);
 
     /**
      * 指定した期間のダッシュボードチャート情報を取得する
      *
      * @param userId 対象ユーザーのID
-     * @param period 取得条件
+     * @param param  グラフデータの取得条件
      * @return ダッシュボードチャート情報
      */
     DashboardChartResponse getChart(UUID userId, DashboardChartParam param);

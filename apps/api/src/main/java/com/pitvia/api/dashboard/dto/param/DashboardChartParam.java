@@ -1,5 +1,8 @@
 package com.pitvia.api.dashboard.dto.param;
 
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+
 import com.pitvia.api.common.constant.PeriodType;
 import com.pitvia.api.common.validation.annotation.PeriodFormat;
 
@@ -21,7 +24,7 @@ public record DashboardChartParam(
         @NotNull PeriodType period,
 
         /**
-         * 集計の終了基準期間
+         * 集計の終了基準期間 (例: "2026-06")
          */
         String endPeriod,
 
@@ -36,8 +39,29 @@ public record DashboardChartParam(
     private static final int DEFAULT_SIZE = 6;
 
     /**
+     * 初期表示用（デフォルト：月次・当月基準・直近6件分）のパラメータオブジェクトを生成する静的ファクトリメソッド
+     *
+     * @return 初期表示用の {@link DashboardChartParam}
+     */
+    public static DashboardChartParam defaultMonth() {
+        return new DashboardChartParam(
+                PeriodType.MONTH,
+                YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                DEFAULT_SIZE);
+    }
+
+    /**
+     * 集計の終了基準期間を取得
+     *
+     * @return 終了基準期間文字列
+     */
+    public String getEndPeriodOrDefault() {
+        return hasEndPeriod() ? endPeriod : defaultMonth().endPeriod();
+    }
+
+    /**
      * データ取得件数を返す
-     * 引数の {@code size} が指定されていない場合は、デフォルト値を返す
+     * フィールドの {@code size} が指定されていない場合は、デフォルト値を返す
      *
      * @return データ取得件数
      */
