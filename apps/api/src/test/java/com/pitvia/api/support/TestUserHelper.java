@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.jayway.jsonpath.JsonPath;
 import com.pitvia.api.auth.constant.CookieConstants;
 import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.common.constant.ApiPaths;
@@ -32,11 +33,12 @@ public class TestUserHelper {
     /**
      * ログイン結果（テスト用セッション情報）
      *
-     * @param email  ログインしたユーザーのメールアドレス
-     * @param cookie レスポンスから取得したリフレッシュトークンCookie
-     * @param role   ユーザーロール
+     * @param email       ログインしたユーザーのメールアドレス
+     * @param cookie      レスポンスから取得したリフレッシュトークンCookie
+     * @param accessToken レスポンスから取得したアクセストークン（JWT）
+     * @param role        ユーザーロール
      */
-    public record LoginSession(String email, Cookie cookie, UserRole role) {
+    public record LoginSession(String email, Cookie cookie, String accessToken, UserRole role) {
     }
 
     /**
@@ -87,8 +89,11 @@ public class TestUserHelper {
                 .andExpect(status().isOk())
                 .andReturn();
 
+        String responseBody = result.getResponse().getContentAsString();
+        String accessToken = JsonPath.read(responseBody, "$.data.accessToken");
         Cookie cookie = result.getResponse().getCookie(CookieConstants.REFRESH_TOKEN);
-        return new LoginSession(email, cookie, role);
+
+        return new LoginSession(email, cookie, accessToken, role);
     }
 
     /**
