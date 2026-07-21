@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.pitvia.api.vehicle.entity.VehicleShopLink;
-import com.pitvia.api.vehicle.repository.projection.ManagedVehicleSummaryProjection;
 
 /**
  * 車両ショップ連携情報テーブル (vehicle_shop_links) に対するデータアクセスを管理するリポジトリ
@@ -46,20 +45,18 @@ public interface VehicleShopLinkRepository extends JpaRepository<VehicleShopLink
     long countLinkedOwners(@Param("shopUserId") UUID shopUserId);
 
     /**
-     * SHOPが管理している車両のサマリー（総数・マイカー数・顧客車両数）を取得する
+     * ショップと連携中（APPROVED）の顧客所有車両数を取得する
      *
      * @param shopUserId ショップユーザーID
-     * @return 管理車両サマリー
+     * @return 連携顧客車両数
      */
     @Query("""
-            SELECT
-                COUNT(DISTINCT v.id) AS totalCount,
-                COUNT(DISTINCT CASE WHEN v.user.id = :shopUserId THEN v.id END) AS ownCount,
-                COUNT(DISTINCT CASE WHEN v.user.id <> :shopUserId THEN v.id END) AS customerCount
+            SELECT COUNT(DISTINCT vsl.vehicle.id)
             FROM VehicleShopLink vsl
-            JOIN vsl.vehicle v
             WHERE vsl.shop.id = :shopUserId
               AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND vsl.vehicle.user.id <> :shopUserId
             """)
-    ManagedVehicleSummaryProjection findManagedVehicleSummary(@Param("shopUserId") UUID shopUserId);
+    long countCustomerVehicles(@Param("shopUserId") UUID shopUserId);
+
 }

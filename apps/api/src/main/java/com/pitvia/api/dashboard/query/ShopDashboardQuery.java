@@ -23,8 +23,8 @@ import com.pitvia.api.maintenance.enums.MaintenanceType;
 import com.pitvia.api.maintenance.repository.MaintenanceRecordRepository;
 import com.pitvia.api.maintenance.repository.MaintenanceWorkItemRepository;
 import com.pitvia.api.maintenance.repository.projection.MonthlySalesProjection;
+import com.pitvia.api.vehicle.repository.VehicleRepository;
 import com.pitvia.api.vehicle.repository.VehicleShopLinkRepository;
-import com.pitvia.api.vehicle.repository.projection.ManagedVehicleSummaryProjection;
 
 /**
  * ショップ権限（SHOP）専用のダッシュボード表示データおよびチャート情報を構築する戦略クラス
@@ -32,6 +32,9 @@ import com.pitvia.api.vehicle.repository.projection.ManagedVehicleSummaryProject
 @Component
 @Transactional(readOnly = true)
 public class ShopDashboardQuery extends AbstractDashboardChartBuilder {
+
+    /** 車両情報リポジトリ */
+    private final VehicleRepository vehicleRepository;
 
     /** 車両・ショップ連携リポジトリ */
     private final VehicleShopLinkRepository vehicleShopLinkRepository;
@@ -45,10 +48,12 @@ public class ShopDashboardQuery extends AbstractDashboardChartBuilder {
     public ShopDashboardQuery(
             DashboardRepository dashboardRepository,
             MaintenanceRecordRepository maintenanceRecordRepository,
+            VehicleRepository vehicleRepository,
             VehicleShopLinkRepository vehicleShopLinkRepository,
             MaintenanceWorkItemRepository maintenanceWorkItemRepository) {
 
         super(dashboardRepository, maintenanceRecordRepository);
+        this.vehicleRepository = vehicleRepository;
         this.vehicleShopLinkRepository = vehicleShopLinkRepository;
         this.maintenanceWorkItemRepository = maintenanceWorkItemRepository;
 
@@ -77,12 +82,17 @@ public class ShopDashboardQuery extends AbstractDashboardChartBuilder {
     @Override
     public DashboardResponse execute(UUID userId, DashboardChartParam param) {
 
-        // 管理車両のサマリーを取得してDTOにマッピング
-        ManagedVehicleSummaryProjection summary = vehicleShopLinkRepository.findManagedVehicleSummary(userId);
+        // 自社所有の車両数を取得
+        long ownCount = vehicleRepository.countByUser_Id(userId);
+
+        // 連携中顧客の車両数を取得
+        long customerCount = vehicleShopLinkRepository.countCustomerVehicles(userId);
+
+        // 管理車両のサマリー（総数・マイカー数・顧客車両数）を構築
         ManagedVehicle managedVehicle = new ManagedVehicle(
-                summary != null ? summary.getTotalCount() : 0L,
-                summary != null ? summary.getOwnCount() : 0L,
-                summary != null ? summary.getCustomerCount() : 0L);
+                ownCount + customerCount,
+                ownCount,
+                customerCount);
 
         // 当月のシステム日付から店舗の総売上を集計
         YearMonth currentMonth = YearMonth.now();
