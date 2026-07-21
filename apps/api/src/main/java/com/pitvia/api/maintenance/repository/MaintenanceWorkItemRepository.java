@@ -53,6 +53,7 @@ public interface MaintenanceWorkItemRepository extends JpaRepository<Maintenance
             WHERE mr.shop.id = :shopId
               AND mr.workDateFrom BETWEEN :startDate AND :endDate
               AND mr.isDraft = false
+              AND mr.vehicle.user.id <> :shopId
             """)
     MonthlySalesProjection calculateSales(
             @Param("shopId") UUID shopId,

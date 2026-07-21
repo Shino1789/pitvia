@@ -166,6 +166,18 @@ BEGIN
     VALUES (v_item_id, 'NEW', 'ガラスコーティング剤', 1.0, 3500.00, '2026-07-05 16:00:00+09', '2026-07-05 16:00:00+09');
 
 
+    -- [10.5] 2026-07: ショップ売上・顧客車両施工確認用 (工賃:30,000円 + 部品:10,000円 = 売上40,000円)
+    v_rec_id := gen_random_uuid();
+    INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
+    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, '顧客車両 7月定期点検整備', 3, '2026-07-15', 84500, FALSE, '2026-07-15 10:00:00+09', '2026-07-15 10:00:00+09');
+
+    INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
+    VALUES (v_rec_id, 1, 'エンジン周り点検・プラグ清掃', 'ショップテスト', 30000.00, '2026-07-15 10:00:00+09', '2026-07-15 10:00:00+09') RETURNING id INTO v_item_id;
+
+    INSERT INTO maintenance_parts (maintenance_work_item_id, part_condition, part_name, quantity, unit_price, created_at, updated_at)
+    VALUES (v_item_id, 'NEW', '高耐熱レーシングオイル 4L', 1.0, 10000.00, '2026-07-15 10:00:00+09', '2026-07-15 10:00:00+09');
+
+
     -- [11] 下書きデータ（is_draft = TRUE 検証用: 集計や一覧から除外されるべき1件）
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
