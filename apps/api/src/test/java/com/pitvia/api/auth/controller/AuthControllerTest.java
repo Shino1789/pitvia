@@ -11,17 +11,12 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.pitvia.api.auth.constant.CookieConstants;
 import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.common.constant.ApiPaths;
+import com.pitvia.api.support.AbstractIntegrationTest;
 import com.pitvia.api.support.TestUserHelper;
 import com.pitvia.api.support.TestUserHelper.LoginSession;
 
@@ -31,19 +26,7 @@ import com.pitvia.api.support.TestUserHelper.LoginSession;
  * @author pitvia
  * @version 1.0
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Transactional
-@ActiveProfiles("test")
-class AuthControllerTest {
-
-    /** MockMvcインスタンス */
-    @Autowired
-    private MockMvc mockMvc;
-
-    /** テストユーザー操作用ヘルパー */
-    @Autowired
-    private TestUserHelper testUserHelper;
+class AuthControllerTest extends AbstractIntegrationTest {
 
     /**
      * 新規アカウント登録（/auth/register）の正常系テスト。
