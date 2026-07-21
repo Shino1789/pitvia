@@ -37,7 +37,10 @@ public enum MaintenanceType {
     TUNING("チューニング"),
 
     /** セッティング */
-    SETTING("セッティング");
+    SETTING("セッティング"),
+
+    /** その他 */
+    OTHER("その他");
 
     /**
      * 画面表示用ラベル。
