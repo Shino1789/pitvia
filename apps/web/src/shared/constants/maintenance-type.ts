@@ -1,0 +1,31 @@
+/**
+ * 整備種別
+ * Spring: MaintenanceType
+ */
+export const MAINTENANCE_TYPE = {
+  PERIODIC_MAINTENANCE: "PERIODIC_MAINTENANCE",
+  VEHICLE_INSPECTION: "VEHICLE_INSPECTION",
+  INSPECTION: "INSPECTION",
+  REPAIR: "REPAIR",
+  CUSTOM: "CUSTOM",
+  TUNING: "TUNING",
+  SETTING: "SETTING",
+  OTHER: "OTHER",
+} as const;
+
+export type MaintenanceType =
+  (typeof MAINTENANCE_TYPE)[keyof typeof MAINTENANCE_TYPE];
+
+/**
+ * 整備種別の表示用ラベルマップ
+ */
+export const MAINTENANCE_TYPE_LABELS: Record<MaintenanceType, string> = {
+  [MAINTENANCE_TYPE.PERIODIC_MAINTENANCE]: "定期メンテナンス",
+  [MAINTENANCE_TYPE.VEHICLE_INSPECTION]: "車検",
+  [MAINTENANCE_TYPE.INSPECTION]: "点検",
+  [MAINTENANCE_TYPE.REPAIR]: "修理",
+  [MAINTENANCE_TYPE.CUSTOM]: "カスタム",
+  [MAINTENANCE_TYPE.TUNING]: "チューニング",
+  [MAINTENANCE_TYPE.SETTING]: "セッティング",
+  [MAINTENANCE_TYPE.OTHER]: "その他",
+};
