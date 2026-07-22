@@ -16,8 +16,12 @@ export const dashboardApi = {
    *
    * @returns ユーザー権限に応じたダッシュボード情報
    */
-  getDashboard: () =>
-    apiClient.get<ApiResponse<DashboardResponse>>(ENDPOINTS.dashboard.root),
+  getDashboard: async (): Promise<DashboardResponse> => {
+    const response = await apiClient.get<ApiResponse<DashboardResponse>>(
+      ENDPOINTS.dashboard.root,
+    );
+    return response.data.data;
+  },
 
   /**
    * ダッシュボードグラフデータ取得APIリクエスト
@@ -25,9 +29,13 @@ export const dashboardApi = {
    * @param params グラフ取得クエリパラメータ
    * @returns ユーザー権限に応じたグラフ表示用データ
    */
-  getChart: (params: DashboardChartParam) =>
-    apiClient.get<ApiResponse<DashboardChartResponse>>(
+  getChart: async (
+    params: DashboardChartParam,
+  ): Promise<DashboardChartResponse> => {
+    const response = await apiClient.get<ApiResponse<DashboardChartResponse>>(
       ENDPOINTS.dashboard.chart,
       { params },
-    ),
+    );
+    return response.data.data;
+  },
 };
