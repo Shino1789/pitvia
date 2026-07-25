@@ -12,6 +12,7 @@ export const ROUTES = {
   SHOPS: "/shops",
   CUSTOMERS: "/customers",
   SETTINGS: "/settings",
+  FORBIDDEN: "/forbidden",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

@@ -1,15 +1,18 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { UserRole } from "@/shared/constants/role";
+import { ROUTES } from "@/shared/constants/routes";
 
 /**
  * Props型定義
  */
 type Props = {
-  /** アクセスを許可するユーザーロールの配列 */
-  allow: UserRole[];
+  /** アクセスを許可するユーザーロール */
+  allow: ReadonlyArray<UserRole>;
+
   /** 認可された場合に表示する子コンポーネント */
   children: ReactNode;
 };
@@ -21,20 +24,25 @@ type Props = {
  * @returns 認可成功時は子コンポーネント、認可失敗時はForbidden画面
  */
 export function RoleGuard({ allow, children }: Props) {
+  // Next.jsのルーターを取得
+  const router = useRouter();
   // グローバルストアから現在のログインユーザー情報を取得
   const user = useAuthStore((state) => state.user);
 
-  // ユーザー情報自体が存在しない場合は、前提条件エラーとして例外をスロー
-  if (!user) {
-    throw new Error("User is not initialized.");
+  const isAllowed = user ? allow.includes(user.role) : false;
+
+  useEffect(() => {
+    // 画面描画後に権限がない場合は403画面に飛ばす
+    if (user && !isAllowed) {
+      router.replace(ROUTES.FORBIDDEN);
+    }
+  }, [user, isAllowed, router]);
+
+  // 権限がないユーザーは画面を描画しない(チラつき防止)
+  if (!isAllowed) {
+    return null;
   }
 
-  // 現在のユーザーロールが、許可されたロール配列に含まれているかチェック
-  if (!allow.includes(user.role)) {
-    // TODO: forbidden画面はカスタマイズ要検討
-    return <div>このページにアクセスする権限がありません。</div>;
-  }
-
-  // 認可チェックを通過した場合は、対象の画面を描画
+  // 権限のあるユーザーは対象の画面を描画
   return <>{children}</>;
 }
