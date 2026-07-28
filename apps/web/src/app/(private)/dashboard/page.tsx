@@ -1,56 +1,62 @@
 "use client";
 
+import { RoleGuard } from "@/features/auth/components/role-guard";
+import { OwnerDashboard } from "@/features/dashboard/components/owner-dashboard";
+import { ShopDashboard } from "@/features/dashboard/components/shop-dashboard";
+import { USER_ROLE } from "@/shared/constants/role";
+import {
+  ownerDashboardMock,
+  shopDashboardMock,
+} from "@/features/dashboard/mock/mock-data";
 import { useAuthStore } from "@/stores/auth-store";
-import { authSession } from "@/features/auth/services/auth-session";
-import { Button } from "@/shared/ui/button";
-import { useRouter } from "next/navigation";
+import { useHeader } from "@/shared/hooks/use-header";
 
-export default function DashboardPage() {
-  const { user } = useAuthStore();
-  const router = useRouter();
+/**
+ * ダッシュボード表示用インナーコンポーネント
+ */
+function DashboardContent() {
+  const user = useAuthStore((state) => state.user);
 
-  const handleLogout = async () => {
-    await authSession.logout();
-    router.push("/login");
-  };
+  // 動的ヘッダーにタイトルを登録
+  useHeader({ title: "ホーム" });
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between border-b pb-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              ダッシュボード
-            </h1>
-            <p className="text-muted-foreground">Pitvia 認証検証用スペース</p>
-          </div>
-          <Button variant="outline" onClick={handleLogout}>
-            ログアウト
-          </Button>
-        </div>
-
-        <div className="p-6 bg-card rounded-lg border shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">
-            現在のログインセッション情報
-          </h2>
-          <div className="space-y-2 text-sm">
-            <p>
-              <span className="font-medium text-muted-foreground">お名前:</span>{" "}
-              {user?.userName || "未取得"}
-            </p>
-            <p>
-              <span className="font-medium text-muted-foreground">
-                メールアドレス:
-              </span>{" "}
-              {user?.email || "未取得"}
-            </p>
-            <p>
-              <span className="font-medium text-muted-foreground">ロール:</span>{" "}
-              {user?.role || "未取得"}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <main>
+      {user?.role === USER_ROLE.SHOP ? (
+        <ShopDashboard data={shopDashboardMock} />
+      ) : (
+        <OwnerDashboard data={ownerDashboardMock} />
+      )}
+    </main>
   );
 }
+
+/**
+ * ダッシュボード画面ページエントリーポイント
+ */
+export default function DashboardPage() {
+  return (
+    <RoleGuard allow={[USER_ROLE.OWNER, USER_ROLE.SHOP]}>
+      <DashboardContent />
+    </RoleGuard>
+  );
+}
+// TODO:現状はV0のモックを移植し画面が描画されるかの確認のため、確認が取れ次第ロジック肉付けとリファクタ
+// "use client";
+
+// import { RoleGuard } from "@/features/auth/components/role-guard";
+// import { Dashboard } from "@/features/dashboard/components/dashboard";
+// import { USER_ROLE } from "@/shared/constants/role";
+
+// /**
+//  * ダッシュボード画面ページエントリーポイント
+//  *
+//  * OWNER (個人ユーザー) または SHOP (整備工場ユーザー) のみアクセスを許可します。
+//  */
+// export default function DashboardPage() {
+//   return (
+//     <RoleGuard allow={[USER_ROLE.OWNER, USER_ROLE.SHOP]}>
+//       <Dashboard />
+//     </RoleGuard>
+//   );
+// }
