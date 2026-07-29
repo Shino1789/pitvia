@@ -17,15 +17,19 @@ import {
 import { formatWorkPeriod } from "@/shared/utils/format";
 
 interface RecentMaintenanceCardProps {
-  items: RecentMaintenance[];
-  /**
-   * owner: 担当ショップ名を表示 / shop: 顧客名（車両保有者）を表示
-   */
+  /** 整備履歴リスト */
+  maintenances: RecentMaintenance[];
+  /** owner: 担当ショップ名を表示 / shop: 顧客名（車両保有者）を表示 */
   variant: "owner" | "shop";
 }
 
+/**
+ * 直近の整備履歴カードコンポーネント
+ *
+ * @component
+ */
 export function RecentMaintenanceCard({
-  items,
+  maintenances,
   variant,
 }: RecentMaintenanceCardProps) {
   return (
@@ -50,52 +54,58 @@ export function RecentMaintenanceCard({
         </Link>
       </CardHeader>
       <CardContent className="flex-1">
-        <div className="space-y-2.5">
-          {items.map((item) => {
-            const badgeClass =
-              MAINTENANCE_TYPE_BADGE_CLASS[item.maintenanceType] ??
-              MAINTENANCE_TYPE_BADGE_CLASS.OTHER;
-            const subName =
-              variant === "owner" ? item.shopName : item.ownerName;
-            const SubIcon = variant === "owner" ? Store : User;
+        {maintenances.length === 0 ? (
+          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+            整備履歴がありません
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {maintenances.map((item) => {
+              const badgeClass =
+                MAINTENANCE_TYPE_BADGE_CLASS[item.maintenanceType] ??
+                MAINTENANCE_TYPE_BADGE_CLASS.OTHER;
+              const subName =
+                variant === "owner" ? item.shopName : item.ownerName;
+              const SubIcon = variant === "owner" ? Store : User;
 
-            return (
-              <Link
-                key={item.maintenanceId}
-                href={`/maintenance/${item.maintenanceId}`}
-              >
-                <div className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer">
-                  <div className="flex items-start justify-between mb-1.5">
-                    <Badge className={badgeClass}>
-                      {MAINTENANCE_TYPE_LABELS[item.maintenanceType]}
-                    </Badge>
-                    <p className="font-semibold text-foreground text-sm">
-                      ¥{item.totalCost.toLocaleString()}
-                    </p>
-                  </div>
-                  <p className="font-medium text-foreground text-sm mb-1.5">
-                    {item.title}{" "}
-                    <span className="text-muted-foreground">
-                      {item.vehicleName}
-                    </span>
-                  </p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatWorkPeriod(item.workDateFrom, item.workDateTo)}
-                    </span>
-                    {subName && (
-                      <span className="flex items-center gap-1">
-                        <SubIcon className="h-3 w-3" />
-                        {subName}
+              return (
+                <Link
+                  key={item.maintenanceId}
+                  href={`/maintenance/${item.maintenanceId}`}
+                >
+                  <div className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <Badge className={badgeClass}>
+                        {MAINTENANCE_TYPE_LABELS[item.maintenanceType]}
+                      </Badge>
+                      <p className="font-semibold text-foreground text-sm">
+                        ¥{item.totalCost.toLocaleString()}
+                      </p>
+                    </div>
+                    <p className="font-medium text-foreground text-sm mb-1.5">
+                      {item.title}{" "}
+                      <span className="text-muted-foreground">
+                        {item.vehicleName}
                       </span>
-                    )}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatWorkPeriod(item.workDateFrom, item.workDateTo)}
+                      </span>
+                      {subName && (
+                        <span className="flex items-center gap-1">
+                          <SubIcon className="h-3 w-3" />
+                          {subName}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

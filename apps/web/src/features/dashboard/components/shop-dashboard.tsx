@@ -1,68 +1,65 @@
-import { Car, Wallet, Users } from "lucide-react";
-import { StatCard } from "@/features/dashboard/components/stat-card";
-import { DashboardChart } from "@/features/dashboard/components/dashboard-chart";
-import { RecentMaintenanceCard } from "@/features/dashboard/components/recent-maintenance-card";
-import type { ShopDashboardResponse } from "@/features/dashboard/types/dashboard";
+"use client";
+
+import type { ShopDashboardResponse } from "../types/dashboard";
+import { DashboardChart } from "./dashboard-chart/dashboard-chart";
+import { RecentMaintenanceCard } from "./recent-maintenance-card";
+import { StatCard } from "./stat-card";
+import { Car, DollarSign, Users } from "lucide-react";
 
 interface ShopDashboardProps {
+  /** ショップ用ダッシュボード初期データ */
   data: ShopDashboardResponse;
 }
 
+/**
+ * ショップ（整備工場）用ダッシュボードコンポーネント
+ *
+ * @component
+ */
 export function ShopDashboard({ data }: ShopDashboardProps) {
-  const { managedVehicles } = data;
+  const { managedVehicles, monthlySales, linkedCustomerCount } = data;
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="space-y-6">
+      {/* 統計カードグループ */}
+      <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           title="管理車両数"
-          value={managedVehicles.total}
-          subtitle={
-            <span className="text-muted-foreground">
-              自分{" "}
-              <span className="font-medium text-foreground">
-                {managedVehicles.own}
-              </span>
-              <span className="mx-1.5 text-border">・</span>
-              顧客{" "}
-              <span className="font-medium text-foreground">
-                {managedVehicles.customer}
-              </span>
-            </span>
-          }
+          value={`${managedVehicles.total}台`}
+          subtitle={`自社: ${managedVehicles.own}台 / 顧客: ${managedVehicles.customer}台`}
           icon={Car}
         />
         <StatCard
           title="今月売上"
-          value={`¥${data.monthlySales.toLocaleString()}`}
-          subtitle="+¥46,000（先月比 +12%）"
-          icon={Wallet}
+          value={`¥${monthlySales.toLocaleString()}`}
+          subtitle="今月の整備売上合計"
+          icon={DollarSign}
         />
         <StatCard
           title="連携顧客数"
-          value={data.linkedCustomerCount}
-          subtitle="先月比 -1名"
-          subtitleColor="destructive"
+          value={`${linkedCustomerCount}人`}
+          subtitle="マイショップ登録顧客"
           icon={Users}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
+      {/* メインコンテンツ（グラフ & 最近の整備） */}
+      <div className="grid gap-6 lg:grid-cols-7">
+        <div className="lg:col-span-4">
           <DashboardChart
             title="整備件数推移"
-            chart={data.maintenanceCountChart}
+            initialChart={data.maintenanceCountChart}
             valueType="count"
-            totalLabel="総件数"
+            totalLabel="整備件数"
           />
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-3">
           <RecentMaintenanceCard
-            items={data.recentMaintenances}
+            maintenances={data.recentMaintenances}
             variant="shop"
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }
