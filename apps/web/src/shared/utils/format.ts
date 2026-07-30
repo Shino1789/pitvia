@@ -32,7 +32,7 @@ export function formatPeriodAxis(
     const parts = period.split("-");
     return `${parseInt(parts[1], 10)}月`;
   }
-  return period;
+  return `${period}年`;
 }
 
 /** 集計期間をツールチップ見出しに整形 ("2026-06" → "2026年6月" / "2026" → "2026年") */
