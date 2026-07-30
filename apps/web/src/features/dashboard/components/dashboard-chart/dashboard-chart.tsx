@@ -17,7 +17,6 @@ export type ValueType = "currency" | "count";
 
 interface DashboardChartProps {
   title: string;
-  /** 初期表示用のグラフデータ */
   initialChart: DashboardChartResponse;
   valueType: ValueType;
   totalLabel: string;
@@ -34,28 +33,42 @@ const FULL_FORMATTERS: Record<ValueType, (value: number) => string> = {
 };
 
 /**
- * ダッシュボード用 棒グラフカードコンポーネント
- *
- * @component
+ * 指定された periodStr (例: "2026-07" や "2026") に対し、
+ * 指定件数 (amount) 分だけ期間を進める/戻す計算ユーティリティ
  */
+function shiftPeriod(periodStr: string, isMonthly: boolean, amount: number): string {
+  if (isMonthly) {
+    // "2026-07" 形式の計算
+    const [yearStr, monthStr] = periodStr.split("-");
+    const date = new Date(Number(yearStr), Number(monthStr) - 1 + amount, 1);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  } else {
+    // "2026" 形式の計算
+    const y = Number(periodStr) + amount;
+    return String(y);
+  }
+}
+
 export function DashboardChart({
   title,
   initialChart,
   valueType,
   totalLabel,
 }: DashboardChartProps) {
-  // フックから検索パラメータと取得結果を受け取る
   const { params, changeParams, data } = useDashboardChart({
     period: initialChart.periodType,
   });
 
-  // 再取得データがあれば優先し、なければ初期データを使用
-  const chartData = data ?? initialChart;
-  const isMonthly = params.period === PERIOD_TYPE.MONTH;
+  const isInitialParam = params.period === initialChart.periodType && !params.endPeriod;
+  const chartData = isInitialParam ? (data ?? initialChart) : data;
 
-  // startPeriod と endPeriod から表示用の期間ラベルを作成
+  const isMonthly = params.period === PERIOD_TYPE.MONTH;
+  const size = chartData?.items?.length || 6; // データ件数（デフォルト6）
+
   const rangeLabel =
-    chartData.startPeriod && chartData.endPeriod
+    chartData?.startPeriod && chartData?.endPeriod
       ? `${chartData.startPeriod} 〜 ${chartData.endPeriod}`
       : "";
 
@@ -68,35 +81,45 @@ export function DashboardChart({
         title={title}
         rangeLabel={rangeLabel}
         isMonthly={isMonthly}
-        canMoveBackward={chartData.canMoveBackward}
-        canMoveForward={chartData.canMoveForward}
-        onPrev={() =>
+        canMoveBackward={chartData?.canMoveBackward ?? false}
+        canMoveForward={chartData?.canMoveForward ?? false}
+        // 【過去へ移動】
+        // 現在の開始期間 (startPeriod: 例 2026-02) の「1か月前 (2026-01)」を次の endPeriod に指定
+        onPrev={() => {
+          if (!chartData?.startPeriod) return;
+          const newEndPeriod = shiftPeriod(chartData.startPeriod, isMonthly, -1);
           changeParams((prev) => ({
             ...prev,
-            endPeriod: chartData.startPeriod, // 前の期間の終了基準を設定
-          }))
-        }
-        onNext={() =>
+            endPeriod: newEndPeriod,
+          }));
+        }}
+        // 【未来へ移動】
+        // 現在の終了期間 (endPeriod: 例 2026-07) の「6か月後 (2027-01)」を次の endPeriod に指定
+        onNext={() => {
+          if (!chartData?.endPeriod) return;
+          const newEndPeriod = shiftPeriod(chartData.endPeriod, isMonthly, size);
           changeParams((prev) => ({
             ...prev,
-            endPeriod: chartData.endPeriod, // 次の期間の基準を設定
-          }))
-        }
+            endPeriod: newEndPeriod,
+          }));
+        }}
         onChangePeriod={(period) =>
           changeParams({
             period,
-            endPeriod: undefined, // 期間変更時は最新基準にリセット
+            endPeriod: undefined, // 月次/年次の切り替え時は最新にリセット
           })
         }
       />
       <CardContent className="pt-0">
-        <DashboardBarChart
-          displayItems={chartData.items}
-          periodType={params.period}
-          totalLabel={totalLabel}
-          formatAxisValue={formatAxisValue}
-          formatTooltipValue={formatTooltipValue}
-        />
+        {chartData && (
+          <DashboardBarChart
+            displayItems={chartData.items}
+            periodType={params.period}
+            totalLabel={totalLabel}
+            formatAxisValue={formatAxisValue}
+            formatTooltipValue={formatTooltipValue}
+          />
+        )}
       </CardContent>
     </Card>
   );
