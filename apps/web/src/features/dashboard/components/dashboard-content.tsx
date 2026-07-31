@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
 import { OwnerDashboard } from "@/features/dashboard/components/owner-dashboard";
 import { ShopDashboard } from "@/features/dashboard/components/shop-dashboard";
 import { useDashboard } from "@/features/dashboard/hooks/use-dashboard";
@@ -28,13 +29,9 @@ export function DashboardContent() {
   // 動的ヘッダーにタイトルを登録
   useHeader({ title: getMenuLabel(ROUTES.DASHBOARD) });
 
-  // TODO: 今後 Skeleton UI を実装予定（現在は仮ローディング表示）
+  // データ取得中はスケルトンUIを表示
   if (isPending) {
-    return (
-      <div className="flex h-[400px] w-full items-center justify-center">
-        <p className="text-muted-foreground">データを読み込んでいます...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // TODO: 今後 Error State / Retry UI を実装予定（現在は仮エラー表示）
