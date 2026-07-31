@@ -11,6 +11,7 @@ export const ROUTES = {
   VEHICLES: "/vehicles",
   SHOPS: "/shops",
   CUSTOMERS: "/customers",
+  MAINTENANCES: "/maintenances",
   SETTINGS: "/settings",
   FORBIDDEN: "/forbidden",
 } as const;

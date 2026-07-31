@@ -12,14 +12,27 @@ import {
 } from "recharts";
 import { DashboardTooltip } from "./dashboard-tooltip";
 
+/**
+ * Props型定義
+ */
 interface DashboardBarChartProps {
+  /** グラフ描画用データ配列 */
   displayItems: ChartPoint[];
+  /** 表示期間の種別（日次・月次・年次など） */
   periodType: PeriodType;
+  /** 合計値のラベル名（例: "合計費用", "整備件数"） */
   totalLabel: string;
+  /** Y軸目盛りのフォーマット関数 */
   formatAxisValue: (value: number) => string;
+  /** ツールチップ内の数値フォーマット関数 */
   formatTooltipValue: (value: number) => string;
 }
 
+/**
+ * ダッシュボード用の棒グラフコンポーネント
+ *
+ * @component
+ */
 export function DashboardBarChart({
   displayItems,
   periodType,
@@ -27,6 +40,7 @@ export function DashboardBarChart({
   formatAxisValue,
   formatTooltipValue,
 }: DashboardBarChartProps) {
+  // ChartContainer に渡すカラー・ラベル等の設定
   const chartConfig = {
     totalValue: { label: totalLabel, color: "var(--primary)" },
   };
@@ -38,6 +52,7 @@ export function DashboardBarChart({
           data={displayItems}
           margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
         >
+          {/* 棒グラフのグラデーションカラー定義 */}
           <defs>
             <linearGradient
               id="dashboardBarGradient"
@@ -54,6 +69,8 @@ export function DashboardBarChart({
               />
             </linearGradient>
           </defs>
+
+          {/* X軸（期間表示） */}
           <XAxis
             dataKey="period"
             axisLine={false}
@@ -64,6 +81,8 @@ export function DashboardBarChart({
             }
             dy={10}
           />
+
+          {/* YAxis（数値目盛り） */}
           <YAxis
             axisLine={false}
             tickLine={false}
@@ -72,6 +91,8 @@ export function DashboardBarChart({
             dx={-5}
             width={55}
           />
+
+          {/* ホバー時のツールチップ表示 */}
           <Tooltip
             cursor={{ fill: "var(--muted)", opacity: 0.3 }}
             content={
@@ -82,6 +103,8 @@ export function DashboardBarChart({
               />
             }
           />
+
+          {/* 棒グラフ描画設定 */}
           <Bar
             dataKey="totalValue"
             fill="url(#dashboardBarGradient)"
