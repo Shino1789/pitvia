@@ -1,5 +1,6 @@
 "use client";
 
+import { ErrorState } from "@/shared/components/state/error-state";
 import { DashboardSkeleton } from "@/features/dashboard/components/dashboard-skeleton";
 import { OwnerDashboard } from "@/features/dashboard/components/owner-dashboard";
 import { ShopDashboard } from "@/features/dashboard/components/shop-dashboard";
@@ -24,7 +25,7 @@ export function DashboardContent() {
   // ストアからログインユーザー情報を取得
   const user = useAuthStore((state) => state.user);
   // ダッシュボード初期化カスタムフックから状態と関数を取得
-  const { data, isPending, isError, error } = useDashboard();
+  const { data, isPending, isError, refetch } = useDashboard();
 
   // 動的ヘッダーにタイトルを登録
   useHeader({ title: getMenuLabel(ROUTES.DASHBOARD) });
@@ -34,15 +35,9 @@ export function DashboardContent() {
     return <DashboardSkeleton />;
   }
 
-  // TODO: 今後 Error State / Retry UI を実装予定（現在は仮エラー表示）
+  // データの取得に失敗した場合
   if (isError || !data) {
-    return (
-      <div className="flex h-[400px] w-full items-center justify-center">
-        <p className="text-destructive">
-          {error?.message || "データの取得に失敗しました。"}
-        </p>
-      </div>
-    );
+    return <ErrorState onRetry={refetch} />;
   }
 
   // ログインユーザーのロールに応じた判定 & 型キャストしてコンポーネントへ渡す
