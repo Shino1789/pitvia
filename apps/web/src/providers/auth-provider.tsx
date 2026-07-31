@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingScreen } from "@/shared/components/state/loading-screen";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -76,13 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router, accessToken]);
 
   // 初期化が完了するまでは、未ログイン判定による一瞬の画面チラつきを防ぐためローディング画面を表示
-  // TODO: ローディング画面はカスタマイズ要検討
   if (!isInitialized) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background text-muted-foreground text-sm">
-        Loading...
-      </div>
-    );
+    return <LoadingScreen message="認証情報を確認しています..." />;
   }
 
   return <>{children}</>;
