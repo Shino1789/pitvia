@@ -66,3 +66,30 @@ export const MENU_ITEMS: MenuItem[] = [
     sidebar: true,
   },
 ];
+
+/**
+ * パスをキーとしたメニューマップ
+ */
+export const MENU_MAP = Object.fromEntries(
+  MENU_ITEMS.map((item) => [item.path, item]),
+) as Record<AppRoute, MenuItem>;
+
+/**
+ * パスからメニュー定義を取得
+ *
+ * @param path ルートパス
+ * @returns 該当するメニュー項目（未定義の場合は undefined）
+ */
+export function getMenu(path: AppRoute): MenuItem | undefined {
+  return MENU_MAP[path];
+}
+
+/**
+ * パスから画面名（ラベル）を取得
+ *
+ * @param path ルートパス
+ * @returns 画面名文字列（未定義の場合は空文字）
+ */
+export function getMenuLabel(path: AppRoute): string {
+  return MENU_MAP[path]?.label ?? "";
+}
