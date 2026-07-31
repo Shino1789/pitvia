@@ -13,6 +13,6 @@ public final class PageConstants {
     }
 
     /** ダッシュボード最近の整備履歴 */
-    public static final int DASHBOARD_RECENT_MAINTENANCE_SIZE = 5;
+    public static final int DASHBOARD_RECENT_MAINTENANCE_SIZE = 3;
 
 }
