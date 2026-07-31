@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Car, LogOut, X } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Sheet, SheetContent, SheetTitle } from "@/shared/ui/sheet";
@@ -41,12 +41,9 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
         <div className="flex flex-col h-full">
           {/* サイドバー ヘッダー領域（アプリロゴ ＆ 閉じるボタン） */}
           <div className="flex items-center justify-between h-14 px-4 border-b border-border">
-            {/* ロゴマークとアプリ名 */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Car className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-lg text-foreground">
+            {/* アプリ名 */}
+            <div className="flex items-center pl-2">
+              <span className="font-semibold text-lg text-foreground tracking-tight">
                 Pitvia
               </span>
             </div>
