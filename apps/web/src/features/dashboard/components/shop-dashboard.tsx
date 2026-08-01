@@ -4,7 +4,7 @@ import type { ShopDashboardResponse } from "../types/dashboard";
 import { DashboardChart } from "./dashboard-chart/dashboard-chart";
 import { RecentMaintenanceCard } from "./recent-maintenance-card";
 import { StatCard } from "./stat-card";
-import { Car, DollarSign, Users } from "lucide-react";
+import { Car, TrendingUp, Users } from "lucide-react";
 import { USER_ROLE } from "@/shared/constants/role";
 
 /**
@@ -39,7 +39,7 @@ export function ShopDashboard({ data }: ShopDashboardProps) {
           title="今月売上"
           value={`¥${monthlySales.toLocaleString()}`}
           subtitle="今月の整備売上合計"
-          icon={DollarSign}
+          icon={TrendingUp}
         />
         {/* 連携顧客数カード */}
         <StatCard
