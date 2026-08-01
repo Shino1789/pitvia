@@ -2,16 +2,17 @@ import { PERIOD_TYPE, type PeriodType } from "@/shared/constants/period";
 
 /**
  * グラフ縦軸用: 金額を万単位で簡潔に整形
- * (例: 15000 → "¥1.5万", 5000 → "¥5,000")
+ * (例: 150000 → "15万", 500000 → "50万", 0 → "0")
  *
  * @param value 金額数値
  * @returns 整形後の金額文字列
  */
 export function formatYenAxis(value: number): string {
+  if (value === 0) return "0";
   if (value >= 10000) {
-    return `¥${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
+    return `${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
   }
-  return `¥${value.toLocaleString()}`;
+  return value.toLocaleString();
 }
 
 /**
@@ -26,14 +27,15 @@ export function formatYenFull(value: number): string {
 }
 
 /**
- * グラフ縦軸用: 件数を数値文字列に整形
- * (例: 30 → "30")
+ * グラフ縦軸用: 件数を「件」付き数値文字列に整形
+ * (例: 30 → "30件", 0 → "0")
  *
  * @param value 件数数値
  * @returns 整形後の件数文字列
  */
 export function formatCountAxis(value: number): string {
-  return `${value}`;
+  if (value === 0) return "0";
+  return `${value}件`;
 }
 
 /**

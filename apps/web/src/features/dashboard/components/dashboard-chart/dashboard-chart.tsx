@@ -27,7 +27,7 @@ interface DashboardChartProps {
   /** グラフのタイトル（例: "整備費用推移"） */
   title: string;
   /** SSRまたは初回取得時の初期データ */
-  initialChart: DashboardChartResponse;
+  initialChart?: DashboardChartResponse;
   /** 表示する数値の種別（"currency" | "count"） */
   valueType: ValueType;
   /** 合計値のラベル名（例: "合計費用", "整備件数"） */
@@ -65,14 +65,14 @@ function shiftPeriod(
   amount: number,
 ): string {
   if (isMonthly) {
-    // "2026-07" 形式の計算
+    // "yyyy-MM" 形式の計算
     const [yearStr, monthStr] = periodStr.split("-");
     const date = new Date(Number(yearStr), Number(monthStr) - 1 + amount, 1);
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     return `${y}-${m}`;
   } else {
-    // "2026" 形式の計算
+    // "yyyy" 形式の計算
     const y = Number(periodStr) + amount;
     return String(y);
   }
@@ -89,14 +89,16 @@ export function DashboardChart({
   valueType,
   totalLabel,
 }: DashboardChartProps) {
+  // initialChart が未定義の場合はデフォルト値として PERIOD_TYPE.MONTH ("MONTH") を採用
+  const initialPeriod = initialChart?.periodType ?? PERIOD_TYPE.MONTH;
+
   // 期間切り替え・パラメーター管理フック
   const { params, changeParams, data } = useDashboardChart({
-    period: initialChart.periodType,
+    period: initialPeriod,
   });
 
   // 初期状態（パラメータ未変更時）は initialChart を優先使用
-  const isInitialParam =
-    params.period === initialChart.periodType && !params.endPeriod;
+  const isInitialParam = params.period === initialPeriod && !params.endPeriod;
   const chartData = isInitialParam ? (data ?? initialChart) : data;
 
   // 月次フラグと表示件数の判定
@@ -115,7 +117,7 @@ export function DashboardChart({
 
   return (
     <Card className="bg-card border-border h-full">
-      {/* グラフヘッダー（タイトル・ナビゲーション・月次年次切り替え） */}
+      {/* グラフヘッダー */}
       <DashboardChartHeader
         title={title}
         rangeLabel={rangeLabel}
@@ -162,8 +164,10 @@ export function DashboardChart({
       <CardContent className="pt-0">
         {chartData && (
           <DashboardBarChart
-            displayItems={chartData.items}
+            key={`${valueType}-${params.period}`}
+            displayItems={chartData.items ?? []}
             periodType={params.period}
+            valueType={valueType}
             totalLabel={totalLabel}
             formatAxisValue={formatAxisValue}
             formatTooltipValue={formatTooltipValue}

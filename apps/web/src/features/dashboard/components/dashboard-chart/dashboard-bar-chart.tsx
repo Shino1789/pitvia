@@ -1,6 +1,9 @@
+import { DASHBOARD_AXIS_CONFIG } from "@/features/dashboard/constants/dashboard-chart";
 import type { ChartPoint } from "@/features/dashboard/types/dashboard";
 import type { PeriodType } from "@/shared/constants/period";
+import { PERIOD_TYPE } from "@/shared/constants/period";
 import { ChartContainer } from "@/shared/ui/chart";
+import { calculateAxisMax } from "@/shared/utils/chart";
 import { formatPeriodAxis } from "@/shared/utils/format";
 import {
   Bar,
@@ -10,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { ValueType } from "./dashboard-chart";
 import { DashboardTooltip } from "./dashboard-tooltip";
 
 /**
@@ -18,8 +22,10 @@ import { DashboardTooltip } from "./dashboard-tooltip";
 interface DashboardBarChartProps {
   /** グラフ描画用データ配列 */
   displayItems: ChartPoint[];
-  /** 表示期間の種別（日次・月次・年次など） */
+  /** 表示期間の種別（"monthly" | "yearly" など） */
   periodType: PeriodType;
+  /** 表示する数値の種別（"currency" | "count"） */
+  valueType: ValueType;
   /** 合計値のラベル名（例: "合計費用", "整備件数"） */
   totalLabel: string;
   /** Y軸目盛りのフォーマット関数 */
@@ -36,6 +42,7 @@ interface DashboardBarChartProps {
 export function DashboardBarChart({
   displayItems,
   periodType,
+  valueType,
   totalLabel,
   formatAxisValue,
   formatTooltipValue,
@@ -44,6 +51,22 @@ export function DashboardBarChart({
   const chartConfig = {
     totalValue: { label: totalLabel, color: "var(--primary)" },
   };
+
+  // 表示中のデータ一覧から最大の totalValue を抽出
+  const maxTotalValue = Math.max(
+    0,
+    ...displayItems.map((item) => item.totalValue ?? 0),
+  );
+
+  // 期間（月次/年次）の判定
+  const isMonthly = periodType === PERIOD_TYPE.MONTH;
+  const configKey = isMonthly ? "monthly" : "yearly";
+
+  // 設定値の取得 (DASHBOARD_AXIS_CONFIG から取得)
+  const { defaultMax, step } = DASHBOARD_AXIS_CONFIG[valueType][configKey];
+
+  // 軸スケールの最大値を算出
+  const domainMax = calculateAxisMax(maxTotalValue, defaultMax, step);
 
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -88,6 +111,9 @@ export function DashboardBarChart({
             tickLine={false}
             tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
             tickFormatter={formatAxisValue}
+            domain={[0, domainMax]}
+            tickCount={6}
+            allowDecimals={false} // 件数・金額共に目盛り上の小数は不使用
             dx={-5}
             width={55}
           />
@@ -109,6 +135,7 @@ export function DashboardBarChart({
             dataKey="totalValue"
             fill="url(#dashboardBarGradient)"
             radius={[4, 4, 0, 0]}
+            isAnimationActive={true}
           />
         </BarChart>
       </ResponsiveContainer>
