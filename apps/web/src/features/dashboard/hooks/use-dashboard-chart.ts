@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth-store";
 import { DashboardChartParam } from "../types/dashboard";
 import { PERIOD_TYPE } from "@/shared/constants/period";
 import { dashboardQueries } from "../queries/dashboard-queries";
@@ -20,11 +21,14 @@ const DEFAULT_PARAMS: DashboardChartParam = {
 export function useDashboardChart(
   initialParams: DashboardChartParam = DEFAULT_PARAMS,
 ) {
+  // ログイン中のユーザー情報をストアから取得
+  const user = useAuthStore((state) => state.user);
+
   // グラフの集計条件パラメータを状態管理
   const [params, setParams] = useState<DashboardChartParam>(initialParams);
 
   // グラフデータの取得クエリ
-  const queryResult = useQuery(dashboardQueries.chart(params));
+  const queryResult = useQuery(dashboardQueries.chart(params, user?.userId));
 
   return {
     ...queryResult,

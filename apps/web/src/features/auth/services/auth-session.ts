@@ -1,6 +1,7 @@
 import axios from "axios";
 import { authApi } from "../api/auth-api";
 import { useAuthStore } from "@/stores/auth-store";
+import { queryClient } from "@/providers/query-provider";
 import type { LoginRequest, RegisterRequest } from "../types/auth";
 
 /** 現在実行中のサイレントリフレッシュのPromiseを保持する変数 */
@@ -61,6 +62,8 @@ export const authSession = {
       // ログアウトAPIリクエスト実行
       await authApi.logout();
     } finally {
+      // ログアウト時にキャッシュを完全にクリアして別ユーザーへの混入を防ぐ
+      queryClient.clear();
       // API通信が成功したか失敗したかに関わらず、認証ストアの情報をクリアして未ログイン状態にする
       store.clearAuth();
     }

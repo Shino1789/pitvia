@@ -9,21 +9,28 @@ import type { DashboardChartParam } from "../types/dashboard";
 export const dashboardQueries = {
   /**
    * ダッシュボード初期情報 Query Options
+   *
+   * @param userId ログインユーザーID
    */
-  summary: () =>
+  summary: (userId?: string) =>
     queryOptions({
-      queryKey: dashboardKeys.summary,
+      queryKey: [...dashboardKeys.summary, userId],
       queryFn: dashboardApi.getDashboard,
+      // ユーザーIDが存在する場合のみクエリを実行
+      enabled: !!userId,
     }),
 
   /**
    * ダッシュボードグラフデータ Query Options
    *
    * @param params グラフ取得クエリパラメータ
+   * @param userId ログインユーザーID
    */
-  chart: (params: DashboardChartParam) =>
+  chart: (params: DashboardChartParam, userId?: string) =>
     queryOptions({
-      queryKey: dashboardKeys.chart(params),
+      queryKey: [...dashboardKeys.chart(params), userId],
       queryFn: () => dashboardApi.getChart(params),
+      // ユーザーIDが存在する場合のみクエリを実行
+      enabled: !!userId,
     }),
 };
