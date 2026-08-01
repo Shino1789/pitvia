@@ -11,7 +11,9 @@ export const ROUTES = {
   VEHICLES: "/vehicles",
   SHOPS: "/shops",
   CUSTOMERS: "/customers",
+  MAINTENANCES: "/maintenances",
   SETTINGS: "/settings",
+  FORBIDDEN: "/forbidden",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

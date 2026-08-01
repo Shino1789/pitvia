@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { QueryProvider } from "@/providers/query-provider";
 import { Toaster } from "@/shared/ui/sonner";
 import "./globals.css";
 
@@ -25,16 +26,14 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        {/* メインコンテンツ */}
-        {children}
+        {/* React Query の Context をアプリ全体に提供 */}
+        <QueryProvider>
+          {/* メインコンテンツ */}
+          {children}
 
-        {/*
-          アプリケーション共通のトースト表示コンポーネント
-          richColors: 成功(緑)/エラー(赤)などのカラーリングを有効化
-          position: 画面右上に出現
-          closeButton: ユーザーが手動で閉じられる×ボタンを付与
-         */}
-        <Toaster richColors position="top-right" closeButton />
+          {/* アプリ共通トースト表示 */}
+          <Toaster richColors position="top-right" closeButton />
+        </QueryProvider>
       </body>
     </html>
   );

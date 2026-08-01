@@ -1,22 +1,19 @@
 # ==================================================
-# Spring Boot テスト設定
+# Spring Boot テスト設定 (Testcontainers + PostgreSQL)
 # ==================================================
 spring:
   # データベース接続設定
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:tc:postgresql:17-alpine:///pitvia_test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
 
   # JPA設定
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
+      ddl-auto: validate
 
   flyway:
-    enabled: false
+    enabled: true
 
 jwt:
   # 署名に使用する秘密鍵

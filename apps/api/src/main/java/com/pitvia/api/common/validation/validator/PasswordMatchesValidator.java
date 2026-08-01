@@ -1,8 +1,10 @@
-package com.pitvia.api.common.validation;
+package com.pitvia.api.common.validation.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.beans.BeanWrapperImpl;
+
+import com.pitvia.api.common.validation.annotation.PasswordMatches;
 
 /**
  * パスワードと確認用パスワードの一致を検証するバリデータアノテーションの実体クラス
@@ -24,7 +26,7 @@ public class PasswordMatchesValidator implements ConstraintValidator<PasswordMat
     private String confirmPasswordField;
 
     /**
-     * アノテーションの属性値（フィールド名設定）を初期化します。
+     * アノテーションの属性値を初期化
      *
      * @param constraintAnnotation 対象のアノテーションインスタンス
      */

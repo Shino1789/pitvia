@@ -18,4 +18,12 @@ export const ENDPOINTS = {
     /** ユーザー情報取得API */
     me: "/auth/me",
   },
+
+  dashboard: {
+    /** ダッシュボード初期化API */
+    root: "/dashboard",
+
+    /** ダッシュボードグラフデータ取得API */
+    chart: "/dashboard/chart",
+  },
 } as const;

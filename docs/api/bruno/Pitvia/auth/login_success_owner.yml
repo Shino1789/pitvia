@@ -18,6 +18,23 @@ http:
       }
   auth: inherit
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        console.log(res);
+
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        if (res.status === 200 && body.data?.accessToken) {
+          bru.setEnvVar("accessToken", body.data.accessToken);
+          console.log("AccessToken saved");
+        }
+
 settings:
   encodeUrl: true
   timeout: 0
