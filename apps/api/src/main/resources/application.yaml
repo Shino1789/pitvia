@@ -17,6 +17,14 @@ spring:
   jpa:
     open-in-view: false
 
+  # ファイルアップロード設定
+  servlet:
+    multipart:
+      # アップロード可能な1ファイルあたりの最大サイズ
+      max-file-size: 15MB
+      # 1回のリクエスト全体でアップロード可能な最大サイズ
+      max-request-size: 120MB
+
   web:
     resources:
       # 静的リソースの自動マッピングを無効化
@@ -43,15 +51,28 @@ app:
   cors:
     allowed-origins:
       - ${FRONTEND_URL}
+
   # Security設定
   security:
     swagger-enabled: false
     cookie:
       secure: true
       same-site: None
+
   # スケジューラ設定
   scheduler:
     refresh-token-cron: "0 0 3 * * *"
+
+  # ストレージ設定（MinIO / AWS S3）
+  storage:
+    # 利用するプロバイダー（minio または s3）
+    provider: ${STORAGE_PROVIDER:minio}
+    # 画像公開URLのベース（例: http://localhost:9000/pitvia や https://cdn.pitvia.com）
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL}
+    # 保存先のバケット名
+    bucket: ${STORAGE_BUCKET}
+    # リージョン名
+    region: ${STORAGE_REGION:us-east-1}
 
 jwt:
   # 署名に使用する秘密鍵
