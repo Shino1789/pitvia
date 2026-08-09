@@ -27,9 +27,13 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
     /**
      * 車両画像が設定されている全車両のストレージキーを取得
      *
+     * <p>
+     * 論理削除済み車両は {@code @SQLRestriction} により対象外となる。
+     * </p>
+     *
      * @return 設定されているストレージキーの集合
      */
-    @Query("SELECT v.imageUrl FROM Vehicle v WHERE v.imageUrl IS NOT NULL")
+    @Query("SELECT v.imageKey FROM Vehicle v WHERE v.imageKey IS NOT NULL")
     Set<String> findAllStorageKeys();
 
 }

@@ -50,10 +50,10 @@ public class MaintenanceWorkItemImage {
     private MaintenanceWorkItem maintenanceWorkItem;
 
     /**
-     * 画像のストレージキー（列名はパスだが、実際に保存するのは公開URLではなくストレージキー）
+     * 画像のストレージキー
      */
     @Column(nullable = false)
-    private String imagePath;
+    private String imageKey;
 
     /**
      * 画像の表示並び順

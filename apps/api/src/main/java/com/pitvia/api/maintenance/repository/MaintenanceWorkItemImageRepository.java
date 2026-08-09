@@ -20,7 +20,7 @@ public interface MaintenanceWorkItemImageRepository extends JpaRepository<Mainte
      *
      * @return 登録されているストレージキーの集合
      */
-    @Query("SELECT i.imagePath FROM MaintenanceWorkItemImage i")
+    @Query("SELECT i.imageKey FROM MaintenanceWorkItemImage i")
     Set<String> findAllStorageKeys();
 
 }

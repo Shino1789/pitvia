@@ -104,9 +104,9 @@ public class Vehicle extends BaseEntity {
     private String licensePlate;
 
     /**
-     * 車両画像のストレージキー（列名はURLだが、実際に保存するのは公開URLではなくストレージキー）
+     * 車両画像のストレージキー
      */
-    private String imageUrl;
+    private String imageKey;
 
     /**
      * 現在の積算走行距離 (km)

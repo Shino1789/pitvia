@@ -74,10 +74,10 @@ public class User extends BaseEntity {
     private String passwordHash;
 
     /**
-     * アイコン画像のストレージキー（列名はURLだが、実際に保存するのは公開URLではなくストレージキー）
+     * アイコン画像のストレージキー
      */
     @Column(length = 500)
-    private String iconUrl;
+    private String iconKey;
 
     /**
      * メール認証日時

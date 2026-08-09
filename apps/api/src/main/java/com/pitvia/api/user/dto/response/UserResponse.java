@@ -31,9 +31,9 @@ public record UserResponse(
         String email,
 
         /**
-         * アイコン画像URL
+         * アイコン画像のストレージキー
          */
-        String iconUrl
+        String iconKey
 
 ) {
 
@@ -49,6 +49,6 @@ public record UserResponse(
                 user.getRole(),
                 user.getUserName(),
                 user.getEmail(),
-                user.getIconUrl());
+                user.getIconKey());
     }
 }

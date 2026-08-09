@@ -38,7 +38,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      *
      * @return 設定されているストレージキーの集合
      */
-    @Query("SELECT u.iconUrl FROM User u WHERE u.iconUrl IS NOT NULL")
+    @Query("SELECT u.iconKey FROM User u WHERE u.iconKey IS NOT NULL")
     Set<String> findAllStorageKeys();
 
 }

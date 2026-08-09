@@ -21,8 +21,8 @@ Table users {
     not null,
     note: 'ハッシュ化済みパスワード'
   ]
-  icon_url varchar [
-    note: 'ユーザーアイコン'
+  icon_key varchar [
+    note: 'ユーザーアイコン画像のストレージキー'
   ]
   email_verified_at timestamp [
     note: 'メール認証日時'
@@ -203,8 +203,8 @@ Table vehicles {
   license_plate varchar [
     note: 'ナンバープレート'
   ]
-  image_url varchar [
-    note: '車両アイコン画像URL'
+  image_key varchar [
+    note: '車両アイコン画像のストレージキー'
   ]
   current_mileage int [
     not null,
@@ -542,9 +542,9 @@ Table maintenance_work_item_images {
     ref: > maintenance_work_items.id,
     note: '整備作業ID'
   ]
-  image_path varchar [
+  image_key varchar [
     not null,
-    note: '整備画像パス'
+    note: '整備画像のストレージキー'
   ]
   sort_order int [
     not null,

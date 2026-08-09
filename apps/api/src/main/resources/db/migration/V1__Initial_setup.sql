@@ -9,7 +9,7 @@ CREATE TABLE users (
     user_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password_hash VARCHAR(60) NOT NULL,
-    icon_url VARCHAR(500),
+    icon_key VARCHAR(500),
     email_verified_at TIMESTAMPTZ,
     last_login_at TIMESTAMPTZ,
     version INTEGER NOT NULL DEFAULT 0,
@@ -140,7 +140,7 @@ CREATE TABLE vehicles (
     model_code VARCHAR(100),
     model_year SMALLINT,
     license_plate VARCHAR(100),
-    image_url VARCHAR(500),
+    image_key VARCHAR(500),
     current_mileage INTEGER NOT NULL,
     transmission_type VARCHAR(20),
     drive_type VARCHAR(20),
@@ -335,7 +335,7 @@ CREATE INDEX idx_parts_work_item_id ON maintenance_parts(maintenance_work_item_i
 CREATE TABLE maintenance_work_item_images (
     id BIGSERIAL PRIMARY KEY,
     maintenance_work_item_id BIGINT NOT NULL,
-    image_path VARCHAR(500) NOT NULL,
+    image_key VARCHAR(500) NOT NULL,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
