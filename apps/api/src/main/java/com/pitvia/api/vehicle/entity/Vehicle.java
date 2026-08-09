@@ -70,10 +70,10 @@ public class Vehicle extends BaseEntity {
     private VehicleType vehicleType;
 
     /**
-     * 車両表示名（愛称など）
+     * 車種名（例: RX-7, GT-R）
      */
     @Column(nullable = false)
-    private String name;
+    private String modelName;
 
     /**
      * メーカー情報
@@ -83,23 +83,23 @@ public class Vehicle extends BaseEntity {
     private Manufacturer manufacturer;
 
     /**
-     * 車種モデル名
-     */
-    @Column(nullable = false)
-    private String model;
-
-    /**
      * 型式
      */
     private String modelCode;
 
     /**
+     * エンジン型式
+     */
+    private String engineCode;
+
+    /**
      * 年式（西暦）
      */
+    @Column(nullable = false)
     private Short modelYear;
 
     /**
-     * ナンバープレート
+     * ナンバープレート（チューニングカー・サーキット専用車等を考慮し任意項目）
      */
     private String licensePlate;
 
@@ -118,14 +118,14 @@ public class Vehicle extends BaseEntity {
      * トランスミッション形式 (MT, AT, CVT, DCT)
      */
     @Enumerated(EnumType.STRING)
-    @Column
+    @Column(nullable = false)
     private TransmissionType transmissionType;
 
     /**
      * 駆動方式 (FR, FF, AWD, MR, RR)
      */
     @Enumerated(EnumType.STRING)
-    @Column
+    @Column(nullable = false)
     private DriveType driveType;
 
     /**

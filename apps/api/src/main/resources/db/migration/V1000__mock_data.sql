@@ -26,9 +26,9 @@ INSERT INTO shops (id, phone_number, postal_code, address, website_url, descript
 -- -----------------------------------------------------------------------------
 -- 3. VEHICLES (マイカー1台 + デモカー1台)
 -- -----------------------------------------------------------------------------
-INSERT INTO vehicles (id, user_id, vehicle_type, name, manufacturer_id, model, model_code, model_year, license_plate, current_mileage, transmission_type, drive_type, memo, created_at, updated_at) VALUES
-('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'CAR', 'マイカー (RX-7)', 4, 'RX-7', 'FD3S', 2002, '品川 300 な 77-77', 85000, 'MT', 'FR', 'オーナーのメイン車両', '2025-01-05 10:00:00+09', '2025-01-05 10:00:00+09'),
-('d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'CAR', 'デモカー (GT-R)', 2, 'GT-R', 'BNR34', 2001, '品川 300 す 34-34', 45000, 'MT', 'AWD', 'ショップのデモカー', '2025-01-05 10:00:00+09', '2025-01-05 10:00:00+09');
+INSERT INTO vehicles (id, user_id, vehicle_type, model_name, manufacturer_id, model_code, engine_code, model_year, license_plate, current_mileage, transmission_type, drive_type, memo, created_at, updated_at) VALUES
+('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'CAR', 'RX-7', 4, 'FD3S', '13B-REW', 2002, '品川 300 な 77-77', 85000, 'MT', 'FR', 'オーナーのメイン車両', '2025-01-05 10:00:00+09', '2025-01-05 10:00:00+09'),
+('d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'CAR', 'GT-R', 2, 'BNR34', 'RB26DETT', 2001, '品川 300 す 34-34', 45000, 'MT', 'AWD', 'ショップのデモカー', '2025-01-05 10:00:00+09', '2025-01-05 10:00:00+09');
 
 -- -----------------------------------------------------------------------------
 -- 4. VEHICLE_SHOP_LINKS (車両とショップの連携: APPROVED)

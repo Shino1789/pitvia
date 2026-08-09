@@ -181,23 +181,23 @@ Table vehicles {
     check: `vehicle_type IN ('CAR', 'MOTORCYCLE', 'KART', 'OTHER')`,
     note: '車両種別'
   ]
-  name varchar [
+  model_name varchar [
     not null,
-    note: '車両名（愛車名）'
+    note: '車両名（例: RX-7, GT-R）'
   ]
   manufacturer_id bigint [
     not null,
     ref: > manufacturers.id,
     note: 'メーカーID'
   ]
-  model varchar [
-    not null,
-    note: '車種'
-  ]
   model_code varchar [
     note: '型式'
   ]
+  engine_code varchar [
+    note: 'エンジン型式'
+  ]
   model_year smallint [
+    not null,
     note: '年式'
   ]
   license_plate varchar [
@@ -212,10 +212,12 @@ Table vehicles {
     note: '現在の走行距離'
   ]
   transmission_type varchar [
+    not null,
     check: `transmission_type IN ('MT', 'AT', 'CVT', 'DCT')`,
     note: 'ミッション種別'
   ]
   drive_type varchar [
+    not null,
     check: `drive_type IN ('FR', 'FF', 'AWD', 'MR', 'RR')`,
     note: '駆動方式'
   ]

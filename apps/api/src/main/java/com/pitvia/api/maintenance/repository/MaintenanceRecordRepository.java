@@ -112,7 +112,7 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
     @Query("""
             SELECT
                 mr.id AS id,
-                v.name AS vehicleName,
+                v.modelName AS vehicleName,
                 owner.userName AS ownerName,
                 mt.code AS maintenanceTypeCode,
                 mr.title AS title,
@@ -155,7 +155,7 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
     @Query("""
             SELECT
                 mr.id AS id,
-                v.name AS vehicleName,
+                v.modelName AS vehicleName,
                 owner.userName AS ownerName,
                 mt.code AS maintenanceTypeCode,
                 mr.title AS title,
