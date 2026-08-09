@@ -1,5 +1,7 @@
 package com.pitvia.api.storage.properties;
 
+import java.time.Duration;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -63,7 +65,32 @@ public record StorageProperties(
         /**
          * パススタイルアクセスを使用するか（MinIO利用時はtrue）
          */
-        boolean pathStyleAccess
+        boolean pathStyleAccess,
+
+        /**
+         * 孤児ファイルクリーンアップ設定
+         */
+        @NotNull OrphanCleanup orphanCleanup
 
 ) {
+    /**
+     * 孤児ファイルクリーンアップ固有の設定プロパティ
+     */
+    public record OrphanCleanup(
+
+            /**
+             * クリーンアップ処理の有効可否
+             */
+            boolean enabled,
+
+            /**
+             * アップロード直後でDB未反映の可能性があるオブジェクトを除外するための猶予期間
+             */
+            @NotNull Duration gracePeriod,
+
+            /**
+             * trueの場合は削除対象の検出とログ出力のみ行い、実際の削除は行わない
+             */
+            boolean dryRun) {
+    }
 }
