@@ -22,3 +22,15 @@ jwt:
   expiration: 15m
   # リフレッシュトークンの有効期限
   refresh-expiration: 7d
+
+app:
+  # ストレージ設定（テスト用ダミー値）
+  storage:
+    provider: minio
+    endpoint: http://localhost:9000
+    public-base-url: http://localhost:9000/test-bucket
+    access-key: test-access-key
+    secret-key: test-secret-key
+    bucket: test-bucket
+    region: us-east-1
+    path-style-access: true

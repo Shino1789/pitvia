@@ -14,3 +14,14 @@ app:
     cookie:
       secure: false
       same-site: Lax
+
+  # ストレージ設定(MinIO)
+  storage:
+    # SDK接続先エンドポイント
+    endpoint: ${STORAGE_ENDPOINT:}
+    # ストレージ接続用のアクセスキー
+    access-key: ${STORAGE_ACCESS_KEY}
+    # ストレージ接続用のシークレットキー
+    secret-key: ${STORAGE_SECRET_KEY}
+    # パススタイルアクセスを使用するか
+    path-style-access: true

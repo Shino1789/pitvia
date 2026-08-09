@@ -30,6 +30,15 @@ repositories {
 }
 
 // ==================================================
+// 依存ライブラリバージョン管理（BOM）
+// ==================================================
+dependencyManagement {
+	imports {
+		mavenBom 'software.amazon.awssdk:bom:2.50.2'
+	}
+}
+
+// ==================================================
 // 依存ライブラリ
 // ==================================================
 dependencies {
@@ -74,6 +83,12 @@ dependencies {
 
 	// Utility
 	implementation 'commons-codec:commons-codec:1.16.1'
+
+	// Object Storage (MinIO / S3)
+	implementation 'software.amazon.awssdk:s3'
+
+  // Image Processing (WebPサポート用プラグイン)
+	implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
 
 }
 
