@@ -1,9 +1,11 @@
 package com.pitvia.api.user.repository;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.pitvia.api.user.entity.User;
 
@@ -30,5 +32,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return 既に存在する場合は true、存在しない場合は false
      */
     boolean existsByEmail(String email);
+
+    /**
+     * アイコン画像が設定されている全ユーザーのストレージキーを取得
+     *
+     * @return 設定されているストレージキーの集合
+     */
+    @Query("SELECT u.iconUrl FROM User u WHERE u.iconUrl IS NOT NULL")
+    Set<String> findAllStorageKeys();
 
 }
