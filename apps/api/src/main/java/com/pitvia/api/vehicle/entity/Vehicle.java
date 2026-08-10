@@ -151,4 +151,13 @@ public class Vehicle extends BaseEntity {
             this.currentMileage = mileage;
         }
     }
+
+    /**
+     * 車両画像のストレージキーを更新する
+     *
+     * @param imageKey 新しいストレージキー
+     */
+    public void updateImageKey(String imageKey) {
+        this.imageKey = imageKey;
+    }
 }
