@@ -101,7 +101,17 @@ public enum ErrorCode {
     /**
      * ファイル一覧の取得失敗
      */
-    FILE_LIST_FAILED("ファイル一覧の取得に失敗しました");
+    FILE_LIST_FAILED("ファイル一覧の取得に失敗しました"),
+
+    /**
+     * メーカーが存在しない
+     */
+    MANUFACTURER_NOT_FOUND("指定されたメーカーが見つかりません"),
+
+    /**
+     * 未対応の車両種別
+     */
+    UNSUPPORTED_VEHICLE_TYPE("現在対応していない車両種別が指定されました");
 
     /**
      * クライアント向けデフォルトメッセージ

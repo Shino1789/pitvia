@@ -27,6 +27,9 @@ public final class ApiPaths {
     /** ダッシュボードエンドポイントのプレフィックス */
     public static final String DASHBOARD = V1 + "/dashboard";
 
+    /** 車両関連エンドポイントのプレフィックス */
+    public static final String VEHICLE = V1 + "/vehicles";
+
     /** Swagger UI 画面パス */
     public static final String SWAGGER = "/swagger-ui";
 
