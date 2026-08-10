@@ -1,0 +1,44 @@
+info:
+  name: 車両登録：正常系（画像なし）
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/vehicles
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "RX-7",
+            "manufacturerId": 1,
+            "modelCode": "FD3S",
+            "engineCode": "13B-REW",
+            "modelYear": 2002,
+            "licensePlate": "品川 300 な 77-77",
+            "currentMileage": 85000,
+            "transmissionType": "MT",
+            "driveType": "FR",
+            "memo": "Brunoテスト用（画像なし）"
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  画像ファイルを添付せずに車両を登録し、201 Created が返ることを確認する。
+  manufacturerId=1（V1マイグレーションのシードデータにおけるTOYOTA）を前提とする。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

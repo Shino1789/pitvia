@@ -1,0 +1,53 @@
+info:
+  name: 車両登録：正常系（画像あり）
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/vehicles
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "GT-R",
+            "manufacturerId": 1,
+            "modelCode": "BNR34",
+            "engineCode": "RB26DETT",
+            "modelYear": 2001,
+            "licensePlate": null,
+            "currentMileage": 45000,
+            "transmissionType": "MT",
+            "driveType": "AWD",
+            "memo": "Brunoテスト用（画像あり）"
+          }
+        contentType: application/json
+      - name: file
+        type: file
+        value:
+          - vehicle/assets/sample-icon.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  画像ファイル（vehicle/assets/sample-icon.png）を添付して車両を登録し、201 Created が返ることを確認する。
+  「先に画像なしで車両を保存してIDを確定 → 確定したIDで画像をアップロード → imageKeyを更新」という
+  StorageTransactionManagerによる登録フローの動作確認を兼ねる。
+  manufacturerId=1（V1マイグレーションのシードデータにおけるTOYOTA）を前提とする。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
+  ※ファイルパスがBruno上で解決できない場合は、コレクション内の
+  `vehicle/assets/sample-icon.png` を選択し直してください。

@@ -1,0 +1,49 @@
+info:
+  name: 車両登録：異常系（バリデーションエラー）
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/vehicles
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": null,
+            "modelName": "",
+            "manufacturerId": null,
+            "modelYear": 1800,
+            "currentMileage": -1,
+            "transmissionType": null,
+            "driveType": null
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト：Bean Validation】
+  不正な形式の値を送信した際、Spring BootのBean Validationが正常に作動し、
+  400 Bad Request と共に `validationErrors` 配列に各フィールドのエラーが返ることを確認する。
+
+  【テスト項目】
+  1. vehicleType: 未指定（@NotNull違反）
+  2. modelName: 空文字（@NotBlank違反）
+  3. manufacturerId: 未指定（@NotNull違反）
+  4. modelYear: 1900年より過去（@Min違反）
+  5. currentMileage: 負数（@Min違反）
+  6. transmissionType: 未指定（@NotNull違反）
+  7. driveType: 未指定（@NotNull違反）
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
