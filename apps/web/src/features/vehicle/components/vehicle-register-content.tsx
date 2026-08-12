@@ -21,6 +21,7 @@ import {
 } from "../schemas/vehicle.schema";
 import { useHeader } from "@/shared/hooks/use-header";
 import { useDiscardGuard } from "@/shared/hooks/use-discard-guard";
+import { ROUTES } from "@/shared/constants/routes";
 
 /** 現状はCAR固定 */
 const VEHICLE_TYPE = "CAR" as const;
@@ -94,7 +95,7 @@ export function VehicleRegisterContent() {
    * 未保存の入力がある場合のみ確認ダイアログを挟んでから遷移する。
    */
   const handleCancel = () => {
-    guard(isDirty, () => router.back());
+    guard(isDirty, () => router.push(ROUTES.VEHICLES));
   };
 
   /**
