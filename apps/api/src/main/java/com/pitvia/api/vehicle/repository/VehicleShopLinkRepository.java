@@ -1,11 +1,13 @@
 package com.pitvia.api.vehicle.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.pitvia.api.vehicle.entity.Vehicle;
 import com.pitvia.api.vehicle.entity.VehicleShopLink;
 
 /**
@@ -58,5 +60,24 @@ public interface VehicleShopLinkRepository extends JpaRepository<VehicleShopLink
               AND vsl.vehicle.user.id <> :shopUserId
             """)
     long countCustomerVehicles(@Param("shopUserId") UUID shopUserId);
+
+    /**
+     * ショップと連携（APPROVED）が確認できる、指定オーナーの所有車両一覧を取得する
+     *
+     * @param shopUserId ショップユーザーID
+     * @param ownerId    対象オーナーのユーザーID
+     * @return 車両一覧（登録日時降順）
+     */
+    @Query("""
+            SELECT vsl.vehicle
+            FROM VehicleShopLink vsl
+            WHERE vsl.shop.id = :shopUserId
+              AND vsl.vehicle.user.id = :ownerId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+            ORDER BY vsl.vehicle.createdAt DESC
+            """)
+    List<Vehicle> findApprovedVehiclesByShopAndOwner(
+            @Param("shopUserId") UUID shopUserId,
+            @Param("ownerId") UUID ownerId);
 
 }
