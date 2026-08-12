@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -155,6 +156,30 @@ public class GlobalExceptionHandler {
         // JSON構文エラーやDTO構造不一致の場合、validationErrorsは含めずに返却
         return ResponseEntity.badRequest().body(responseFactory.error(ErrorCode.MALFORMED_JSON, request));
 
+    }
+
+    /**
+     * リクエストのContent-Typeが、エンドポイントの{@code consumes}指定と一致しない場合をキャッチ
+     *
+     * <p>
+     * 例: multipart/form-dataのみを受け付けるエンドポイントに、application/jsonで
+     * リクエストされた場合など。
+     * </p>
+     *
+     * @param ex      サポート対象外メディアタイプ例外
+     * @param request HTTPリクエスト
+     * @return 415 Unsupported Media Type のレスポンスエンティティ
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex,
+            HttpServletRequest request) {
+
+        log.warn("Unsupported media type path={} contentType={}", request.getRequestURI(), ex.getContentType());
+
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(responseFactory.error(ErrorCode.UNSUPPORTED_MEDIA_TYPE, request));
     }
 
     /**

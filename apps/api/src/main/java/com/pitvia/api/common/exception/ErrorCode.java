@@ -24,6 +24,11 @@ public enum ErrorCode {
     MALFORMED_JSON("JSON形式が不正です"),
 
     /**
+     * サポート対象外のContent-Type（415）
+     */
+    UNSUPPORTED_MEDIA_TYPE("サポートされていないContent-Typeです"),
+
+    /**
      * 未認証エラー（401）
      */
     UNAUTHORIZED("認証が必要です"),
