@@ -51,7 +51,7 @@ public class VehicleFormOptionsService {
             throw new BusinessException(ErrorCode.UNSUPPORTED_VEHICLE_TYPE);
         }
 
-        List<ManufacturerOption> manufacturers = manufacturerRepository.findAllByOrderByNameAsc().stream()
+        List<ManufacturerOption> manufacturers = manufacturerRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(this::toManufacturerOption)
                 .toList();
 

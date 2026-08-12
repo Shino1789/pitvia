@@ -15,10 +15,10 @@ import com.pitvia.api.master.entity.Manufacturer;
 public interface ManufacturerRepository extends JpaRepository<Manufacturer, Long> {
 
     /**
-     * 全メーカーを名称の昇順で取得する
+     * 全メーカーを表示順（sort_order）の昇順で取得する
      *
-     * @return メーカー一覧（名称昇順）
+     * @return メーカー一覧（表示順）
      */
-    List<Manufacturer> findAllByOrderByNameAsc();
+    List<Manufacturer> findAllByOrderBySortOrderAsc();
 
 }

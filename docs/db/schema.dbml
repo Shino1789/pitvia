@@ -155,6 +155,9 @@ Table manufacturers {
     unique,
     note: 'メーカー名'
  ]
+  sort_order int [
+    note: '表示順'
+  ]
   created_at timestamp [
     not null,
     default: `now()`
