@@ -1,0 +1,24 @@
+info:
+  name: 車両一覧（自分）：正常系（OWNER）
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  ログインユーザー（OWNER）自身が所有する車両一覧を取得する。
+  レスポンスの`data.owner`はnull、`data.vehicles`にログインユーザー自身の車両のみが含まれることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

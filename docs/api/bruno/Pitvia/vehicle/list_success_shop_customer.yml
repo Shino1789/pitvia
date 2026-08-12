@@ -1,0 +1,35 @@
+info:
+  name: 車両一覧（顧客車両）：正常系（SHOP・ownerId指定）
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles?ownerId=a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+  params:
+    - name: ownerId
+      value: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  SHOPが、車両共有関係にある特定オーナー（顧客）の車両一覧を取得する。
+  レスポンスの`data.owner`に対象オーナー情報（id/userName）が含まれ、
+  `data.vehicles`に共有中（APPROVED）の車両のみが含まれることを確認する。
+
+  ※このシナリオは開発環境の初期モックデータ（V1000__mock_data.sql）に依存します。
+  `ownerId`に指定した `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11`（オーナーテスト / owner@example.com）は
+  `shop@example.com`（ショップテスト / パスワード: password123）とAPPROVED状態で共有済みです。
+
+  実行前に、`auth/login_success_shop.yml`（Brunoテスト用アカウント）ではなく、
+  上記のモックデータ用SHOPアカウント（shop@example.com / password123）で
+  `POST /auth/login` を実行し、そのアクセストークンを `accessToken` 環境変数へ設定してください。

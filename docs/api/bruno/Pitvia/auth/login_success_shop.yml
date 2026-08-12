@@ -1,0 +1,52 @@
+info:
+  name: ログイン認証：正常系（SHOP）
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/auth/login
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "email": "shop-test@example.com",
+        "password": "Password456"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        console.log(res);
+
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        if (res.status === 200 && body.data?.accessToken) {
+          bru.setEnvVar("accessToken", body.data.accessToken);
+          console.log("AccessToken saved");
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  登録済みのSHOPアカウントでログイン要求を行い、以下を確認する。
+  1. ステータスコードが 200 OK であること。
+  2. レスポンスBodyに AccessToken が含まれること。
+  3. レスポンスHeaderの `Set-Cookie` に `refreshToken` が HttpOnly 属性付きで設定されていること。
+
+  ※実行前に `register_success_shop.yml` でSHOPアカウントを作成しておく必要があります。
+  車両一覧API（顧客車両閲覧）のテストで、ここで保存したaccessTokenを使用します。
