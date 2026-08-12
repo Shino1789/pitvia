@@ -11,21 +11,37 @@ info:
     Next.js フロントエンド と Spring Boot バックエンド間の
     REST API 通信で使用する。
 
+    ⚠️ `Users` タグ・`MaintenanceRecords` タグ配下のエンドポイントは、
+    現時点ではController未実装のため疎通しない（将来実装予定のAPI設計案として記載）。
+
 servers:
   - url: http://localhost:8080/api/v1
     description: ローカル開発環境
 
 tags:
   - name: Auth
-    description: 認証API
-  - name: Users
-    description: ユーザーAPI
+    description: 認証API（ログイン・アカウント登録・トークン再発行・ログアウト）
+  - name: Dashboard
+    description: ダッシュボードAPI
+  - name: Health
+    description: ヘルスチェックAPI
   - name: Vehicles
     description: 車両API
+  - name: Users
+    description: |
+      ユーザーAPI
+
+      ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
   - name: MaintenanceRecords
-    description: 整備記録API
+    description: |
+      整備記録API
+
+      ⚠️ 未実装（将来対応予定）。
 
 paths:
+  # ==========================================================================
+  # Auth
+  # ==========================================================================
   /auth/register:
     post:
       tags:
@@ -33,6 +49,9 @@ paths:
       summary: アカウント登録
       description: |
         オーナー または ショップアカウントを作成する。
+
+        認証不要（公開エンドポイント）。
+      security: []
       requestBody:
         required: true
         content:
@@ -47,7 +66,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/EmptyApiResponse"
         "400":
-          description: 入力値不正（バリデーションエラーなど）
+          description: |
+            入力値不正（バリデーションエラー）、またはメールアドレスが既に登録されている場合
+            （`USER_ALREADY_EXISTS`）
           content:
             application/json:
               schema:
@@ -60,6 +81,13 @@ paths:
       summary: ログイン
       description: |
         メールアドレスとパスワードでログインする。
+
+        認証不要（公開エンドポイント）。
+
+        アクセストークンはレスポンスボディで返却する（フロントエンドはメモリ上のみで保持し、永続化しない）。
+        リフレッシュトークンはレスポンスボディには含まれず、`Set-Cookie`ヘッダーでHttpOnly Cookie
+        （`refresh_token`）として払い出される。
+      security: []
       requestBody:
         required: true
         content:
@@ -69,28 +97,108 @@ paths:
       responses:
         "200":
           description: ログイン成功
+          headers:
+            Set-Cookie:
+              description: |
+                リフレッシュトークンを含むHttpOnly Cookie（`refresh_token`、有効期限7日）
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginApiResponse"
         "400":
-          description: 入力値不正
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: 認証失敗
+          description: |
+            入力値不正（バリデーションエラー）、またはメールアドレス・パスワードの不一致
+            （`INVALID_CREDENTIALS`）
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /users/me:
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: アクセストークン再発行
+      description: |
+        Cookieに保存されたリフレッシュトークンを用いて、新しいアクセストークンを再発行する。
+
+        認証不要（公開エンドポイント）。リフレッシュトークンはCookie（`refresh_token`）から
+        自動的に読み取られ、リクエストボディは不要。再発行のたびにリフレッシュトークン自体も
+        ローテーションされ、新しい`Set-Cookie`が返却される。
+      security: []
+      parameters:
+        - name: refresh_token
+          in: cookie
+          required: false
+          description: HttpOnly Cookieに保存されたリフレッシュトークン
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 再発行成功
+          headers:
+            Set-Cookie:
+              description: ローテーションされた新しいリフレッシュトークンを含むHttpOnly Cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshApiResponse"
+        "401":
+          description: |
+            リフレッシュトークンが存在しない（`NO_REFRESH_TOKEN`）、または無効・期限切れ
+            （`INVALID_REFRESH_TOKEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: ログアウト
+      description: |
+        リフレッシュトークンをサーバー側で失効させ、Cookieを削除する。
+
+        認証不要（公開エンドポイント）。リフレッシュトークンが既に存在しない場合もエラーにはならない
+        （冪等）。
+      security: []
+      parameters:
+        - name: refresh_token
+          in: cookie
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ログアウト成功
+          headers:
+            Set-Cookie:
+              description: リフレッシュトークンCookieを即時失効させる削除用Cookie（Max-Age=0）
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+
+  # ==========================================================================
+  # Dashboard
+  # ==========================================================================
+  /dashboard:
     get:
       tags:
-        - Users
-      summary: 自分のユーザー情報取得
+        - Dashboard
+      summary: ダッシュボード情報取得
+      description: |
+        ログインユーザーのロール（OWNER / SHOP）に応じたダッシュボード情報を取得する。
+
+        レスポンスの形状はロールによって異なる
+        （OWNER: `OwnerDashboardResponse` / SHOP: `ShopDashboardResponse`）。
       security:
         - bearerAuth: []
       responses:
@@ -99,7 +207,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserApiResponse"
+                $ref: "#/components/schemas/DashboardApiResponse"
         "401":
           description: 未認証
           content:
@@ -107,27 +215,134 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-    put:
+  /dashboard/chart:
+    get:
       tags:
-        - Users
-      summary: 自分のユーザー情報更新
+        - Dashboard
+      summary: ダッシュボードグラフデータ取得
+      description: |
+        期間（月次/年次）を指定して、グラフ表示用の集計データを取得する。
+
+        `endPeriod`省略時は現在の年月/年を基準に、`size`省略時は直近6件分を取得する。
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateUserRequest"
+      parameters:
+        - name: period
+          in: query
+          required: true
+          description: 集計単位
+          schema:
+            $ref: "#/components/schemas/PeriodType"
+        - name: endPeriod
+          in: query
+          required: false
+          description: |
+            集計の終了基準期間（`period=MONTH`なら"yyyy-MM"、`period=YEAR`なら"yyyy"形式）。
+            省略時は現在の年月/年。
+          schema:
+            type: string
+          example: "2026-06"
+        - name: size
+          in: query
+          required: false
+          description: endPeriodを基準に、過去方向へ取得する期間数（1以上）
+          schema:
+            type: integer
+            minimum: 1
+          example: 6
       responses:
         "200":
-          description: 更新成功
+          description: 取得成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EmptyApiResponse"
+                $ref: "#/components/schemas/DashboardChartApiResponse"
         "400":
-          description: 入力値不正
+          description: |
+            入力値不正（`period`未指定、`size`が1未満、`endPeriod`が`period`に対応しない
+            日付フォーマット等）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # Health
+  # ==========================================================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: サーバー生存確認
+      description: |
+        認証不要（公開エンドポイント）。
+
+        他のAPIと異なり、レスポンスは`ApiResponse`でラップされないプレーンテキストを返す。
+      security: []
+      responses:
+        "200":
+          description: 正常
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Pitvia API OK"
+
+  /health/db:
+    get:
+      tags:
+        - Health
+      summary: DB疎通確認
+      description: |
+        認証不要（公開エンドポイント）。
+
+        レスポンスは`ApiResponse`でラップされないプレーンテキストを返す。
+      security: []
+      responses:
+        "200":
+          description: 正常
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  # ==========================================================================
+  # Vehicles
+  # ==========================================================================
+  /vehicles/form-options:
+    get:
+      tags:
+        - Vehicles
+      summary: 車両登録フォームの選択肢取得
+      description: |
+        車両登録・変更フォームの初期化に必要な選択肢一式
+        （メーカー一覧・トランスミッション形式・駆動方式）を取得する。
+
+        現時点では`vehicleType=CAR`のみ対応。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleType
+          in: query
+          required: true
+          description: 対象の車両種別
+          schema:
+            $ref: "#/components/schemas/VehicleType"
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleFormOptionsApiResponse"
+        "400":
+          description: 現在対応していない車両種別が指定された場合（`UNSUPPORTED_VEHICLE_TYPE`）
           content:
             application/json:
               schema:
@@ -144,6 +359,10 @@ paths:
       tags:
         - Vehicles
       summary: 車両一覧取得
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+
+        ログインユーザーが所有・連携している車両の一覧を取得する想定のAPI設計案。
       security:
         - bearerAuth: []
       responses:
@@ -164,14 +383,36 @@ paths:
       tags:
         - Vehicles
       summary: 車両登録
+      description: |
+        車両を新規登録する。車両画像を同時にアップロードできる（任意）。
+
+        `multipart/form-data`形式で送信し、`request`パートに車両情報（JSON）、
+        `file`パートに画像ファイル（任意、jpg/jpeg/png/webp、2MB以内）を格納する。
+
+        所有者IDはリクエストボディからではなく、認証済みユーザー情報（アクセストークン）から
+        取得する。
       security:
         - bearerAuth: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/CreateVehicleRequest"
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/CreateVehicleRequest"
+                file:
+                  type: string
+                  format: binary
+                  description: 車両画像ファイル（任意）
+            encoding:
+              request:
+                contentType: application/json
+              file:
+                contentType: image/jpeg, image/png, image/webp
       responses:
         "201":
           description: 登録成功
@@ -180,7 +421,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/EmptyApiResponse"
         "400":
-          description: 入力値不正
+          description: |
+            入力値不正（バリデーションエラー）、指定されたメーカーが存在しない
+            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE`）
           content:
             application/json:
               schema:
@@ -191,12 +435,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /vehicles/{vehicleId}:
     get:
       tags:
         - Vehicles
       summary: 車両詳細取得
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するController定義が存在しないため、現時点ではこのエンドポイントは疎通しない。
+
+        レスポンス形状（`VehicleResponse`）自体はDTOとして実装済みだが、Controllerに未接続。
       security:
         - bearerAuth: []
       parameters:
@@ -204,8 +459,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         "200":
           description: 車両詳細取得成功
@@ -230,6 +485,10 @@ paths:
       tags:
         - Vehicles
       summary: 車両更新
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するController定義が存在しないため、現時点ではこのエンドポイントは疎通しない。
+
+        車両登録（`POST /vehicles`）と同様に、`multipart/form-data`形式での送信を想定。
       security:
         - bearerAuth: []
       parameters:
@@ -237,14 +496,28 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/UpdateVehicleRequest"
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/UpdateVehicleRequest"
+                file:
+                  type: string
+                  format: binary
+                  description: 車両画像ファイル（未変更の場合は省略）
+            encoding:
+              request:
+                contentType: application/json
+              file:
+                contentType: image/jpeg, image/png, image/webp
       responses:
         "200":
           description: 更新成功
@@ -275,6 +548,8 @@ paths:
       tags:
         - Vehicles
       summary: 車両削除
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するController定義が存在しないため、現時点ではこのエンドポイントは疎通しない。
       security:
         - bearerAuth: []
       parameters:
@@ -282,11 +557,83 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
         "204":
           description: 削除成功
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 車両が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # Users（未実装 / 将来対応予定）
+  # ==========================================================================
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: 自分のユーザー情報取得
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - Users
+      summary: 自分のユーザー情報更新
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: 入力値不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   securitySchemes:
@@ -294,6 +641,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: |
+        `Authorization: Bearer <accessToken>`ヘッダーで送信する。
+        アクセストークンの有効期限は15分。期限切れ時は`POST /auth/refresh`で再発行する。
 
   schemas:
     # --- 共通メタ / レスポンスラッパー定義 ---
@@ -335,8 +685,7 @@ components:
           type: string
           example: "/api/v1/auth/login"
         code:
-          type: string
-          example: "VALIDATION_ERROR"
+          $ref: "#/components/schemas/ErrorCode"
         message:
           type: string
           example: "入力値に誤りがあります"
@@ -345,6 +694,33 @@ components:
           nullable: true
           items:
             $ref: "#/components/schemas/ValidationError"
+
+    # 業務エラーコード一覧（ErrorCode.java と一致させる）
+    ErrorCode:
+      type: string
+      enum:
+        - VALIDATION_ERROR
+        - MALFORMED_JSON
+        - UNSUPPORTED_MEDIA_TYPE
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - RESOURCE_NOT_FOUND
+        - INTERNAL_SERVER_ERROR
+        - INVALID_ROLE
+        - USER_NOT_FOUND
+        - USER_ALREADY_EXISTS
+        - INVALID_CREDENTIALS
+        - NO_REFRESH_TOKEN
+        - INVALID_REFRESH_TOKEN
+        - FILE_UPLOAD_FAILED
+        - FILE_DELETE_FAILED
+        - FILE_EMPTY
+        - UNSUPPORTED_IMAGE_TYPE
+        - FILE_SIZE_EXCEEDED
+        - FILE_LIST_FAILED
+        - MANUFACTURER_NOT_FOUND
+        - UNSUPPORTED_VEHICLE_TYPE
+      example: "VALIDATION_ERROR"
 
     # 異常系レスポンスのルート
     ErrorResponse:
@@ -384,6 +760,17 @@ components:
         data:
           $ref: "#/components/schemas/LoginResponse"
 
+    RefreshApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/RefreshTokenResponse"
+
     UserApiResponse:
       type: object
       required:
@@ -394,6 +781,42 @@ components:
           $ref: "#/components/schemas/Meta"
         data:
           $ref: "#/components/schemas/UserResponse"
+
+    DashboardApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/OwnerDashboardResponse"
+            - $ref: "#/components/schemas/ShopDashboardResponse"
+          description: ログインユーザーのロールによって形状が変わる（OWNER / SHOP）
+
+    DashboardChartApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/DashboardChartResponse"
+
+    VehicleFormOptionsApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/VehicleFormOptionsResponse"
 
     VehicleApiResponse:
       type: object
@@ -419,7 +842,7 @@ components:
           items:
             $ref: "#/components/schemas/VehicleResponse"
 
-    # --- 業務データペイロード定義 ---
+    # --- Auth ---
     RegisterRequest:
       type: object
       required:
@@ -427,22 +850,34 @@ components:
         - userName
         - email
         - password
+        - confirmPassword
       properties:
         role:
           type: string
           enum:
             - OWNER
             - SHOP
+          description: ADMIN権限はアカウント登録では選択不可（内部利用のみ）
         userName:
           type: string
-          example: "シノダ リョウタ"
+          maxLength: 100
+          example: "田中 圭太"
         email:
           type: string
           format: email
-          example: "shinoda@example.com"
+          maxLength: 255
+          example: "tanaka@example.com"
         password:
           type: string
           format: password
+          minLength: 8
+          maxLength: 128
+          description: 英字・数字をそれぞれ最低1文字含む必要がある
+          example: "password123"
+        confirmPassword:
+          type: string
+          format: password
+          description: passwordと一致する必要がある
           example: "password123"
 
     LoginRequest:
@@ -454,7 +889,7 @@ components:
         email:
           type: string
           format: email
-          example: "shinoda@example.com"
+          example: "tanaka@example.com"
         password:
           type: string
           format: password
@@ -463,64 +898,342 @@ components:
     LoginResponse:
       type: object
       properties:
+        user:
+          $ref: "#/components/schemas/UserResponse"
         accessToken:
           type: string
+          description: 有効期限15分のJWT
           example: "eyJhbGciOiJIUzI1NiIsIn..."
-        refreshToken:
-          type: string
-          example: "def502003f41a..."
 
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: 再発行された有効期限15分のJWT
+          example: "eyJhbGciOiJIUzI1NiIsIn..."
+        user:
+          $ref: "#/components/schemas/UserResponse"
+
+    # --- Users ---
     UserResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - OWNER
+            - SHOP
+            - ADMIN
+        userName:
+          type: string
+          example: "田中 圭太"
+        email:
+          type: string
+          example: "tanaka@example.com"
+        iconKey:
+          type: string
+          nullable: true
+          description: アイコン画像のストレージキー（未設定の場合はnull）
+
+    UpdateUserRequest:
+      type: object
+      description: ⚠️ 未実装（将来対応予定）のAPI設計案
+      properties:
+        userName:
+          type: string
+          maxLength: 100
+          example: "田中 敬太"
+
+    # --- Dashboard ---
+    PeriodType:
+      type: string
+      enum:
+        - MONTH
+        - YEAR
+
+    DashboardChartType:
+      type: string
+      enum:
+        - MAINTENANCE_COST_TREND
+        - MAINTENANCE_COUNT_TREND
+
+    MaintenanceType:
+      type: string
+      enum:
+        - PERIODIC_MAINTENANCE
+        - VEHICLE_INSPECTION
+        - INSPECTION
+        - REPAIR
+        - CUSTOM
+        - TUNING
+        - SETTING
+        - OTHER
+
+    OwnerDashboardResponse:
+      type: object
+      properties:
+        vehicleCount:
+          type: integer
+          format: int64
+          example: 2
+        maintenanceCount:
+          type: integer
+          format: int64
+          example: 20
+        linkedShopCount:
+          type: integer
+          format: int64
+          example: 1
+        maintenanceCostChart:
+          $ref: "#/components/schemas/DashboardChartResponse"
+        recentMaintenances:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentMaintenance"
+
+    ShopDashboardResponse:
+      type: object
+      properties:
+        managedVehicles:
+          $ref: "#/components/schemas/ManagedVehicle"
+        monthlySales:
+          type: integer
+          format: int64
+          example: 350000
+        linkedCustomerCount:
+          type: integer
+          format: int64
+          example: 5
+        maintenanceCountChart:
+          $ref: "#/components/schemas/DashboardChartResponse"
+        recentMaintenances:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentMaintenance"
+
+    ManagedVehicle:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+          example: 8
+        own:
+          type: integer
+          format: int64
+          example: 1
+        customer:
+          type: integer
+          format: int64
+          example: 7
+
+    RecentMaintenance:
+      type: object
+      properties:
+        maintenanceId:
+          type: string
+          format: uuid
+        vehicleName:
+          type: string
+          example: "RX-7"
+        ownerName:
+          type: string
+          example: "田中 圭太"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        title:
+          type: string
+          example: "オイル交換"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 単日作業の場合はnull
+        totalCost:
+          type: integer
+          format: int64
+          example: 8000
+        shopName:
+          type: string
+          nullable: true
+          description: DIYによる整備の場合はnull
+
+    DashboardChartResponse:
+      type: object
+      properties:
+        chartType:
+          $ref: "#/components/schemas/DashboardChartType"
+        periodType:
+          $ref: "#/components/schemas/PeriodType"
+        startPeriod:
+          type: string
+          example: "2026-01"
+        endPeriod:
+          type: string
+          example: "2026-06"
+        canMoveForward:
+          type: boolean
+        canMoveBackward:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartPoint"
+
+    ChartPoint:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2026-06"
+        totalValue:
+          type: integer
+          format: int64
+          example: 45000
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartValue"
+
+    ChartValue:
+      type: object
+      properties:
+        category:
+          $ref: "#/components/schemas/MaintenanceType"
+        value:
+          type: integer
+          format: int64
+          example: 20000
+
+    # --- Vehicles ---
+    VehicleType:
+      type: string
+      enum:
+        - CAR
+        - MOTORCYCLE
+        - KART
+        - OTHER
+      description: 現時点でAPIが対応しているのはCARのみ
+
+    TransmissionType:
+      type: string
+      enum:
+        - MT
+        - AT
+        - CVT
+        - DCT
+
+    DriveType:
+      type: string
+      enum:
+        - FR
+        - FF
+        - AWD
+        - MR
+        - RR
+
+    ManufacturerOption:
       type: object
       properties:
         id:
           type: integer
           format: int64
           example: 1
-        role:
+        name:
           type: string
-          example: "OWNER"
-        userName:
-          type: string
-          example: "シノダ リョウタ"
-        email:
-          type: string
-          example: "shinoda@example.com"
+          example: "トヨタ"
 
-    UpdateUserRequest:
+    VehicleSelectOption:
       type: object
       properties:
-        userName:
+        value:
           type: string
-          example: "シノダ 稜太"
+          example: "MT"
+        label:
+          type: string
+          example: "MT"
+
+    VehicleFormOptionsResponse:
+      type: object
+      properties:
+        manufacturers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManufacturerOption"
+        transmissionTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleSelectOption"
+        driveTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleSelectOption"
 
     CreateVehicleRequest:
       type: object
       required:
         - vehicleType
-        - name
+        - modelName
         - manufacturerId
-        - model
+        - modelYear
         - currentMileage
+        - transmissionType
+        - driveType
       properties:
         vehicleType:
+          $ref: "#/components/schemas/VehicleType"
+        modelName:
           type: string
-          example: "CAR"
-        name:
-          type: string
-          example: "マイカー"
+          maxLength: 255
+          example: "RX-7"
         manufacturerId:
           type: integer
           format: int64
-          example: 12
-        model:
+          example: 4
+        modelCode:
           type: string
-          example: "ZN6"
+          maxLength: 100
+          nullable: true
+          example: "FD3S"
+        engineCode:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "13B-REW"
+        modelYear:
+          type: integer
+          format: int32
+          minimum: 1900
+          description: 西暦。未来方向は「現在の年+1年」まで許容
+          example: 2002
+        licensePlate:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "品川 300 な 77-77"
         currentMileage:
           type: integer
+          format: int32
+          minimum: 0
           example: 85000
+        transmissionType:
+          $ref: "#/components/schemas/TransmissionType"
+        driveType:
+          $ref: "#/components/schemas/DriveType"
+        memo:
+          type: string
+          nullable: true
+          example: "オーナーのメイン車両"
 
     UpdateVehicleRequest:
+      description: ⚠️ 未実装（将来対応予定）のAPI設計案。CreateVehicleRequestと同一の構造を想定
       allOf:
         - $ref: "#/components/schemas/CreateVehicleRequest"
 
@@ -528,21 +1241,43 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          format: int64
-          example: 42
+          type: string
+          format: uuid
         vehicleType:
+          $ref: "#/components/schemas/VehicleType"
+        modelName:
           type: string
-          example: "CAR"
-        name:
+          example: "RX-7"
+        manufacturerName:
           type: string
-          example: "マイカー"
-        manufacturer:
+          example: "マツダ"
+        modelCode:
           type: string
-          example: "TOYOTA"
-        model:
+          nullable: true
+          example: "FD3S"
+        engineCode:
           type: string
-          example: "ZN6"
+          nullable: true
+          example: "13B-REW"
+        modelYear:
+          type: integer
+          example: 2002
+        licensePlate:
+          type: string
+          nullable: true
+          example: "品川 300 な 77-77"
+        imageUrl:
+          type: string
+          nullable: true
+          description: 車両画像の公開URL（未設定の場合はnull）
         currentMileage:
           type: integer
-          example: 85200
+          example: 85000
+        transmissionType:
+          $ref: "#/components/schemas/TransmissionType"
+        driveType:
+          $ref: "#/components/schemas/DriveType"
+        memo:
+          type: string
+          nullable: true
+          example: "オーナーのメイン車両"
