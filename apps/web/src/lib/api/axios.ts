@@ -17,9 +17,6 @@ export const apiClient = axios.create({
   timeout: 10000,
   // クッキー（HttpOnlyのrefresh_token等）をクロスドメイン間でも常に送信・保持する
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // APIリクエストインターセプター登録
