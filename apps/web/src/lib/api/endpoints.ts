@@ -26,4 +26,15 @@ export const ENDPOINTS = {
     /** ダッシュボードグラフデータ取得API */
     chart: "/dashboard/chart",
   },
+
+  vehicle: {
+    /** 車両登録フォーム初期化API */
+    formOptions: "/vehicles/form-options",
+
+    /** 車両登録API */
+    root: "/vehicles",
+
+    /** 車両詳細取得・更新・削除API */
+    byId: (vehicleId: string) => `/vehicles/${vehicleId}`,
+  },
 } as const;

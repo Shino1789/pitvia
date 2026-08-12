@@ -11,6 +11,15 @@ export const TOAST_MESSAGES = {
       /** ログアウト完了 */
       LOGOUT: "ログアウトしました。",
     },
+
+    VEHICLE: {
+      /** 車両登録完了 */
+      REGISTER: "車両を登録しました。",
+      /** 車両情報更新完了 */
+      UPDATE: "車両情報を更新しました。",
+      /** 車両削除完了 */
+      DELETE: "車両を削除しました。",
+    },
   },
 
   ERROR: {
