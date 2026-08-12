@@ -89,8 +89,12 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
 
 function FormLabel({
   className,
+  required = false,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: React.ComponentProps<typeof LabelPrimitive.Root> & {
+  /** 必須項目である場合にラベル末尾へ「*」を表示する */
+  required?: boolean;
+}) {
   const { error, formItemId } = useFormField();
 
   return (
@@ -100,7 +104,14 @@ function FormLabel({
       className={cn(className)} // 「data-[error=true]:text-destructive」を削除し、赤化を防ぐ
       htmlFor={formItemId}
       {...props}
-    />
+    >
+      {props.children}
+      {required && (
+        <span className="text-destructive" aria-hidden="true">
+          *
+        </span>
+      )}
+    </Label>
   );
 }
 

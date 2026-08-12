@@ -34,6 +34,24 @@ export const VALIDATION_MESSAGES = {
    */
   invalidFormat: (field: string) => `${field}の形式が正しくありません`,
 
+  /**
+   * 最小値チェックのエラーメッセージ
+   *
+   * @param field フィールド名
+   * @param min 最小値
+   */
+  minValue: (field: string, min: number) =>
+    `${field}は${min}以上で入力してください`,
+
+  /**
+   * 最大値チェックのエラーメッセージ
+   *
+   * @param field フィールド名
+   * @param max 最大値
+   */
+  maxValue: (field: string, max: number) =>
+    `${field}は${max}以下で入力してください`,
+
   /** パスワードの複雑性ルール（英数字混在）のエラーメッセージ */
   passwordRule: "パスワードは英字と数字を少なくとも1文字ずつ含めてください",
 

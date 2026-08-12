@@ -1,0 +1,45 @@
+info:
+  name: 車両登録：異常系（年式が未来すぎる）
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/vehicles
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "RX-7",
+            "manufacturerId": 1,
+            "modelCode": "FD3S",
+            "engineCode": "13B-REW",
+            "modelYear": 2028,
+            "currentMileage": 0,
+            "transmissionType": "MT",
+            "driveType": "FR"
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト：独自バリデータ】
+  年式に「現在の年 + 2年」を指定した際、`@ValidModelYear`（許容は現在の年 + 1年まで）に違反し、
+  400 Bad Request (VALIDATION_ERROR) が返ることを確認する。
+
+  ※本テストは実行時点の年に依存する固定値です（2026年時点では2028年式が「2年先」に該当）。
+  年をまたいだ際は、modelYearの値を「実行時の年 + 2」に更新してください。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

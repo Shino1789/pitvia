@@ -18,7 +18,7 @@ public interface RecentMaintenanceProjection {
     UUID getId();
 
     /**
-     * 車両表示名（愛称など）を取得する
+     * 車種名（例: RX-7, GT-R）を取得する
      */
     String getVehicleName();
 

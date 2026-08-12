@@ -53,6 +53,12 @@ public class Manufacturer {
     private String name;
 
     /**
+     * 表示並び順
+     */
+    @Column(nullable = false)
+    private Integer sortOrder;
+
+    /**
      * 作成日時
      */
     @CreatedDate

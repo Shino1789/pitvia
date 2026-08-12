@@ -1,0 +1,42 @@
+info:
+  name: 車両登録：異常系（メーカー未存在）
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/vehicles
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "RX-7",
+            "manufacturerId": 999999,
+            "modelCode": "FD3S",
+            "engineCode": "13B-REW",
+            "modelYear": 2002,
+            "currentMileage": 85000,
+            "transmissionType": "MT",
+            "driveType": "FR"
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  存在しないmanufacturerIdを指定した際、`VehicleService` のガード句でブロックされ、
+  400 Bad Request (MANUFACTURER_NOT_FOUND) が返ることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

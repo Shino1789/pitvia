@@ -84,6 +84,7 @@ CREATE TABLE manufacturers (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(100) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    sort_order INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -134,16 +135,16 @@ CREATE TABLE vehicles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     vehicle_type VARCHAR(50) NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    model_name VARCHAR(255) NOT NULL,
     manufacturer_id BIGINT NOT NULL,
-    model VARCHAR(255) NOT NULL,
     model_code VARCHAR(100),
-    model_year SMALLINT,
+    engine_code VARCHAR(100),
+    model_year SMALLINT NOT NULL,
     license_plate VARCHAR(100),
     image_key VARCHAR(500),
     current_mileage INTEGER NOT NULL,
-    transmission_type VARCHAR(20),
-    drive_type VARCHAR(20),
+    transmission_type VARCHAR(20) NOT NULL,
+    drive_type VARCHAR(20) NOT NULL,
     memo TEXT,
     version INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -405,22 +406,24 @@ INSERT INTO maintenance_categories (code, name, sort_order) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- 3. MANUFACTURERS (主要メーカーマスタ)
-INSERT INTO manufacturers (code, name) VALUES
-('TOYOTA',        'トヨタ'),
-('NISSAN',        '日産'),
-('HONDA',         'ホンダ'),
-('MAZDA',         'マツダ'),
-('SUBARU',        'スバル'),
-('MITSUBISHI',    '三菱'),
-('SUZUKI',        'スズキ'),
-('DAIHATSU',      'ダイハツ'),
-('LEXUS',         'レクサス'),
-('YAMAHA',        'ヤマハ'),
-('KAWASAKI',      'カワサキ'),
-('BMW',           'BMW'),
-('PORSCHE',       'ポルシェ'),
-('MERCEDES_BENZ', 'Mercedes-Benz'),
-('AUDI',          'Audi'),
-('VOLKSWAGEN',    'Volkswagen'),
-('OTHER',         'その他')
+-- sort_orderは「国産車 → 国産バイク → 外車 → その他」の順で表示させるための表示順
+-- （nameの文字コード順では和文・欧文表記が混在し意図した並びにならないため、明示的に管理する）
+INSERT INTO manufacturers (code, name, sort_order) VALUES
+('TOYOTA',        'トヨタ',          10),
+('NISSAN',        '日産',            20),
+('HONDA',         'ホンダ',          30),
+('MAZDA',         'マツダ',          40),
+('SUBARU',        'スバル',          50),
+('MITSUBISHI',    '三菱',            60),
+('SUZUKI',        'スズキ',          70),
+('DAIHATSU',      'ダイハツ',        80),
+('LEXUS',         'レクサス',        90),
+('YAMAHA',        'ヤマハ',          100),
+('KAWASAKI',      'カワサキ',        110),
+('BMW',           'BMW',             120),
+('PORSCHE',       'ポルシェ',        130),
+('MERCEDES_BENZ', 'Mercedes-Benz',   140),
+('AUDI',          'Audi',            150),
+('VOLKSWAGEN',    'Volkswagen',      160),
+('OTHER',         'その他',          999)
 ON CONFLICT (code) DO NOTHING;

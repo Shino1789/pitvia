@@ -24,6 +24,11 @@ public enum ErrorCode {
     MALFORMED_JSON("JSON形式が不正です"),
 
     /**
+     * サポート対象外のContent-Type（415）
+     */
+    UNSUPPORTED_MEDIA_TYPE("サポートされていないContent-Typeです"),
+
+    /**
      * 未認証エラー（401）
      */
     UNAUTHORIZED("認証が必要です"),
@@ -101,7 +106,17 @@ public enum ErrorCode {
     /**
      * ファイル一覧の取得失敗
      */
-    FILE_LIST_FAILED("ファイル一覧の取得に失敗しました");
+    FILE_LIST_FAILED("ファイル一覧の取得に失敗しました"),
+
+    /**
+     * メーカーが存在しない
+     */
+    MANUFACTURER_NOT_FOUND("指定されたメーカーが見つかりません"),
+
+    /**
+     * 未対応の車両種別
+     */
+    UNSUPPORTED_VEHICLE_TYPE("現在対応していない車両種別が指定されました");
 
     /**
      * クライアント向けデフォルトメッセージ
