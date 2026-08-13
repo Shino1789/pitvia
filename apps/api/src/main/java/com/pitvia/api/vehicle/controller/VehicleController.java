@@ -6,8 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -21,7 +24,9 @@ import com.pitvia.api.common.factory.ResponseFactory;
 import com.pitvia.api.vehicle.dto.request.CreateVehicleRequest;
 import com.pitvia.api.vehicle.dto.response.VehicleFormOptionsResponse;
 import com.pitvia.api.vehicle.dto.response.VehicleListResponse;
+import com.pitvia.api.vehicle.dto.response.VehicleResponse;
 import com.pitvia.api.vehicle.enums.VehicleType;
+import com.pitvia.api.vehicle.service.VehicleDetailService;
 import com.pitvia.api.vehicle.service.VehicleFormOptionsService;
 import com.pitvia.api.vehicle.service.VehicleListService;
 import com.pitvia.api.vehicle.service.VehicleService;
@@ -49,6 +54,9 @@ public class VehicleController {
 
     /** 車両一覧取得サービス */
     private final VehicleListService vehicleListService;
+
+    /** 車両詳細取得・更新・削除サービス */
+    private final VehicleDetailService vehicleDetailService;
 
     /** レスポンスオブジェクト生成ファクトリ */
     private final ResponseFactory responseFactory;
@@ -115,6 +123,74 @@ public class VehicleController {
         ApiResponse<Void> response = responseFactory.success(httpRequest, null);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 車両詳細を取得する
+     *
+     * <p>
+     * 所有者本人、またはSHOPが対象車両にAPPROVED状態で連携している場合のみ閲覧できる。
+     * </p>
+     *
+     * @param principal   認証済みユーザー情報
+     * @param vehicleId   対象車両ID
+     * @param httpRequest HTTPリクエスト
+     * @return 車両詳細レスポンス
+     */
+    @GetMapping("/{vehicleId}")
+    public ApiResponse<VehicleResponse> getDetail(
+            @AuthenticationPrincipal JwtPrincipal principal,
+            @PathVariable UUID vehicleId,
+            HttpServletRequest httpRequest) {
+
+        VehicleResponse response = vehicleDetailService.getDetail(principal, vehicleId);
+        return responseFactory.success(httpRequest, response);
+    }
+
+    /**
+     * 車両情報を更新する
+     *
+     * <p>
+     * 車両所有者本人のみ実行できる（SHOPが連携済み顧客の車両を更新しようとした場合は403）。
+     * </p>
+     *
+     * @param principal   認証済みユーザー情報
+     * @param vehicleId   対象車両ID
+     * @param request     車両更新リクエスト情報
+     * @param file        車両画像ファイル（任意、未指定時は既存画像を変更しない）
+     * @param httpRequest HTTPリクエスト
+     * @return 更新成功レスポンス
+     */
+    @PutMapping(value = "/{vehicleId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Void> update(
+            @AuthenticationPrincipal JwtPrincipal principal,
+            @PathVariable UUID vehicleId,
+            @Valid @RequestPart("request") CreateVehicleRequest request,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            HttpServletRequest httpRequest) {
+
+        vehicleDetailService.update(principal, vehicleId, request, file);
+        return responseFactory.success(httpRequest, null);
+    }
+
+    /**
+     * 車両を削除する
+     *
+     * <p>
+     * 車両所有者本人のみ実行できる（SHOPが連携済み顧客の車両を削除しようとした場合は403）。
+     * </p>
+     *
+     * @param principal 認証済みユーザー情報
+     * @param vehicleId 対象車両ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/{vehicleId}")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal JwtPrincipal principal,
+            @PathVariable UUID vehicleId) {
+
+        vehicleDetailService.delete(principal, vehicleId);
+        return ResponseEntity.noContent().build();
     }
 
 }

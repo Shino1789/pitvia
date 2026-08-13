@@ -79,7 +79,28 @@ public record VehicleResponse(
         /**
          * 車両メモ / 補足情報
          */
-        String memo) {
+        String memo,
+
+        /**
+         * ログインユーザーがこの車両を編集（更新・削除）できるかどうか
+         */
+        boolean canEdit) {
+
+    /**
+     * Vehicleエンティティから生成（canEdit未指定 = false固定）
+     *
+     * <p>
+     * 画像のストレージキーは、この変換処理の中で公開URLへ解決する。
+     * {@code manufacturer}は遅延ロードのため、本メソッドは呼び出し元のトランザクション内で実行すること。
+     * </p>
+     *
+     * @param vehicle            車両エンティティ
+     * @param storageUrlResolver 公開URL組み立てクラス
+     * @return VehicleResponse
+     */
+    public static VehicleResponse from(Vehicle vehicle, StorageUrlResolver storageUrlResolver) {
+        return from(vehicle, storageUrlResolver, false);
+    }
 
     /**
      * Vehicleエンティティから生成
@@ -89,11 +110,12 @@ public record VehicleResponse(
      * {@code manufacturer}は遅延ロードのため、本メソッドは呼び出し元のトランザクション内で実行すること。
      * </p>
      *
-     * @param vehicle           車両エンティティ
+     * @param vehicle            車両エンティティ
      * @param storageUrlResolver 公開URL組み立てクラス
+     * @param canEdit            ログインユーザーがこの車両を編集できるかどうか
      * @return VehicleResponse
      */
-    public static VehicleResponse from(Vehicle vehicle, StorageUrlResolver storageUrlResolver) {
+    public static VehicleResponse from(Vehicle vehicle, StorageUrlResolver storageUrlResolver, boolean canEdit) {
 
         String imageUrl = vehicle.getImageKey() != null
                 ? storageUrlResolver.resolve(vehicle.getImageKey())
@@ -112,6 +134,7 @@ public record VehicleResponse(
                 vehicle.getCurrentMileage(),
                 vehicle.getTransmissionType(),
                 vehicle.getDriveType(),
-                vehicle.getMemo());
+                vehicle.getMemo(),
+                canEdit);
     }
 }

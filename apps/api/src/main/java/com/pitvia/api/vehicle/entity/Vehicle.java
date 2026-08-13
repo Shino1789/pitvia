@@ -10,6 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import com.pitvia.api.common.entity.BaseEntity;
 import com.pitvia.api.master.entity.Manufacturer;
 import com.pitvia.api.user.entity.User;
+import com.pitvia.api.vehicle.dto.request.CreateVehicleRequest;
 import com.pitvia.api.vehicle.enums.DriveType;
 import com.pitvia.api.vehicle.enums.TransmissionType;
 import com.pitvia.api.vehicle.enums.VehicleType;
@@ -159,5 +160,29 @@ public class Vehicle extends BaseEntity {
      */
     public void updateImageKey(String imageKey) {
         this.imageKey = imageKey;
+    }
+
+    /**
+     * 車両情報を更新する
+     *
+     * <p>
+     * 画像（imageKey）は対象外。画像の差し替えは{@link #updateImageKey}で別途行う。
+     * </p>
+     *
+     * @param request      更新リクエスト
+     * @param manufacturer 検証済みのメーカーエンティティ
+     */
+    public void update(CreateVehicleRequest request, Manufacturer manufacturer) {
+        this.vehicleType = request.vehicleType();
+        this.modelName = request.modelName();
+        this.manufacturer = manufacturer;
+        this.modelCode = request.modelCode();
+        this.engineCode = request.engineCode();
+        this.modelYear = request.modelYear();
+        this.licensePlate = request.licensePlate();
+        this.currentMileage = request.currentMileage();
+        this.transmissionType = request.transmissionType();
+        this.driveType = request.driveType();
+        this.memo = request.memo();
     }
 }

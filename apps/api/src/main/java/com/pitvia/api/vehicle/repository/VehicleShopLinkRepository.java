@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.pitvia.api.vehicle.entity.Vehicle;
 import com.pitvia.api.vehicle.entity.VehicleShopLink;
+import com.pitvia.api.vehicle.enums.LinkStatus;
 
 /**
  * 車両ショップ連携情報テーブル (vehicle_shop_links) に対するデータアクセスを管理するリポジトリ
@@ -79,5 +80,15 @@ public interface VehicleShopLinkRepository extends JpaRepository<VehicleShopLink
     List<Vehicle> findApprovedVehiclesByShopAndOwner(
             @Param("shopUserId") UUID shopUserId,
             @Param("ownerId") UUID ownerId);
+
+    /**
+     * ショップが指定車両に対して、指定ステータスで連携しているかを判定する
+     *
+     * @param shopId    ショップユーザーID
+     * @param vehicleId 対象車両ID
+     * @param status    連携ステータス
+     * @return 該当する連携が存在すればtrue
+     */
+    boolean existsByShop_IdAndVehicle_IdAndStatus(UUID shopId, UUID vehicleId, LinkStatus status);
 
 }
