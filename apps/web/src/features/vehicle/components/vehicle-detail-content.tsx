@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, EyeIcon, PencilIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import {
@@ -34,8 +34,8 @@ const VEHICLE_TYPE = "CAR" as const;
 
 /** 閲覧モード/編集モードの切り替え選択肢 */
 const MODE_OPTIONS: SegmentedToggleOption<"view" | "edit">[] = [
-  { value: "view", label: "閲覧モード" },
-  { value: "edit", label: "編集モード" },
+  { value: "view", label: "閲覧モード", icon: EyeIcon },
+  { value: "edit", label: "編集モード", icon: PencilIcon },
 ];
 
 /**
