@@ -360,11 +360,28 @@ paths:
         - Vehicles
       summary: 車両一覧取得
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+        ログインユーザーの車両一覧を取得する。
 
-        ログインユーザーが所有・連携している車両の一覧を取得する想定のAPI設計案。
+        `ownerId`未指定の場合、ログインユーザー自身が所有する車両一覧を取得する
+        （レスポンスの`owner`は`null`）。
+
+        `ownerId`指定はSHOPロール専用で、連携（承認済み）しているオーナーの車両一覧を取得する。
+        OWNERロールが`ownerId`を指定した場合は`400`（`OWNER_ID_NOT_ALLOWED`）を返す。
+
+        `ownerId`に指定したユーザーが存在しない場合、または存在してもログインユーザー（SHOP）と
+        車両共有関係（承認済み連携）が無い場合は、いずれも`404`（`VEHICLE_OWNER_NOT_FOUND`）を
+        返す。対象ユーザーの存在有無を外部から推測できないよう、両者を区別しない。
       security:
         - bearerAuth: []
+      parameters:
+        - name: ownerId
+          in: query
+          required: false
+          description: |
+            対象オーナーのユーザーID（SHOPが連携先オーナーの車両一覧を取得する場合のみ指定）。
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: 車両一覧取得成功
@@ -372,8 +389,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VehicleListApiResponse"
+        "400":
+          description: OWNERロールが`ownerId`を指定した場合（`OWNER_ID_NOT_ALLOWED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された`ownerId`のユーザーが存在しない、またはログインユーザーと車両共有関係にない
+            （`VEHICLE_OWNER_NOT_FOUND`）
           content:
             application/json:
               schema:
@@ -720,6 +751,8 @@ components:
         - FILE_LIST_FAILED
         - MANUFACTURER_NOT_FOUND
         - UNSUPPORTED_VEHICLE_TYPE
+        - OWNER_ID_NOT_ALLOWED
+        - VEHICLE_OWNER_NOT_FOUND
       example: "VALIDATION_ERROR"
 
     # 異常系レスポンスのルート
@@ -838,9 +871,7 @@ components:
         meta:
           $ref: "#/components/schemas/Meta"
         data:
-          type: array
-          items:
-            $ref: "#/components/schemas/VehicleResponse"
+          $ref: "#/components/schemas/VehicleListResponse"
 
     # --- Auth ---
     RegisterRequest:
@@ -1281,3 +1312,31 @@ components:
           type: string
           nullable: true
           example: "オーナーのメイン車両"
+
+    VehicleOwnerSummary:
+      type: object
+      description: |
+        車両一覧の対象オーナー情報（SHOPが`ownerId`を指定して取得した場合のみ、
+        `VehicleListResponse.owner`に設定される）
+      properties:
+        id:
+          type: string
+          format: uuid
+        userName:
+          type: string
+          example: "田中 圭太"
+
+    VehicleListResponse:
+      type: object
+      properties:
+        owner:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/VehicleOwnerSummary"
+          nullable: true
+          description: |
+            `ownerId`未指定（ログインユーザー自身の一覧）の場合は`null`
+        vehicles:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleResponse"

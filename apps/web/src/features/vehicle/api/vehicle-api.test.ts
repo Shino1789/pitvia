@@ -37,6 +37,40 @@ describe("vehicleApi", () => {
     vi.clearAllMocks();
   });
 
+  describe("getList", () => {
+    /**
+     * @test ownerId未指定の場合、パラメータ無しで/vehiclesへGETリクエストすることを確認
+     */
+    test("ownerId未指定の場合、パラメータ無しでリクエストする", async () => {
+      const { apiClient } = await import("@/lib/api/axios");
+      vi.mocked(apiClient.get).mockResolvedValue({
+        data: { data: { owner: null, vehicles: [] } },
+      });
+
+      await vehicleApi.getList();
+
+      expect(apiClient.get).toHaveBeenCalledWith("/vehicles", {
+        params: undefined,
+      });
+    });
+
+    /**
+     * @test ownerId指定の場合、クエリパラメータとして付与されることを確認
+     */
+    test("ownerId指定の場合、クエリパラメータとして送信する", async () => {
+      const { apiClient } = await import("@/lib/api/axios");
+      vi.mocked(apiClient.get).mockResolvedValue({
+        data: { data: { owner: null, vehicles: [] } },
+      });
+
+      await vehicleApi.getList("owner-id-123");
+
+      expect(apiClient.get).toHaveBeenCalledWith("/vehicles", {
+        params: { ownerId: "owner-id-123" },
+      });
+    });
+  });
+
   describe("getFormOptions", () => {
     /**
      * @test form-optionsエンドポイントへ、車両種別をクエリパラメータとして呼び出すことを確認

@@ -12,6 +12,8 @@ vi.mock("next/navigation", () => ({
     push: mockPush,
   }),
   useParams: () => ({ vehicleId: "vehicle-id-123" }),
+  // ownerIdクエリパラメータ無しのケースを想定
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる）
@@ -95,7 +97,7 @@ const FORM_OPTIONS = {
 };
 
 /**
- * VehicleDetailContent（車両詳細・変更画面）の単体テスト
+ * VehicleDetailContent（車両詳細・更新画面）の単体テスト
  */
 describe("VehicleDetailContent", () => {
   beforeEach(() => {

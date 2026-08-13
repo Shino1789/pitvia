@@ -10,8 +10,12 @@ export interface HeaderState {
   readonly actions?: ReactNode;
 }
 
-export interface HeaderContextType {
-  readonly headerState: HeaderState;
+/**
+ * ヘッダー状態を更新するための操作関数群の型定義
+ */
+export interface HeaderDispatch {
+  /** ヘッダーの状態を更新する */
   readonly setHeader: (state: HeaderState) => void;
+  /** ヘッダーの状態をクリアする */
   readonly clearHeader: () => void;
 }

@@ -1,5 +1,6 @@
 package com.pitvia.api.vehicle.repository;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -23,6 +24,14 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
      * @return 登録車両数
      */
     long countByUser_Id(UUID userId);
+
+    /**
+     * 指定ユーザーが所有する車両一覧を、登録日時の新しい順に取得
+     *
+     * @param userId ユーザーID
+     * @return 車両一覧（登録日時降順）
+     */
+    List<Vehicle> findAllByUser_IdOrderByCreatedAtDesc(UUID userId);
 
     /**
      * 車両画像が設定されている全車両のストレージキーを取得

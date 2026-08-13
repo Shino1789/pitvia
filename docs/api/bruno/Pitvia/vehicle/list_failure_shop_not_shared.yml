@@ -1,0 +1,30 @@
+info:
+  name: 車両一覧（顧客車両）：異常系（共有関係なし）
+  type: http
+  seq: 11
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles?ownerId=a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+  params:
+    - name: ownerId
+      value: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  実在するオーナー（`a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11` / モックデータの「オーナーテスト」）を
+  指定しているが、ログイン中のSHOPとは車両共有関係が無いケース。
+  単純に空配列を返すのではなく、404 Not Found（VEHICLE_OWNER_NOT_FOUND）が返ることを確認する。
+
+  ※実行前に `auth/login_success_shop.yml`（Brunoテスト用SHOPアカウント。モックデータの
+  オーナーとは共有関係が無い）でログインし、トークンが保持されている必要があります。

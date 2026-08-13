@@ -72,3 +72,24 @@ export interface VehicleDetail {
   driveType: string;
   memo: string | null;
 }
+
+/**
+ * 車両一覧の対象オーナー情報
+ *
+ * ownerId指定時（SHOPが顧客の車両一覧を見る場合）のみ設定される。
+ * Spring: VehicleOwnerSummary
+ */
+export interface VehicleOwnerSummary {
+  id: string;
+  userName: string;
+}
+
+/**
+ * 車両一覧取得レスポンス
+ * Spring: VehicleListResponse
+ */
+export interface VehicleListResponse {
+  /** 対象オーナー情報（自分自身の一覧取得時はnull） */
+  owner: VehicleOwnerSummary | null;
+  vehicles: VehicleDetail[];
+}

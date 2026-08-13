@@ -1,5 +1,7 @@
 package com.pitvia.api.vehicle.controller;
 
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +20,10 @@ import com.pitvia.api.common.dto.response.ApiResponse;
 import com.pitvia.api.common.factory.ResponseFactory;
 import com.pitvia.api.vehicle.dto.request.CreateVehicleRequest;
 import com.pitvia.api.vehicle.dto.response.VehicleFormOptionsResponse;
+import com.pitvia.api.vehicle.dto.response.VehicleListResponse;
 import com.pitvia.api.vehicle.enums.VehicleType;
 import com.pitvia.api.vehicle.service.VehicleFormOptionsService;
+import com.pitvia.api.vehicle.service.VehicleListService;
 import com.pitvia.api.vehicle.service.VehicleService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,8 +47,34 @@ public class VehicleController {
     /** 車両フォーム選択肢取得サービス */
     private final VehicleFormOptionsService vehicleFormOptionsService;
 
+    /** 車両一覧取得サービス */
+    private final VehicleListService vehicleListService;
+
     /** レスポンスオブジェクト生成ファクトリ */
     private final ResponseFactory responseFactory;
+
+    /**
+     * 車両一覧を取得する
+     *
+     * <p>
+     * {@code ownerId}未指定時はログインユーザー自身の車両一覧、指定時はSHOPから見た
+     * 特定顧客（オーナー）の共有車両一覧を返す。
+     * </p>
+     *
+     * @param principal   認証済みユーザー情報
+     * @param ownerId     対象オーナーのユーザーID（任意、SHOP専用）
+     * @param httpRequest HTTPリクエスト
+     * @return 車両一覧レスポンス
+     */
+    @GetMapping
+    public ApiResponse<VehicleListResponse> getVehicleList(
+            @AuthenticationPrincipal JwtPrincipal principal,
+            @RequestParam(required = false) UUID ownerId,
+            HttpServletRequest httpRequest) {
+
+        VehicleListResponse response = vehicleListService.getVehicleList(principal, ownerId);
+        return responseFactory.success(httpRequest, response);
+    }
 
     /**
      * 車両登録フォームの選択肢一式を取得する

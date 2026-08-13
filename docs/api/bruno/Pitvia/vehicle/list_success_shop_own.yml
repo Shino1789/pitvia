@@ -1,0 +1,24 @@
+info:
+  name: 車両一覧（自分）：正常系（SHOP）
+  type: http
+  seq: 9
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  ログインユーザー（SHOP）自身が所有する車両（自社デモカー等）の一覧を取得する。
+  OWNERと同じく`ownerId`を指定しないため、`data.owner`はnullになる。
+
+  ※実行前に `auth/login_success_shop.yml` でログインし、トークンが保持されている必要があります。

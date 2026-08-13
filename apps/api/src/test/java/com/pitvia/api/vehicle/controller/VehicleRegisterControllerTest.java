@@ -51,7 +51,7 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * @version 1.0
  */
 @Testcontainers
-class VehicleControllerTest extends AbstractIntegrationTest {
+class VehicleRegisterControllerTest extends AbstractIntegrationTest {
 
     /** {@code application-test.yml} のダミー値と一致させ、上書きが必要なプロパティを最小限に抑える */
     private static final String STORAGE_ACCESS_KEY = "test-access-key";
