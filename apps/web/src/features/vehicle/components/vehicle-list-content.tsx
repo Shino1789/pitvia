@@ -32,20 +32,17 @@ export function VehicleListContent() {
   const [keyword, setKeyword] = useState("");
 
   // ownerId指定時は対象オーナーの表示名を、未指定時は固定タイトルを表示する
-  const title = data?.owner ? `${data.owner.userName} 様の車両一覧` : "車両一覧";
+  const title = data?.owner
+    ? `${data.owner.userName} 様の車両一覧`
+    : "車両一覧";
 
   // データ取得完了かつ自分自身の一覧を見ている場合のみ、ヘッダーへ検索・追加アクションを表示する
   const showActions = !isPending && !isError && !!data;
 
-  // useHeaderの依存配列は参照の同一性で比較されるため、actionsをuseMemoで安定化させないと
-  // 「actions生成→setHeader→再レンダリング→actions再生成」が無限ループしてしまう
+  // ヘッダー右側アクションエリアの要素生成
   //
-  // 検索欄のInputはuseHeader経由でAppHeader側（別ツリー）に描画されるため、keywordをこの
-  // useMemoの依存配列に含めて1文字入力ごとにactionsを再生成すると、その都度
-  // useHeaderのuseEffect→setHeader→Context経由の再レンダリングという非同期の往復が発生する。
-  // この往復の遅延により、IME変換中の文字列とReactが把握するvalueとの間にズレが生じ、
-  // 変換セッションが中断されて「いnn」のような文字化けが起きるため、Inputは非制御にして
-  // keywordの変化ではactionsを再生成しないようにしている。
+  // - 不必要な AppHeader の再レンダリング防止のため useMemo で保持
+  // - 1文字入力ごとに actions が再生成されると、日本語入力が途中で中断されて、文字化けが発生するため、keyword はあえて依存配列に含めず Input は非制御で扱う
   const actions = useMemo(() => {
     if (!showActions) {
       return undefined;

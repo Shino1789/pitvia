@@ -1,9 +1,16 @@
 import { createContext } from "react";
-import type { HeaderContextType } from "@/shared/types/header";
+import type { HeaderState, HeaderDispatch } from "@/shared/types/header";
 
 /**
- * アプリ共通ヘッダー（AppHeader）の状態および操作用ハンドラーを共有するためのコンテキスト
+ * アプリ共通ヘッダー（AppHeader）の表示状態（title, actions）を共有するためのコンテキスト
  */
-export const HeaderContext = createContext<HeaderContextType | undefined>(
+export const HeaderStateContext = createContext<HeaderState | undefined>(
+  undefined,
+);
+
+/**
+ * アプリ共通ヘッダーの状態を更新するための操作関数（setHeader/clearHeader）を共有するコンテキスト
+ */
+export const HeaderDispatchContext = createContext<HeaderDispatch | undefined>(
   undefined,
 );
