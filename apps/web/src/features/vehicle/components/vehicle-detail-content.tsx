@@ -231,13 +231,16 @@ export function VehicleDetailContent() {
           一覧へ戻る
         </Button>
 
-        {/* 閲覧モード/編集モードの切り替え */}
-        <SegmentedToggle
-          options={MODE_OPTIONS}
-          value={mode}
-          onChange={handleModeChange}
-          ariaLabel="表示モード"
-        />
+        {/* 閲覧モード/編集モードの切り替え（車両所有者本人のみ表示。SHOPが顧客車両を
+            閲覧している場合（canEdit=false）は切り替えUI自体を表示しない） */}
+        {vehicle.canEdit && (
+          <SegmentedToggle
+            options={MODE_OPTIONS}
+            value={mode}
+            onChange={handleModeChange}
+            ariaLabel="表示モード"
+          />
+        )}
       </div>
 
       <Card className="bg-card border-border">
@@ -249,7 +252,7 @@ export function VehicleDetailContent() {
             imagePreviewUrl={imagePreviewUrl}
             onImageSelect={setImageFile}
             onSubmit={handleSubmit}
-            onDelete={() => setIsDeleteOpen(true)}
+            onDelete={vehicle.canEdit ? () => setIsDeleteOpen(true) : undefined}
             isSubmitting={isUpdating}
             apiError={apiError}
           />
