@@ -480,9 +480,11 @@ paths:
         - Vehicles
       summary: 車両詳細取得
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するController定義が存在しないため、現時点ではこのエンドポイントは疎通しない。
+        車両所有者本人、またはSHOPが対象車両にAPPROVED状態で連携している場合に、
+        車両の詳細情報を取得する。
 
-        レスポンス形状（`VehicleResponse`）自体はDTOとして実装済みだが、Controllerに未接続。
+        レスポンスの`canEdit`は、ログインユーザーが対象車両の所有者本人（更新・削除可能）
+        かどうかを表す。SHOPが連携済み顧客の車両を閲覧する場合は`false`になる。
       security:
         - bearerAuth: []
       parameters:
@@ -506,7 +508,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: 車両が存在しない
+          description: |
+            指定された車両が存在しない、またはログインユーザーから閲覧できない
+            （`VEHICLE_NOT_FOUND`）。両者を区別せず、存在有無を外部から推測できないようにする。
           content:
             application/json:
               schema:
@@ -517,9 +521,14 @@ paths:
         - Vehicles
       summary: 車両更新
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するController定義が存在しないため、現時点ではこのエンドポイントは疎通しない。
+        車両情報を更新する。車両登録（`POST /vehicles`）と同様に`multipart/form-data`形式で
+        送信し、`request`パートに車両情報（JSON）、`file`パートに新しい画像ファイル（任意）を
+        格納する。
 
-        車両登録（`POST /vehicles`）と同様に、`multipart/form-data`形式での送信を想定。
+        `file`パートを省略した場合、既存の画像は変更しない。新しい画像を指定した場合のみ、
+        既存画像を新しい画像へ差し替える（画像を削除して未設定に戻す機能は現時点では未対応）。
+
+        車両所有者本人のみ実行できる。SHOPが連携済み顧客の車両を更新しようとした場合は403。
       security:
         - bearerAuth: []
       parameters:
@@ -557,7 +566,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/EmptyApiResponse"
         "400":
-          description: 入力値不正
+          description: |
+            入力値不正（バリデーションエラー）、指定されたメーカーが存在しない
+            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE`）
           content:
             application/json:
               schema:
@@ -568,8 +580,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            車両は閲覧できるが、所有者本人ではないため編集できない（`VEHICLE_EDIT_NOT_ALLOWED`）。
+            SHOPが連携済み顧客の車両を更新しようとした場合に発生する。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: 車両が存在しない
+          description: |
+            指定された車両が存在しない、またはログインユーザーから閲覧できない
+            （`VEHICLE_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
           content:
             application/json:
               schema:
@@ -580,7 +609,11 @@ paths:
         - Vehicles
       summary: 車両削除
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するController定義が存在しないため、現時点ではこのエンドポイントは疎通しない。
+        車両を削除する（論理削除）。車両所有者本人のみ実行できる。
+        SHOPが連携済み顧客の車両を削除しようとした場合は403。
+
+        削除後、ストレージ上の車両画像は即時には削除されず、孤児ファイルクリーンアップの
+        定期処理により猶予期間経過後に自動的に回収される。
       security:
         - bearerAuth: []
       parameters:
@@ -599,8 +632,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            車両は閲覧できるが、所有者本人ではないため削除できない（`VEHICLE_EDIT_NOT_ALLOWED`）。
+            SHOPが連携済み顧客の車両を削除しようとした場合に発生する。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: 車両が存在しない
+          description: |
+            指定された車両が存在しない、またはログインユーザーから閲覧できない
+            （`VEHICLE_NOT_FOUND`）
           content:
             application/json:
               schema:
@@ -753,6 +796,8 @@ components:
         - UNSUPPORTED_VEHICLE_TYPE
         - OWNER_ID_NOT_ALLOWED
         - VEHICLE_OWNER_NOT_FOUND
+        - VEHICLE_NOT_FOUND
+        - VEHICLE_EDIT_NOT_ALLOWED
       example: "VALIDATION_ERROR"
 
     # 異常系レスポンスのルート
@@ -1264,7 +1309,7 @@ components:
           example: "オーナーのメイン車両"
 
     UpdateVehicleRequest:
-      description: ⚠️ 未実装（将来対応予定）のAPI設計案。CreateVehicleRequestと同一の構造を想定
+      description: CreateVehicleRequestと同一の構造（全項目を送信する全体更新）
       allOf:
         - $ref: "#/components/schemas/CreateVehicleRequest"
 
@@ -1312,6 +1357,13 @@ components:
           type: string
           nullable: true
           example: "オーナーのメイン車両"
+        canEdit:
+          type: boolean
+          description: |
+            ログインユーザーがこの車両を編集（更新・削除）できるかどうか。車両所有者本人の場合のみ
+            true。車両一覧（`GET /vehicles`）のレスポンスでは、現時点でUI側が参照しないため
+            常にfalse固定で返却される。
+          example: true
 
     VehicleOwnerSummary:
       type: object
