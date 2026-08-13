@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeftIcon } from "lucide-react";
@@ -27,7 +27,7 @@ import {
 } from "../schemas/vehicle.schema";
 import { useHeader } from "@/shared/hooks/use-header";
 import { useDiscardGuard } from "@/shared/hooks/use-discard-guard";
-import { ROUTES } from "@/shared/constants/routes";
+import { vehicleListRoute } from "@/shared/constants/routes";
 
 /** 現状はCAR固定 */
 const VEHICLE_TYPE = "CAR" as const;
@@ -39,7 +39,7 @@ const MODE_OPTIONS: SegmentedToggleOption<"view" | "edit">[] = [
 ];
 
 /**
- * 車両詳細・変更画面表示用メインコンテンツコンポーネント
+ * 車両詳細・更新画面表示用メインコンテンツコンポーネント
  *
  * @component
  * @returns 車両詳細コンテンツのJSX要素
@@ -49,6 +49,9 @@ export function VehicleDetailContent() {
   const { vehicleId } = useParams<{ vehicleId: string }>();
   // Next.jsのルーターを取得
   const router = useRouter();
+  // 遷移元の対象オーナーID（SHOPが特定顧客の車両一覧から遷移してきた場合のみ付与される）
+  const searchParams = useSearchParams();
+  const ownerId = searchParams.get("ownerId") ?? undefined;
 
   // 車両詳細取得カスタムフックから状態を取得
   const {
@@ -187,9 +190,14 @@ export function VehicleDetailContent() {
 
   /**
    * 一覧へ戻るボタン押下時のハンドラー
+   *
+   * URLの ownerId を引き継ぐことで、SHOPが特定顧客の車両一覧から遷移してきた場合に
+   * 同じ絞り込み一覧へ戻れるようにする。
    */
   const handleBackToList = () => {
-    guard(mode === "edit" && isDirty, () => router.push(ROUTES.VEHICLES));
+    guard(mode === "edit" && isDirty, () =>
+      router.push(vehicleListRoute(ownerId)),
+    );
   };
 
   /**

@@ -29,4 +29,15 @@ export const vehicleQueries = {
       // 車両IDが確定している場合のみクエリを実行
       enabled: !!vehicleId,
     }),
+
+  /**
+   * 車両一覧 Query Options
+   *
+   * @param ownerId 対象オーナーID（省略時はログインユーザー自身の一覧）
+   */
+  list: (ownerId?: string) =>
+    queryOptions({
+      queryKey: vehicleKeys.list(ownerId),
+      queryFn: () => vehicleApi.getList(ownerId),
+    }),
 };

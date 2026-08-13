@@ -11,4 +11,11 @@ export const vehicleKeys = {
 
   /** 車両詳細 */
   detail: (vehicleId: string) => ["vehicle", "detail", vehicleId] as const,
+
+  /**
+   * 車両一覧
+   *
+   * @param ownerId 対象オーナーID（省略時はログインユーザー自身の一覧）
+   */
+  list: (ownerId?: string) => ["vehicle", "list", ownerId ?? "self"] as const,
 };

@@ -5,7 +5,7 @@ import { VehicleDetailContent } from "@/features/vehicle/components/vehicle-deta
 import { USER_ROLE } from "@/shared/constants/role";
 
 /**
- * 車両詳細・変更画面ページエントリーポイント
+ * 車両詳細・更新画面ページエントリーポイント
  *
  * @component
  * @returns ガードされた車両詳細ページのJSX要素

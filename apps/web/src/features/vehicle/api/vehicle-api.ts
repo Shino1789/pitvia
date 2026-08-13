@@ -6,6 +6,7 @@ import type {
   UpdateVehicleRequest,
   VehicleDetail,
   VehicleFormOptionsResponse,
+  VehicleListResponse,
 } from "@/features/vehicle/types/vehicle";
 
 /**
@@ -39,6 +40,20 @@ function buildVehicleFormData(
  * 車両系APIクライアント
  */
 export const vehicleApi = {
+  /**
+   * 車両一覧取得APIリクエスト
+   *
+   * @param ownerId 対象オーナーID（省略時はログインユーザー自身の車両一覧データが返る）
+   * @returns 車両一覧レスポンス（対象オーナー情報＋車両一覧）
+   */
+  getList: async (ownerId?: string): Promise<VehicleListResponse> => {
+    const response = await apiClient.get<ApiResponse<VehicleListResponse>>(
+      ENDPOINTS.vehicle.root,
+      { params: ownerId ? { ownerId } : undefined },
+    );
+    return response.data.data;
+  },
+
   /**
    * 車両登録フォームの選択肢取得APIリクエスト
    *
