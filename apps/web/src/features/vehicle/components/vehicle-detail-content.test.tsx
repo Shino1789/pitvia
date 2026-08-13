@@ -79,6 +79,7 @@ const VEHICLE = {
   transmissionType: "MT",
   driveType: "FR",
   memo: "オーナーのメイン車両",
+  canEdit: true,
 };
 
 const FORM_OPTIONS = {
@@ -266,5 +267,58 @@ describe("VehicleDetailContent", () => {
     await user.click(within(dialog).getByRole("button", { name: "削除する" }));
 
     expect(mockDeleteVehicle).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * @test canEdit=trueの場合（車両所有者本人）、閲覧/編集モードの切り替えUIが
+   * 表示され、既存の編集機能が利用できることを確認
+   */
+  test("canEdit=trueの場合は編集モード切り替えUIが表示される", () => {
+    render(<VehicleDetailContent />);
+
+    expect(
+      screen.getByRole("button", { name: "編集モード" }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * @test canEdit=falseの場合（SHOPが顧客車両を閲覧している場合）、
+   * 閲覧/編集モードの切り替えUI自体が表示されないことを確認
+   */
+  test("canEdit=falseの場合は編集モード切り替えUIが表示されない", () => {
+    vehicleState = {
+      data: { ...VEHICLE, canEdit: false },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    render(<VehicleDetailContent />);
+
+    expect(
+      screen.queryByRole("button", { name: "編集モード" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "閲覧モード" }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
+   * @test canEdit=falseの場合、編集モードへの切り替え手段が無いため
+   * 削除ボタンも表示されないことを確認
+   */
+  test("canEdit=falseの場合は削除ボタンが表示されない", () => {
+    vehicleState = {
+      data: { ...VEHICLE, canEdit: false },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    render(<VehicleDetailContent />);
+
+    expect(
+      screen.queryByRole("button", { name: "削除" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -41,6 +41,7 @@ const VEHICLE_RX7 = {
   transmissionType: "MT",
   driveType: "FR",
   memo: null,
+  canEdit: false,
 };
 
 const VEHICLE_GTR = {
