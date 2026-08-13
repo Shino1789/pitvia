@@ -1,0 +1,43 @@
+info:
+  name: 車両更新：異常系（SHOPが顧客車両を更新）
+  type: http
+  seq: 21
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/vehicles/c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "RX-7",
+            "manufacturerId": 4,
+            "modelYear": 2002,
+            "currentMileage": 86000,
+            "transmissionType": "MT",
+            "driveType": "FR"
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  SHOPが、車両共有関係にある顧客（オーナーテスト）の車両（RX-7）を更新しようとするケース。
+  閲覧はできる（GETは200で取得できる）が所有者ではないため、
+  403 Forbidden（VEHICLE_EDIT_NOT_ALLOWED）が返ることを確認する。
+  RX-7自体は更新されないため、安全に繰り返し実行できる。
+
+  ※実行前に、モックデータ用SHOPアカウント（shop@example.com / password123）で
+  `POST /auth/login` を実行し、そのアクセストークンを `accessToken` 環境変数へ設定してください。

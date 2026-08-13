@@ -1,0 +1,40 @@
+info:
+  name: 車両更新：異常系（バリデーションエラー）
+  type: http
+  seq: 22
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/vehicles/c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "",
+            "manufacturerId": 4,
+            "modelYear": 2002,
+            "currentMileage": 86000,
+            "transmissionType": "MT",
+            "driveType": "FR"
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  必須項目（modelName）を空文字で送信した場合、400 Bad Request（VALIDATION_ERROR）が
+  返ることを確認する。RX-7自体は更新されないため、安全に繰り返し実行できる。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
