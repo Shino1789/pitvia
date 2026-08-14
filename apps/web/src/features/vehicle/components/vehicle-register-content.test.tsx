@@ -199,6 +199,29 @@ describe("VehicleRegisterContent", () => {
   });
 
   /**
+   * @test テキスト等のフィールドは未入力でも、画像のみを選択した状態でキャンセルした場合、
+   * 確認ダイアログが表示されることを確認
+   *
+   * 画像（imageFile）はreact-hook-formの管理外のため、isDirtyだけで判定すると
+   * この操作は「変更なし」とみなされてしまう不具合の再発防止テスト。
+   */
+  test("画像のみ選択した状態でキャンセルすると確認ダイアログが表示される", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<VehicleRegisterContent />);
+
+    const file = new File(["dummy"], "icon.png", { type: "image/png" });
+    const input = container.querySelector('input[type="file"]');
+    await user.upload(input as HTMLInputElement, file);
+
+    await user.click(screen.getByRole("button", { name: /キャンセル/ }));
+
+    expect(
+      await screen.findByText("入力内容を破棄しますか？"),
+    ).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  /**
    * @test 確認ダイアログで「破棄する」を選択すると、車両一覧へ遷移することを確認
    */
   test("確認ダイアログで破棄するを選択すると一覧へ遷移する", async () => {
