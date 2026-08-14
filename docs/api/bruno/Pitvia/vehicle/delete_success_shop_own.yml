@@ -1,0 +1,29 @@
+info:
+  name: 車両削除（自分）：正常系（SHOP）
+  type: http
+  seq: 23
+
+http:
+  method: DELETE
+  url: http://localhost:8080/api/v1/vehicles/d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  SHOPが自身の車両（デモカー GT-R）を削除する。204 No Contentが返ることを確認する。
+
+  ⚠️ 注意：このリクエストはモックデータのGT-R（デモカー）を実際に論理削除します。
+  実行後は `list_success_shop_own` / `detail_success_shop_own` 等、GT-Rを前提とする
+  他のテストが失敗するようになります。再実行するには、DBを再作成してモックデータを
+  再投入してください（`./scripts/reset.sh` 等）。
+
+  ※実行前に、モックデータ用SHOPアカウント（shop@example.com / password123）で
+  `POST /auth/login` を実行し、そのアクセストークンを `accessToken` 環境変数へ設定してください。

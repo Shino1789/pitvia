@@ -63,6 +63,8 @@ export function VehicleRegisterContent() {
   // （react-hook-formの仕様）。ハンドラー内でのみ参照すると常にfalseのまま変化しないため、
   // ここで明示的に読み出しておく。
   const { isDirty } = form.formState;
+  // 画像はreact-hook-formの管理外のため、画像を変更した場合の判定用フラグ
+  const hasUnsavedChanges = isDirty || imageFile !== null;
 
   // 選択中の画像ファイルからプレビュー用のオブジェクトURLを生成する
   const imagePreviewUrl = useMemo(
@@ -91,11 +93,10 @@ export function VehicleRegisterContent() {
 
   /**
    * キャンセルボタン押下時のハンドラー
-   *
-   * 未保存の入力がある場合のみ確認ダイアログを挟んでから遷移する。
    */
   const handleCancel = () => {
-    guard(isDirty, () => router.push(ROUTES.VEHICLES));
+    // 未保存の入力がある場合のみ確認ダイアログを挟んでから遷移する。
+    guard(hasUnsavedChanges, () => router.push(ROUTES.VEHICLES));
   };
 
   /**

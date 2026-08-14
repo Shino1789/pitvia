@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "shops")
-@SQLDelete(sql = "UPDATE shops SET deleted_at = NOW() WHERE id = ?")
+@SQLDelete(sql = "UPDATE shops SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Builder

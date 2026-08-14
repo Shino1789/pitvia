@@ -79,6 +79,7 @@ const VEHICLE = {
   transmissionType: "MT",
   driveType: "FR",
   memo: "オーナーのメイン車両",
+  canEdit: true,
 };
 
 const FORM_OPTIONS = {
@@ -248,6 +249,104 @@ describe("VehicleDetailContent", () => {
   });
 
   /**
+   * @test 既存画像がある状態で画像削除ボタンを押すと、プレビューが消え、
+   * 保存時にremoveImage=trueが送信されることを確認（ConfirmDialogは表示されない）
+   */
+  test("画像削除ボタンを押すとプレビューが消え、保存時にremoveImage=trueが送信される", async () => {
+    const user = userEvent.setup();
+    mockUpdateVehicle.mockResolvedValue(true);
+    vehicleState = {
+      data: { ...VEHICLE, imageUrl: "https://example.com/rx7.png" },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    render(<VehicleDetailContent />);
+
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+    expect(screen.getByAltText("車両画像プレビュー")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "画像を削除" }));
+
+    // ConfirmDialogは表示されず、即座にプレビューが消える
+    expect(
+      screen.queryByText("この車両を削除しますか？"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByAltText("車両画像プレビュー"),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /保存/ }));
+
+    expect(mockUpdateVehicle).toHaveBeenCalledTimes(1);
+    const [payload, image] = mockUpdateVehicle.mock.calls[0];
+    expect(payload).toMatchObject({ removeImage: true });
+    expect(image).toBeNull();
+  });
+
+  /**
+   * @test テキスト等のフィールドは変更していなくても、画像削除ボタンのみを押した状態で
+   * 「一覧へ戻る」を押すと確認ダイアログが表示されることを確認
+   *
+   * 画像（imageFile/isImageRemoved）はreact-hook-formの管理外のため、isDirtyだけで
+   * 判定すると画像のみの変更が「変更なし」とみなされてしまう不具合の再発防止テスト。
+   */
+  test("画像削除のみの状態で一覧へ戻ろうとすると確認ダイアログが表示される", async () => {
+    const user = userEvent.setup();
+    vehicleState = {
+      data: { ...VEHICLE, imageUrl: "https://example.com/rx7.png" },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    render(<VehicleDetailContent />);
+
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+    await user.click(screen.getByRole("button", { name: "画像を削除" }));
+    await user.click(screen.getByRole("button", { name: /一覧へ戻る/ }));
+
+    expect(
+      await screen.findByText("編集内容を破棄しますか？"),
+    ).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  /**
+   * @test 画像削除ボタンを押した後に新しい画像を選択すると、削除予定が解除され、
+   * 保存時にremoveImage=falseかつ選択した画像が送信されることを確認
+   */
+  test("画像削除後に新しい画像を選択すると削除予定が解除される", async () => {
+    const user = userEvent.setup();
+    mockUpdateVehicle.mockResolvedValue(true);
+    vehicleState = {
+      data: { ...VEHICLE, imageUrl: "https://example.com/rx7.png" },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    const { container } = render(<VehicleDetailContent />);
+
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+    await user.click(screen.getByRole("button", { name: "画像を削除" }));
+
+    const file = new File(["dummy"], "new-icon.png", { type: "image/png" });
+    const input = container.querySelector('input[type="file"]');
+    await user.upload(input as HTMLInputElement, file);
+
+    expect(screen.getByAltText("車両画像プレビュー")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /保存/ }));
+
+    expect(mockUpdateVehicle).toHaveBeenCalledTimes(1);
+    const [payload, image] = mockUpdateVehicle.mock.calls[0];
+    expect(payload).toMatchObject({ removeImage: false });
+    expect(image).toBe(file);
+  });
+
+  /**
    * @test 編集モードで削除ボタンを押すと削除確認ダイアログが表示され、
    * 「削除する」を選択するとdeleteVehicleが呼ばれることを確認
    */
@@ -266,5 +365,58 @@ describe("VehicleDetailContent", () => {
     await user.click(within(dialog).getByRole("button", { name: "削除する" }));
 
     expect(mockDeleteVehicle).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * @test canEdit=trueの場合（車両所有者本人）、閲覧/編集モードの切り替えUIが
+   * 表示され、既存の編集機能が利用できることを確認
+   */
+  test("canEdit=trueの場合は編集モード切り替えUIが表示される", () => {
+    render(<VehicleDetailContent />);
+
+    expect(
+      screen.getByRole("button", { name: "編集モード" }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * @test canEdit=falseの場合（SHOPが顧客車両を閲覧している場合）、
+   * 閲覧/編集モードの切り替えUI自体が表示されないことを確認
+   */
+  test("canEdit=falseの場合は編集モード切り替えUIが表示されない", () => {
+    vehicleState = {
+      data: { ...VEHICLE, canEdit: false },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    render(<VehicleDetailContent />);
+
+    expect(
+      screen.queryByRole("button", { name: "編集モード" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "閲覧モード" }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
+   * @test canEdit=falseの場合、編集モードへの切り替え手段が無いため
+   * 削除ボタンも表示されないことを確認
+   */
+  test("canEdit=falseの場合は削除ボタンが表示されない", () => {
+    vehicleState = {
+      data: { ...VEHICLE, canEdit: false },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicle,
+    };
+
+    render(<VehicleDetailContent />);
+
+    expect(
+      screen.queryByRole("button", { name: "削除" }),
+    ).not.toBeInTheDocument();
   });
 });

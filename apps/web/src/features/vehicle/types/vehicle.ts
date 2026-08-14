@@ -43,6 +43,8 @@ export interface CreateVehicleRequest {
   transmissionType: string;
   driveType: string;
   memo?: string;
+  /** 既存の車両画像を削除するかどうか（更新時のみ使用。車両登録では未使用）*/
+  removeImage?: boolean;
 }
 
 /**
@@ -71,6 +73,13 @@ export interface VehicleDetail {
   transmissionType: string;
   driveType: string;
   memo: string | null;
+  /**
+   * ログインユーザーがこの車両を編集（更新・削除）できるかどうか
+   *
+   * 車両所有者本人の場合のみtrue。SHOPが連携済み顧客の車両を閲覧する場合はfalse。
+   * 一覧取得時（VehicleListResponse.vehicles）は現状UI側で参照しない。
+   */
+  canEdit: boolean;
 }
 
 /**

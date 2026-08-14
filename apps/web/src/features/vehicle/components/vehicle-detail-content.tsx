@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, EyeIcon, PencilIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import {
@@ -34,8 +34,8 @@ const VEHICLE_TYPE = "CAR" as const;
 
 /** 閲覧モード/編集モードの切り替え選択肢 */
 const MODE_OPTIONS: SegmentedToggleOption<"view" | "edit">[] = [
-  { value: "view", label: "閲覧モード" },
-  { value: "edit", label: "編集モード" },
+  { value: "view", label: "閲覧モード", icon: EyeIcon },
+  { value: "edit", label: "編集モード", icon: PencilIcon },
 ];
 
 /**
@@ -88,6 +88,8 @@ export function VehicleDetailContent() {
   const [mode, setMode] = useState<"view" | "edit">("view");
   // 選択中の画像ファイルを管理するstate
   const [imageFile, setImageFile] = useState<File | null>(null);
+  // 既存の車両画像を削除予定にするかどうかを管理するstate
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   // 動的ヘッダーにタイトルを登録
   useHeader({ title: "車両詳細" });
@@ -102,6 +104,8 @@ export function VehicleDetailContent() {
   // （react-hook-formの仕様）。ハンドラー内でのみ参照すると常にfalseのまま変化しないため、
   // ここで明示的に読み出しておく。
   const { isDirty } = form.formState;
+  // 画像はreact-hook-formの管理外のため、画像を変更した場合の判定用フラグ
+  const hasUnsavedChanges = isDirty || imageFile !== null || isImageRemoved;
 
   // 車両詳細・選択肢の取得完了後、フォーム初期値と画像プレビューへ反映する
   useEffect(() => {
@@ -165,13 +169,15 @@ export function VehicleDetailContent() {
     );
   }
 
-  // 新規選択された画像があればそのプレビュー、なければ登録済みの車両画像を表示する
-  const imagePreviewUrl = imageFile ? newImagePreviewUrl : vehicle.imageUrl;
+  // 削除予定 > 新規選択された画像 > 登録済みの車両画像、の優先順でプレビューを決定する
+  const imagePreviewUrl = isImageRemoved
+    ? null
+    : imageFile
+      ? newImagePreviewUrl
+      : vehicle.imageUrl;
 
   /**
    * 表示モード切り替え時のハンドラー
-   *
-   * 編集モードから閲覧モードへ戻す際、未保存の変更があれば確認ダイアログを挟む。
    *
    * @param next 切り替え後のモード
    */
@@ -180,12 +186,33 @@ export function VehicleDetailContent() {
       setMode("edit");
       return;
     }
-
-    guard(isDirty, () => {
+    // 未保存の変更があれば確認ダイアログを挟む。
+    guard(hasUnsavedChanges, () => {
       form.reset();
       setImageFile(null);
+      setIsImageRemoved(false);
       setMode("view");
     });
+  };
+
+  /**
+   * 新しい画像選択時のハンドラー
+   *
+   * @param file 選択されたファイル
+   */
+  const handleImageSelect = (file: File) => {
+    setImageFile(file);
+    // 削除予定フラグをfalseにセット
+    setIsImageRemoved(false);
+  };
+
+  /**
+   * 画像削除ボタン押下時のハンドラー
+   */
+  const handleImageRemove = () => {
+    setImageFile(null);
+    // 削除予定フラグをtrueにセット
+    setIsImageRemoved(true);
   };
 
   /**
@@ -195,7 +222,7 @@ export function VehicleDetailContent() {
    * 同じ絞り込み一覧へ戻れるようにする。
    */
   const handleBackToList = () => {
-    guard(mode === "edit" && isDirty, () =>
+    guard(mode === "edit" && hasUnsavedChanges, () =>
       router.push(vehicleListRoute(ownerId)),
     );
   };
@@ -207,11 +234,15 @@ export function VehicleDetailContent() {
    */
   const handleSubmit = async (data: VehicleFormValues) => {
     const success = await updateVehicle(
-      toCreateVehicleRequest(data, VEHICLE_TYPE),
+      {
+        ...toCreateVehicleRequest(data, VEHICLE_TYPE),
+        removeImage: isImageRemoved,
+      },
       imageFile,
     );
     if (success) {
       setImageFile(null);
+      setIsImageRemoved(false);
       setMode("view");
     }
   };
@@ -231,13 +262,16 @@ export function VehicleDetailContent() {
           一覧へ戻る
         </Button>
 
-        {/* 閲覧モード/編集モードの切り替え */}
-        <SegmentedToggle
-          options={MODE_OPTIONS}
-          value={mode}
-          onChange={handleModeChange}
-          ariaLabel="表示モード"
-        />
+        {/* 閲覧モード/編集モードの切り替え（車両所有者本人のみ表示。SHOPが顧客車両を
+            閲覧している場合（canEdit=false）は切り替えUI自体を表示しない） */}
+        {vehicle.canEdit && (
+          <SegmentedToggle
+            options={MODE_OPTIONS}
+            value={mode}
+            onChange={handleModeChange}
+            ariaLabel="表示モード"
+          />
+        )}
       </div>
 
       <Card className="bg-card border-border">
@@ -247,9 +281,10 @@ export function VehicleDetailContent() {
             mode={mode}
             formOptions={formOptions}
             imagePreviewUrl={imagePreviewUrl}
-            onImageSelect={setImageFile}
+            onImageSelect={handleImageSelect}
+            onImageRemove={handleImageRemove}
             onSubmit={handleSubmit}
-            onDelete={() => setIsDeleteOpen(true)}
+            onDelete={vehicle.canEdit ? () => setIsDeleteOpen(true) : undefined}
             isSubmitting={isUpdating}
             apiError={apiError}
           />

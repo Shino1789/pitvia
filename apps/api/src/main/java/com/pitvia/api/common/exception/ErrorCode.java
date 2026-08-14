@@ -99,6 +99,11 @@ public enum ErrorCode {
     UNSUPPORTED_IMAGE_TYPE("サポートされていない画像形式です"),
 
     /**
+     * 画像の解像度（幅・高さ・総画素数のいずれか）が上限を超過
+     */
+    IMAGE_RESOLUTION_EXCEEDED("画像の解像度が上限を超えています"),
+
+    /**
      * ファイルサイズが上限を超過
      */
     FILE_SIZE_EXCEEDED("ファイルサイズが上限を超えています"),
@@ -131,7 +136,17 @@ public enum ErrorCode {
      * 対象ユーザーの存在有無を外部から推測できないようにする。
      * </p>
      */
-    VEHICLE_OWNER_NOT_FOUND("指定されたユーザーが見つかりません");
+    VEHICLE_OWNER_NOT_FOUND("指定されたユーザーが見つかりません"),
+
+    /**
+     * 指定された車両が存在しない、またはログインユーザーに閲覧権限がない（404）
+     */
+    VEHICLE_NOT_FOUND("指定された車両が見つかりません"),
+
+    /**
+     * 車両は閲覧できるが、編集・削除の権限が無い（403）
+     */
+    VEHICLE_EDIT_NOT_ALLOWED("この車両を編集する権限がありません");
 
     /**
      * クライアント向けデフォルトメッセージ

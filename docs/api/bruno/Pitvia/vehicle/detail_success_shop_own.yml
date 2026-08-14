@@ -1,0 +1,25 @@
+info:
+  name: 車両詳細（自分）：正常系（SHOP）
+  type: http
+  seq: 15
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles/d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  ログインユーザー（SHOP）が自身の車両（デモカー GT-R / モックデータ）の詳細を取得する。
+  `data.canEdit`がtrueであることを確認する。
+
+  ※実行前に、モックデータ用SHOPアカウント（shop@example.com / password123）で
+  `POST /auth/login` を実行し、そのアクセストークンを `accessToken` 環境変数へ設定してください。

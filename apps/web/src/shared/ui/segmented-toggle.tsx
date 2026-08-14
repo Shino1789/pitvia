@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,8 @@ export interface SegmentedToggleOption<T extends string> {
   value: T;
   /** 表示ラベル */
   label: string;
+  /** ラベル前に表示するアイコン（任意） */
+  icon?: LucideIcon;
 }
 
 /**
@@ -55,6 +58,7 @@ export function SegmentedToggle<T extends string>({
     >
       {options.map((option) => {
         const isActive = option.value === value;
+        const Icon = option.icon;
 
         return (
           <Button
@@ -65,12 +69,13 @@ export function SegmentedToggle<T extends string>({
             onClick={() => onChange(option.value)}
             aria-pressed={isActive}
             className={cn(
-              "rounded-none px-4 h-8",
+              "rounded-none px-4 h-8 gap-1.5",
               isActive
                 ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            {Icon && <Icon className="h-3.5 w-3.5" />}
             {option.label}
           </Button>
         );

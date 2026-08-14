@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CameraIcon } from "lucide-react";
+import { CameraIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** 選択可能な画像ファイルのMIMEタイプ（バックエンドのVehicleIconValidationPolicyと一致させる） */
@@ -15,6 +15,8 @@ interface VehicleImageDropzoneProps {
   previewUrl: string | null;
   /** ファイル選択時のコールバック */
   onFileSelect: (file: File) => void;
+  /** 画像削除ボタン押下時のコールバック（未指定の場合は削除ボタン自体を表示しない）*/
+  onImageRemove?: () => void;
   /** 読み取り専用（閲覧モード）にするかどうか */
   disabled?: boolean;
 }
@@ -27,6 +29,7 @@ interface VehicleImageDropzoneProps {
 export function VehicleImageDropzone({
   previewUrl,
   onFileSelect,
+  onImageRemove,
   disabled = false,
 }: VehicleImageDropzoneProps) {
   // 非表示のfile inputへの参照（クリックでのファイル選択用）
@@ -92,12 +95,28 @@ export function VehicleImageDropzone({
       )}
 
       {previewUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- MinIO/S3の公開URLおよびローカルのオブジェクトURLを直接表示するため next/image は使用しない
-        <img
-          src={previewUrl}
-          alt="車両画像プレビュー"
-          className="h-full w-full object-cover"
-        />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- MinIO/S3の公開URLおよびローカルのオブジェクトURLを直接表示するため next/image は使用しない */}
+          <img
+            src={previewUrl}
+            alt="車両画像プレビュー"
+            className="h-full w-full object-cover"
+          />
+          {!disabled && onImageRemove && (
+            <button
+              type="button"
+              aria-label="画像を削除"
+              onClick={(e) => {
+                // 親要素（role="button"）のクリックへ伝播すると、ファイル選択ダイアログが意図せず開いてしまうため止める
+                e.stopPropagation();
+                onImageRemove();
+              }}
+              className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-foreground shadow-sm hover:bg-background"
+            >
+              <XIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </>
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-pink-400/80">
           <CameraIcon className="h-8 w-8" />

@@ -15,8 +15,8 @@ import com.pitvia.api.storage.constant.ImageType;
 @Component
 public class VehicleIconValidationPolicy implements ImageValidationPolicy {
 
-    /** 許容する最大ファイルサイズ（2MB） */
-    private static final long MAX_FILE_SIZE = 2 * 1024 * 1024;
+    /** 許容する最大ファイルサイズ（10MB） */
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     /** 許可する拡張子 */
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".webp");
@@ -25,13 +25,13 @@ public class VehicleIconValidationPolicy implements ImageValidationPolicy {
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
 
     /** 許容する最大幅 */
-    private static final int MAX_WIDTH = 2000;
+    private static final int MAX_WIDTH = 6000;
 
     /** 許容する最大高さ */
-    private static final int MAX_HEIGHT = 2000;
+    private static final int MAX_HEIGHT = 6000;
 
     /** 許容する最大総画素数（幅 × 高さ） */
-    private static final long MAX_PIXELS = 4_000_000L;
+    private static final long MAX_PIXELS = 25_000_000L;
 
     @Override
     public ImageType supports() {
