@@ -43,6 +43,8 @@ export interface CreateVehicleRequest {
   transmissionType: string;
   driveType: string;
   memo?: string;
+  /** 既存の車両画像を削除するかどうか（更新時のみ使用。車両登録では未使用）*/
+  removeImage?: boolean;
 }
 
 /**

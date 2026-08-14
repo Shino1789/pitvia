@@ -42,6 +42,8 @@ interface VehicleFormProps {
   imagePreviewUrl: string | null;
   /** 画像選択時のコールバック */
   onImageSelect: (file: File) => void;
+  /** 画像削除ボタン押下時のコールバック（未指定の場合は削除ボタン自体を表示しない） */
+  onImageRemove?: () => void;
   /** フォーム送信時のコールバック（バリデーション済みの値が渡される） */
   onSubmit: (data: VehicleFormValues) => void;
   /** 削除ボタン押下時のコールバック（未指定の場合は削除ボタン自体を表示しない） */
@@ -65,6 +67,7 @@ export function VehicleForm({
   formOptions,
   imagePreviewUrl,
   onImageSelect,
+  onImageRemove,
   onSubmit,
   onDelete,
   isSubmitting = false,
@@ -90,6 +93,7 @@ export function VehicleForm({
           <VehicleImageDropzone
             previewUrl={imagePreviewUrl}
             onFileSelect={onImageSelect}
+            onImageRemove={onImageRemove}
             disabled={isReadOnly}
           />
 
