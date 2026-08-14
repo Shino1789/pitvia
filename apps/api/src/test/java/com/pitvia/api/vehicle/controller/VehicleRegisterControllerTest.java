@@ -27,6 +27,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.pitvia.api.common.constant.ApiPaths;
+import com.pitvia.api.storage.validator.VehicleIconValidationPolicy;
 import com.pitvia.api.support.AbstractIntegrationTest;
 import com.pitvia.api.support.TestUserHelper.LoginSession;
 import com.pitvia.api.vehicle.entity.Vehicle;
@@ -67,6 +68,13 @@ class VehicleRegisterControllerTest extends AbstractIntegrationTest {
     /** 車両リポジトリ（画像アップロード結果の検証用） */
     @Autowired
     private VehicleRepository vehicleRepository;
+
+    /**
+     * 車両アイコン画像用バリデーションポリシー（解像度超過テスト用の画像サイズを、
+     * 上限値の変更に追従して動的に算出するために使用する）
+     */
+    @Autowired
+    private VehicleIconValidationPolicy vehicleIconValidationPolicy;
 
     /**
      * ランダムなポートで起動するMinIOコンテナの接続先を、Springのプロパティへ動的に反映する
@@ -219,6 +227,53 @@ class VehicleRegisterControllerTest extends AbstractIntegrationTest {
     }
 
     /**
+     * 許容解像度（幅6000px）を超える画像を指定した場合の異常系テスト。
+     *
+     * <p>
+     * 画像形式自体は正しいPNGのため、{@code UNSUPPORTED_IMAGE_TYPE}ではなく
+     * 専用の{@code IMAGE_RESOLUTION_EXCEEDED}が返ることを確認する
+     * （スマートフォン等の高解像度写真を想定した{@code VehicleIconValidationPolicy}の
+     * 上限値は将来変更されうるため、本テストは上限値そのものではなく「上限を超えた場合に
+     * 正しいエラーコードが返ること」の検証に主眼を置く）。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("車両登録：異常系（画像の解像度超過）")
+    void register_imageResolutionExceeded_failure() throws Exception {
+
+        // Arrange
+        LoginSession session = testUserHelper.loginOwner(mockMvc);
+        String requestJson = """
+                {
+                    "vehicleType": "CAR",
+                    "modelName": "RX-7",
+                    "manufacturerId": 1,
+                    "modelYear": 2002,
+                    "currentMileage": 85000,
+                    "transmissionType": "MT",
+                    "driveType": "FR"
+                }
+                """;
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", "application/json", requestJson.getBytes());
+        // VehicleIconValidationPolicyの許容幅（MAX_WIDTH）を超える幅の画像
+        // （高さは小さくし、テスト実行時のメモリ・処理時間を抑える）
+        MockMultipartFile filePart = new MockMultipartFile(
+                "file", "oversized.png", "image/png", createOversizedPngBytes());
+
+        // Act & Assert
+        mockMvc.perform(multipart(ApiPaths.VEHICLE)
+                .file(requestPart)
+                .file(filePart)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + session.accessToken()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("IMAGE_RESOLUTION_EXCEEDED"));
+    }
+
+    /**
      * 許容範囲（現在の年+1年）を超えた未来の年式を指定した場合の異常系テスト。
      *
      * @throws Exception リクエスト実行、または検証に失敗した場合
@@ -264,6 +319,28 @@ class VehicleRegisterControllerTest extends AbstractIntegrationTest {
      */
     private byte[] createTestPngBytes() throws IOException {
         BufferedImage image = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", out);
+        return out.toByteArray();
+    }
+
+    /**
+     * VehicleIconValidationPolicyの許容幅（maxWidth）を1px超える、高さ10pxのPNG画像
+     * バイト列を生成する
+     *
+     * <p>
+     * 上限値をハードコードせず{@link VehicleIconValidationPolicy}から動的に取得することで、
+     * 将来ポリシーの上限値が変更された場合でも、本テストが追従できずに誤って
+     * パス（または失敗）し続けることを防ぐ。高さを小さくすることで、解像度超過を
+     * 再現しつつテスト実行時のメモリ・処理時間を抑える。
+     * </p>
+     *
+     * @return PNG形式の画像バイト列
+     * @throws IOException 画像エンコードに失敗した場合
+     */
+    private byte[] createOversizedPngBytes() throws IOException {
+        int oversizedWidth = vehicleIconValidationPolicy.maxWidth() + 1;
+        BufferedImage image = new BufferedImage(oversizedWidth, 10, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ImageIO.write(image, "png", out);
         return out.toByteArray();

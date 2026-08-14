@@ -99,6 +99,11 @@ public enum ErrorCode {
     UNSUPPORTED_IMAGE_TYPE("サポートされていない画像形式です"),
 
     /**
+     * 画像の解像度（幅・高さ・総画素数のいずれか）が上限を超過
+     */
+    IMAGE_RESOLUTION_EXCEEDED("画像の解像度が上限を超えています"),
+
+    /**
      * ファイルサイズが上限を超過
      */
     FILE_SIZE_EXCEEDED("ファイルサイズが上限を超えています"),

@@ -454,8 +454,9 @@ paths:
         "400":
           description: |
             入力値不正（バリデーションエラー）、指定されたメーカーが存在しない
-            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式
-            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE`）
+            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式／解像度超過
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE` /
+            `IMAGE_RESOLUTION_EXCEEDED`）
           content:
             application/json:
               schema:
@@ -571,8 +572,9 @@ paths:
         "400":
           description: |
             入力値不正（バリデーションエラー）、指定されたメーカーが存在しない
-            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式
-            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE`）
+            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式／解像度超過
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE` /
+            `IMAGE_RESOLUTION_EXCEEDED`）
           content:
             application/json:
               schema:
@@ -793,6 +795,7 @@ components:
         - FILE_DELETE_FAILED
         - FILE_EMPTY
         - UNSUPPORTED_IMAGE_TYPE
+        - IMAGE_RESOLUTION_EXCEEDED
         - FILE_SIZE_EXCEEDED
         - FILE_LIST_FAILED
         - MANUFACTURER_NOT_FOUND

@@ -17,6 +17,7 @@ import com.pitvia.api.storage.generator.StorageKeyGenerator;
 import com.pitvia.api.storage.provider.StorageProvider;
 import com.pitvia.api.storage.resolver.StorageUrlResolver;
 import com.pitvia.api.storage.util.ImageUtils;
+import com.pitvia.api.storage.util.ImageValidationResult;
 import com.pitvia.api.storage.validator.ImageValidationPolicy;
 
 import lombok.extern.slf4j.Slf4j;
@@ -128,7 +129,8 @@ public class StorageService {
      * @param imageType 画像用途種別
      * @param extension アップロード対象ファイルの拡張子（呼び出し元で抽出済みのものを利用する）
      * @throws BusinessException ファイルサイズ超過、非対応の拡張子・MIMEタイプ、
-     *                           またはデコード不能・解像度超過の画像である場合
+     *                           デコード不能な画像（{@code UNSUPPORTED_IMAGE_TYPE}）、
+     *                           または解像度超過（{@code IMAGE_RESOLUTION_EXCEEDED}）の場合
      */
     private void validate(MultipartFile file, ImageType imageType, String extension) {
 
@@ -151,8 +153,15 @@ public class StorageService {
         }
 
         // 拡張子・MIMEタイプの偽装対策として、実データのデコード可否と解像度を検証
-        if (!ImageUtils.validateAndDecodeImage(file, policy)) {
-            throw new BusinessException(ErrorCode.UNSUPPORTED_IMAGE_TYPE);
+        ImageValidationResult result = ImageUtils.validateAndDecodeImage(file, policy);
+        switch (result) {
+            // デコード不能な画像（拡張子・MIMEタイプの偽装の可能性あり）の場合
+            case INVALID_IMAGE -> throw new BusinessException(ErrorCode.UNSUPPORTED_IMAGE_TYPE);
+            // 解像度が上限を超過している場合
+            case RESOLUTION_EXCEEDED -> throw new BusinessException(ErrorCode.IMAGE_RESOLUTION_EXCEEDED);
+            // バリデーションを全て通過した場合は何もせず終了
+            case VALID -> {
+            }
         }
     }
 
