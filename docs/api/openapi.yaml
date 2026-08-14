@@ -11,8 +11,9 @@ info:
     Next.js フロントエンド と Spring Boot バックエンド間の
     REST API 通信で使用する。
 
-    ⚠️ `Users` タグ・`MaintenanceRecords` タグ配下のエンドポイントは、
-    現時点ではController未実装のため疎通しない（将来実装予定のAPI設計案として記載）。
+    ⚠️ `Users` タグ配下のエンドポイントは、現時点ではController未実装のため疎通しない
+    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得APIのみ実装済みで、
+    登録・詳細取得・更新は未実装。
 
 servers:
   - url: http://localhost:8080/api/v1
@@ -36,7 +37,8 @@ tags:
     description: |
       整備記録API
 
-      ⚠️ 未実装（将来対応予定）。
+      一覧取得（`GET /maintenance-records`）のみ実装済み。
+      登録・詳細取得・更新は⚠️ 未実装（将来対応予定）。
 
 paths:
   # ==========================================================================
@@ -655,6 +657,114 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   # ==========================================================================
+  # MaintenanceRecords
+  # ==========================================================================
+  /maintenance-records:
+    get:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴一覧取得
+      description: |
+        整備履歴一覧を取得する。
+
+        - `vehicleId`・`ownerId`ともに未指定：ログインユーザー自身の全車両分の整備履歴
+        - `vehicleId`指定：その車両の整備履歴に限定（自分の車両、またはSHOPがAPPROVED状態で
+          連携している車両のみ）
+        - `ownerId`指定（SHOP専用）：SHOPが連携済み顧客（オーナー）の共有車両群の整備履歴
+
+        `vehicleId`と`ownerId`は同時に指定できない（`vehicleId`が指定されていれば対象車両の
+        所有者は一意に決まるため）。
+
+        レスポンスの`owner`は、ログインユーザー自身の整備履歴を取得した場合はnull。
+        SHOPが自分以外のオーナーの車両（`ownerId`指定時、または`vehicleId`指定時で対象車両が
+        自分の所有でない場合）の整備履歴を取得した場合のみ設定される。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          required: false
+          description: 対象車両ID
+          schema:
+            type: string
+            format: uuid
+        - name: ownerId
+          in: query
+          required: false
+          description: 対象オーナーのユーザーID（SHOP専用）
+          schema:
+            type: string
+            format: uuid
+        - name: maintenanceType
+          in: query
+          required: false
+          description: 整備種別による絞り込み（複数指定可、未指定時は絞り込みなし）
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/MaintenanceType"
+        - name: keyword
+          in: query
+          required: false
+          description: 整備タイトルの部分一致キーワード
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: 並び替え条件（未指定時は`WORK_DATE_DESC`）
+          schema:
+            $ref: "#/components/schemas/MaintenanceRecordSort"
+        - name: page
+          in: query
+          required: false
+          description: ページ番号（1始まり、未指定時は1）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          required: false
+          description: 1ページあたりの件数（未指定時は20）
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+      responses:
+        "200":
+          description: 整備履歴一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceRecordListApiResponse"
+        "400":
+          description: |
+            OWNERが`ownerId`を指定した場合（`OWNER_ID_NOT_ALLOWED`）、または`vehicleId`と
+            `ownerId`が同時に指定された場合（`VEHICLE_ID_OWNER_ID_CONFLICT`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された`vehicleId`の車両が存在しない・閲覧できない場合（`VEHICLE_NOT_FOUND`）、
+            または指定された`ownerId`のユーザーが存在しない・共有関係が無い場合
+            （`VEHICLE_OWNER_NOT_FOUND`）。いずれも存在有無を外部から推測できないよう区別しない。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
   # Users（未実装 / 将来対応予定）
   # ==========================================================================
   /users/me:
@@ -804,6 +914,7 @@ components:
         - VEHICLE_OWNER_NOT_FOUND
         - VEHICLE_NOT_FOUND
         - VEHICLE_EDIT_NOT_ALLOWED
+        - VEHICLE_ID_OWNER_ID_CONFLICT
       example: "VALIDATION_ERROR"
 
     # 異常系レスポンスのルート
@@ -923,6 +1034,17 @@ components:
           $ref: "#/components/schemas/Meta"
         data:
           $ref: "#/components/schemas/VehicleListResponse"
+
+    MaintenanceRecordListApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/MaintenanceRecordListResponse"
 
     # --- Auth ---
     RegisterRequest:
@@ -1410,3 +1532,97 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/VehicleResponse"
+
+    # --- MaintenanceRecords ---
+    MaintenanceRecordSort:
+      type: string
+      enum:
+        - WORK_DATE_DESC
+        - WORK_DATE_ASC
+      description: |
+        整備履歴一覧の並び替え条件。ベータ版では作業日による並び替えのみ対応
+        （費用順・走行距離順は未対応）。
+
+    MaintenanceRecordSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleModelName:
+          type: string
+          example: "GT-R"
+        vehicleModelCode:
+          type: string
+          nullable: true
+          example: "R32"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        title:
+          type: string
+          example: "エンジンオイル＆フィルター交換"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 単日作業の場合はnull
+        mileage:
+          type: integer
+          example: 89500
+        totalCost:
+          type: integer
+          format: int64
+          example: 18500
+        shopName:
+          type: string
+          nullable: true
+          description: DIYによる整備の場合はnull
+
+    MaintenanceRecordPage:
+      type: object
+      description: |
+        整備履歴一覧（ページング付き）。Backendの共通ページングレスポンス型
+        （`PageResponse<T>`）に対応する。
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaintenanceRecordSummary"
+        page:
+          type: integer
+          description: 現在のページ番号（1始まり）
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: 全件数
+          example: 178
+        totalPages:
+          type: integer
+          description: 総ページ数
+          example: 9
+
+    MaintenanceRecordListResponse:
+      type: object
+      properties:
+        owner:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/VehicleOwnerSummary"
+          nullable: true
+          description: |
+            ログインユーザー自身の整備履歴を取得した場合は`null`。SHOPが自分以外のオーナーの
+            車両（`ownerId`指定時、または`vehicleId`指定時で対象車両が自分の所有でない場合）の
+            整備履歴を取得した場合のみ設定される。
+        records:
+          $ref: "#/components/schemas/MaintenanceRecordPage"
