@@ -71,5 +71,10 @@ public record CreateVehicleRequest(
         /**
          * 車両メモ / 補足情報
          */
-        String memo) {
+        String memo,
+
+        /**
+         * 既存の車両画像を削除するかどうか（更新時のみ使用。未指定時はfalse扱い）
+         */
+        boolean removeImage) {
 }

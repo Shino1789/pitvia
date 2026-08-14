@@ -72,10 +72,17 @@ public class VehicleDetailService {
     /**
      * 車両情報を更新する
      *
+     * <p>
+     * 画像の扱いは{@code file}と{@code request.removeImage()}の組み合わせで決まる。
+     * {@code file}が指定されている場合は{@code removeImage}の値に関わらず画像差し替えを優先する。
+     * 削除時はストレージを明示的に削除せず、{@code imageKey}をnullへ更新するのみとする
+     * （{@link #delete}と同様、孤児ファイルクリーンアップスケジューラに実削除を委譲する）。
+     * </p>
+     *
      * @param principal 認証済みユーザー情報
      * @param vehicleId 対象車両ID
      * @param request   更新リクエスト情報
-     * @param file      車両画像ファイル（任意、未指定時は既存画像を変更しない）
+     * @param file      車両画像ファイル（任意、未指定時は{@code removeImage}に従う）
      * @throws BusinessException 車両が存在しない・閲覧できない場合（404）、
      *                           閲覧はできるが所有者でない場合（403）、
      *                           またはメーカーが存在しない・画像バリデーションに違反する場合（400）
@@ -92,12 +99,16 @@ public class VehicleDetailService {
         vehicle.update(request, manufacturer);
 
         if (file != null && !file.isEmpty()) {
+            // 新しい画像が指定された場合は、removeImageの値に関わらず差し替えを優先する
             String oldImageKey = vehicle.getImageKey();
             storageTransactionManager.replaceAndExecute(
                     file, ImageType.VEHICLE_ICON, vehicleId, oldImageKey, newKey -> {
                         vehicle.updateImageKey(newKey);
                         return newKey;
                     });
+        } else if (request.removeImage()) {
+            // ストレージ上のファイルはここでは削除せず、参照を外すのみに留める
+            vehicle.updateImageKey(null);
         }
 
         log.info("Vehicle update completed. vehicleId={}, userId={}", vehicleId, principal.userId());
