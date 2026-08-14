@@ -30,6 +30,9 @@ public final class ApiPaths {
     /** 車両関連エンドポイントのプレフィックス */
     public static final String VEHICLE = V1 + "/vehicles";
 
+    /** 整備履歴関連エンドポイントのプレフィックス */
+    public static final String MAINTENANCE_RECORD = V1 + "/maintenance-records";
+
     /** Swagger UI 画面パス */
     public static final String SWAGGER = "/swagger-ui";
 

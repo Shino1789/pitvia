@@ -146,7 +146,17 @@ public enum ErrorCode {
     /**
      * 車両は閲覧できるが、編集・削除の権限が無い（403）
      */
-    VEHICLE_EDIT_NOT_ALLOWED("この車両を編集する権限がありません");
+    VEHICLE_EDIT_NOT_ALLOWED("この車両を編集する権限がありません"),
+
+    /**
+     * vehicleIdとownerIdが同時に指定された（400）
+     *
+     * <p>
+     * vehicleIdが指定されていれば対象車両の所有者は一意に決まるため、
+     * 両方を同時に指定すること自体を不正なリクエストとして扱う。
+     * </p>
+     */
+    VEHICLE_ID_OWNER_ID_CONFLICT("vehicleIdとownerIdは同時に指定できません");
 
     /**
      * クライアント向けデフォルトメッセージ
