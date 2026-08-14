@@ -1,0 +1,32 @@
+info:
+  name: 整備履歴一覧（整備種別・複数指定）：正常系
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records?maintenanceType=INSPECTION&maintenanceType=REPAIR
+  params:
+    - name: maintenanceType
+      value: INSPECTION
+      type: query
+    - name: maintenanceType
+      value: REPAIR
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  `maintenanceType`を同名のQuery Parameterとして複数指定（Springの標準的な複数値
+  バインド形式）し、指定した種別（点検・修理）のいずれかに一致する整備履歴のみに
+  絞り込まれることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
