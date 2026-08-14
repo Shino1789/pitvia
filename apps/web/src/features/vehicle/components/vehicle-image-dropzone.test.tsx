@@ -74,4 +74,79 @@ describe("VehicleImageDropzone", () => {
       "true",
     );
   });
+
+  /**
+   * @test previewUrl・onImageRemoveの両方が指定されている場合、削除ボタンが表示されることを確認
+   */
+  test("previewUrlとonImageRemoveが指定されている場合は削除ボタンが表示される", () => {
+    render(
+      <VehicleImageDropzone
+        previewUrl="blob:http://localhost/dummy"
+        onFileSelect={vi.fn()}
+        onImageRemove={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "画像を削除" }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * @test onImageRemove未指定の場合、previewUrlがあっても削除ボタンが表示されないことを確認
+   */
+  test("onImageRemove未指定の場合は削除ボタンが表示されない", () => {
+    render(
+      <VehicleImageDropzone
+        previewUrl="blob:http://localhost/dummy"
+        onFileSelect={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "画像を削除" }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
+   * @test disabled=trueの場合、previewUrl・onImageRemoveが指定されていても
+   * 削除ボタンが表示されないことを確認（閲覧モードでの誤操作防止）
+   */
+  test("disabled=trueの場合は削除ボタンが表示されない", () => {
+    render(
+      <VehicleImageDropzone
+        previewUrl="blob:http://localhost/dummy"
+        onFileSelect={vi.fn()}
+        onImageRemove={vi.fn()}
+        disabled
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "画像を削除" }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
+   * @test 削除ボタン押下時、onImageRemoveが呼ばれ、onFileSelect（親のファイル選択処理）は
+   * 呼ばれない（クリックイベントの伝播が止められている）ことを確認
+   */
+  test("削除ボタン押下でonImageRemoveのみが呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onFileSelect = vi.fn();
+    const onImageRemove = vi.fn();
+
+    render(
+      <VehicleImageDropzone
+        previewUrl="blob:http://localhost/dummy"
+        onFileSelect={onFileSelect}
+        onImageRemove={onImageRemove}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "画像を削除" }));
+
+    expect(onImageRemove).toHaveBeenCalledTimes(1);
+    expect(onFileSelect).not.toHaveBeenCalled();
+  });
 });
