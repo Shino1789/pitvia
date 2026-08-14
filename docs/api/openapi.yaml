@@ -525,8 +525,11 @@ paths:
         送信し、`request`パートに車両情報（JSON）、`file`パートに新しい画像ファイル（任意）を
         格納する。
 
-        `file`パートを省略した場合、既存の画像は変更しない。新しい画像を指定した場合のみ、
-        既存画像を新しい画像へ差し替える（画像を削除して未設定に戻す機能は現時点では未対応）。
+        画像の扱いは`file`パートと`request.removeImage`の組み合わせで決まる。
+
+        - `file`あり：`removeImage`の値に関わらず、新しい画像へ差し替える
+        - `file`なし・`removeImage=true`：既存の画像を削除する
+        - `file`なし・`removeImage=false`（未指定時のデフォルト）：既存の画像を維持する
 
         車両所有者本人のみ実行できる。SHOPが連携済み顧客の車両を更新しようとした場合は403。
       security:
@@ -1307,6 +1310,18 @@ components:
           type: string
           nullable: true
           example: "オーナーのメイン車両"
+        removeImage:
+          type: boolean
+          default: false
+          description: |
+            既存の車両画像を削除するかどうか（車両更新 `PUT /vehicles/{vehicleId}` でのみ使用。
+            車両登録 `POST /vehicles` では無視される）。
+
+            - `false` / 未指定：既存画像を維持
+            - `true`：既存画像を削除（未設定の状態に戻す）
+            - `multipart/form-data`の`file`パートが指定されている場合は、この値に関わらず
+              `file`による画像差し替えを優先する
+          example: false
 
     UpdateVehicleRequest:
       description: CreateVehicleRequestと同一の構造（全項目を送信する全体更新）
