@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { useDeleteVehicle } from "./use-delete-vehicle";
+import { vehicleKeys } from "../constants/vehicle-keys";
 
 // ルーター移動を検証するためのモック関数
 const mockReplace = vi.fn();
@@ -33,13 +34,18 @@ describe("useDeleteVehicle", () => {
   });
 
   /**
-   * @test 削除が成功した際、成功トーストを表示し、削除済み画面へ「戻る」で
-   * 再到達できないようreplaceで車両一覧へ遷移することを確認
+   * @test 削除が成功した際、車両一覧キャッシュを無効化したうえで成功トーストを表示し、
+   * 削除済み画面へ「戻る」で再到達できないようreplaceで車両一覧へ遷移することを確認
+   *
+   * 一覧キャッシュを無効化することで、一覧画面へ戻った際に削除済みの車両が
+   * 表示され続ける不具合を防ぐ。
    */
-  test("削除成功時にトーストを表示し、車両一覧へreplaceで遷移する", async () => {
+  test("削除成功時に車両一覧キャッシュを無効化し、車両一覧へreplaceで遷移する", async () => {
     const { vehicleApi } = await import("../api/vehicle-api");
     const { appToast } = await import("@/lib/toast");
+    const { queryClient } = await import("@/providers/query-provider");
     vi.mocked(vehicleApi.remove).mockResolvedValue(undefined);
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
     const { result } = renderHook(() => useDeleteVehicle(VEHICLE_ID));
 
@@ -49,6 +55,9 @@ describe("useDeleteVehicle", () => {
     });
 
     expect(vehicleApi.remove).toHaveBeenCalledWith(VEHICLE_ID);
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: vehicleKeys.list(),
+    });
     expect(appToast.success).toHaveBeenCalled();
     expect(appToast.error).not.toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith("/vehicles");

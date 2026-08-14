@@ -12,8 +12,6 @@ import { getErrorMessage } from "@/lib/api/get-error-message";
 /**
  * 車両情報の更新処理を行うカスタムフック
  *
- * 更新成功時は画面遷移せず、詳細画面にそのまま留まる（呼び出し元で閲覧モードへ戻す）。
- *
  * @param vehicleId 車両ID
  * @returns 車両更新処理関数、ローディング状態、エラー状態
  */
@@ -41,11 +39,15 @@ export function useUpdateVehicle(vehicleId: string) {
       // 車両更新APIリクエスト実行
       await vehicleApi.update(vehicleId, data, image);
 
-      // キャッシュ済みの車両詳細を無効化し、次回参照時に最新値を再取得させる
+      // キャッシュ済みの車両詳細・一覧を無効化し、次回参照時に最新値を再取得させる
       await queryClient.invalidateQueries({
         queryKey: vehicleKeys.detail(vehicleId),
       });
+      await queryClient.invalidateQueries({
+        queryKey: vehicleKeys.list(),
+      });
 
+      // 更新成功トースト表示
       appToast.success(TOAST_MESSAGES.SUCCESS.VEHICLE.UPDATE);
 
       return true;

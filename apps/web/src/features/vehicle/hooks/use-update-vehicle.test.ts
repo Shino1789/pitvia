@@ -35,11 +35,14 @@ describe("useUpdateVehicle", () => {
   });
 
   /**
-   * @test 更新が成功した際、対象車両のキャッシュを無効化し、成功トーストを表示することを確認
+   * @test 更新が成功した際、対象車両の詳細キャッシュ・車両一覧キャッシュの両方を無効化し、
+   * 成功トーストを表示することを確認
    *
+   * 一覧キャッシュも無効化することで、一覧画面へ戻った際に更新前の情報が
+   * 表示され続ける不具合を防ぐ（詳細キャッシュのみのinvalidateだと再現する）。
    * 更新成功時は画面遷移せず詳細画面に留まる設計のため、router関連の検証は行わない。
    */
-  test("更新成功時に該当車両のキャッシュを無効化し、トーストを表示する", async () => {
+  test("更新成功時に車両詳細・一覧の両方のキャッシュを無効化し、トーストを表示する", async () => {
     const { vehicleApi } = await import("../api/vehicle-api");
     const { appToast } = await import("@/lib/toast");
     const { queryClient } = await import("@/providers/query-provider");
@@ -57,6 +60,9 @@ describe("useUpdateVehicle", () => {
     expect(vehicleApi.update).toHaveBeenCalledWith(VEHICLE_ID, REQUEST, image);
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: vehicleKeys.detail(VEHICLE_ID),
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: vehicleKeys.list(),
     });
     expect(appToast.success).toHaveBeenCalled();
     expect(success).toBe(true);
