@@ -257,6 +257,105 @@ class VehicleUpdateControllerTest extends AbstractIntegrationTest {
     }
 
     /**
+     * 既存画像を削除する車両更新の正常系テスト（{@code removeImage=true}、fileなし）。
+     *
+     * <p>
+     * ストレージへの削除リクエストは発生させず、DB上のimageKeyがnullになることのみを検証する
+     * （実ファイルの削除は孤児ファイルクリーンアップスケジューラの責務のため、本テストの対象外）。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("車両更新（画像削除）：正常系（removeImage=true）")
+    void update_removeImage_success() throws Exception {
+
+        // Arrange：まず画像ありで登録する
+        LoginSession owner = testUserHelper.loginOwner(mockMvc);
+        User ownerUser = findUser(owner);
+        Vehicle vehicle = createVehicle(ownerUser, "RX-7");
+
+        String initialRequestJson = """
+                {
+                    "vehicleType": "CAR",
+                    "modelName": "RX-7",
+                    "manufacturerId": 1,
+                    "modelYear": 2002,
+                    "currentMileage": 85000,
+                    "transmissionType": "MT",
+                    "driveType": "FR"
+                }
+                """;
+        mockMvc.perform(multipart(HttpMethod.PUT, ApiPaths.VEHICLE + "/" + vehicle.getId())
+                .file(new MockMultipartFile("request", "", "application/json", initialRequestJson.getBytes()))
+                .file(new MockMultipartFile("file", "icon.png", "image/png", createTestPngBytes()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isOk());
+        assertThat(vehicleRepository.findById(vehicle.getId()).orElseThrow().getImageKey()).isNotNull();
+
+        // Act：fileなし・removeImage=trueで更新する
+        String removeImageRequestJson = """
+                {
+                    "vehicleType": "CAR",
+                    "modelName": "RX-7",
+                    "manufacturerId": 1,
+                    "modelYear": 2002,
+                    "currentMileage": 85000,
+                    "transmissionType": "MT",
+                    "driveType": "FR",
+                    "removeImage": true
+                }
+                """;
+        mockMvc.perform(multipart(HttpMethod.PUT, ApiPaths.VEHICLE + "/" + vehicle.getId())
+                .file(new MockMultipartFile("request", "", "application/json", removeImageRequestJson.getBytes()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isOk());
+
+        // Assert
+        assertThat(vehicleRepository.findById(vehicle.getId()).orElseThrow().getImageKey()).isNull();
+    }
+
+    /**
+     * fileとremoveImage=trueが同時に指定された場合、fileが優先され画像が差し替わる正常系テスト。
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("車両更新（file優先）：正常系（fileとremoveImage=trueが同時指定）")
+    void update_fileTakesPrecedenceOverRemoveImage_success() throws Exception {
+
+        // Arrange
+        LoginSession owner = testUserHelper.loginOwner(mockMvc);
+        User ownerUser = findUser(owner);
+        Vehicle vehicle = createVehicle(ownerUser, "RX-7");
+
+        String requestJson = """
+                {
+                    "vehicleType": "CAR",
+                    "modelName": "RX-7",
+                    "manufacturerId": 1,
+                    "modelYear": 2002,
+                    "currentMileage": 85000,
+                    "transmissionType": "MT",
+                    "driveType": "FR",
+                    "removeImage": true
+                }
+                """;
+
+        // Act：fileとremoveImage=trueを同時に送る
+        mockMvc.perform(multipart(HttpMethod.PUT, ApiPaths.VEHICLE + "/" + vehicle.getId())
+                .file(new MockMultipartFile("request", "", "application/json", requestJson.getBytes()))
+                .file(new MockMultipartFile("file", "icon.png", "image/png", createTestPngBytes()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isOk());
+
+        // Assert：削除ではなく、新しい画像への差し替えが優先されていること
+        Vehicle updated = vehicleRepository.findById(vehicle.getId()).orElseThrow();
+        assertThat(updated.getImageKey()).isNotNull()
+                .startsWith("vehicles/icons/" + vehicle.getId() + "/");
+    }
+
+    /**
      * SHOPが、連携済み顧客の車両を更新しようとした場合：異常系。
      *
      * @throws Exception リクエスト実行、または検証に失敗した場合
