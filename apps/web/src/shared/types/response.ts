@@ -50,3 +50,15 @@ export interface ValidationError {
   field: string;
   reason: string;
 }
+
+/**
+ * ページング付き一覧レスポンス共通型
+ * Spring: PageResponse<T>（`page`は1始まり）
+ */
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}

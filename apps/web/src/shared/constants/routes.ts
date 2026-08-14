@@ -13,6 +13,7 @@ export const ROUTES = {
   SHOPS: "/shops",
   CUSTOMERS: "/customers",
   MAINTENANCES: "/maintenances",
+  MAINTENANCE_NEW: "/maintenances/new",
   SETTINGS: "/settings",
   FORBIDDEN: "/forbidden",
 } as const;
