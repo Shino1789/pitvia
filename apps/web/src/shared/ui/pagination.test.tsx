@@ -4,25 +4,39 @@ import { describe, test, expect, vi } from "vitest";
 import { Pagination } from "./pagination";
 
 /**
- * Pagination（共通ページングコンポーネント）の単体テスト
+ * Pagination（一覧画面共通のページングUIコンポーネント）の単体テスト
  */
 describe("Pagination", () => {
   /**
-   * @test 総ページ数が1以下の場合は何も表示しないことを確認
+   * @test 総ページ数が1以下の場合は、ページ番号操作UIを出さず全件数のみ表示することを確認
    */
-  test("totalPagesが1以下の場合は何も描画しない", () => {
-    const { container } = render(
-      <Pagination page={1} totalPages={1} onPageChange={vi.fn()} />,
+  test("totalPagesが1以下の場合は全件数のみ表示する", () => {
+    render(
+      <Pagination
+        page={1}
+        totalPages={1}
+        totalElements={20}
+        onPageChange={vi.fn()}
+      />,
     );
 
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByText("全20件")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "前のページ" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1" })).not.toBeInTheDocument();
   });
 
   /**
    * @test 現在ページ・先頭・末尾のページ番号ボタンが表示され、間が省略記号になることを確認
    */
   test("先頭・末尾・現在ページ周辺のページ番号と省略記号を表示する", () => {
-    render(<Pagination page={5} totalPages={12} onPageChange={vi.fn()} />);
+    render(
+      <Pagination
+        page={5}
+        totalPages={12}
+        totalElements={230}
+        onPageChange={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole("button", { name: "1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "4" })).toBeInTheDocument();
@@ -34,10 +48,33 @@ describe("Pagination", () => {
   });
 
   /**
+   * @test 全件数がページ番号操作UIと合わせて表示されることを確認
+   */
+  test("全件数が表示される", () => {
+    render(
+      <Pagination
+        page={1}
+        totalPages={9}
+        totalElements={178}
+        onPageChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("全178件")).toBeInTheDocument();
+  });
+
+  /**
    * @test 現在ページのボタンにaria-current="page"が設定されることを確認
    */
   test("現在ページのボタンにaria-currentが設定される", () => {
-    render(<Pagination page={5} totalPages={12} onPageChange={vi.fn()} />);
+    render(
+      <Pagination
+        page={5}
+        totalPages={12}
+        totalElements={230}
+        onPageChange={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole("button", { name: "5" })).toHaveAttribute(
       "aria-current",
@@ -54,7 +91,14 @@ describe("Pagination", () => {
   test("ページ番号ボタン押下でonPageChangeが呼ばれる", async () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
-    render(<Pagination page={3} totalPages={5} onPageChange={onPageChange} />);
+    render(
+      <Pagination
+        page={3}
+        totalPages={5}
+        totalElements={90}
+        onPageChange={onPageChange}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: "4" }));
 
@@ -67,7 +111,14 @@ describe("Pagination", () => {
   test("前へ/次へボタンで前後のページへ移動できる", async () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
-    render(<Pagination page={3} totalPages={5} onPageChange={onPageChange} />);
+    render(
+      <Pagination
+        page={3}
+        totalPages={5}
+        totalElements={90}
+        onPageChange={onPageChange}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: "前のページ" }));
     expect(onPageChange).toHaveBeenCalledWith(2);
@@ -81,12 +132,24 @@ describe("Pagination", () => {
    */
   test("先頭・末尾ページでは移動ボタンが無効化される", () => {
     const { rerender } = render(
-      <Pagination page={1} totalPages={5} onPageChange={vi.fn()} />,
+      <Pagination
+        page={1}
+        totalPages={5}
+        totalElements={90}
+        onPageChange={vi.fn()}
+      />,
     );
     expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
 
-    rerender(<Pagination page={5} totalPages={5} onPageChange={vi.fn()} />);
+    rerender(
+      <Pagination
+        page={5}
+        totalPages={5}
+        totalElements={90}
+        onPageChange={vi.fn()}
+      />,
+    );
     expect(screen.getByRole("button", { name: "前のページ" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
   });

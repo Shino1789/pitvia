@@ -300,16 +300,13 @@ export function MaintenanceRecordListContent() {
       )}
 
       {records.length > 0 && (
-        <div className="flex flex-col items-center gap-2 pt-2">
-          <p className="text-xs text-muted-foreground">
-            全{data.records.totalElements.toLocaleString()}件
-          </p>
-          <Pagination
-            page={data.records.page}
-            totalPages={data.records.totalPages}
-            onPageChange={handlePageChange}
-          />
-        </div>
+        <Pagination
+          page={data.records.page}
+          totalPages={data.records.totalPages}
+          totalElements={data.records.totalElements}
+          onPageChange={handlePageChange}
+          className="pt-2"
+        />
       )}
     </div>
   );
