@@ -34,10 +34,10 @@ export function MaintenanceRecordCard({ record }: MaintenanceRecordCardProps) {
   return (
     <Link href={`${ROUTES.MAINTENANCES}/${record.id}`}>
       <Card className="bg-card border-border transition-colors hover:bg-accent/40">
-        <CardContent className="flex flex-col gap-2">
-          {/* 上段：整備種別バッジ・走行距離 & 合計費用 */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+        <CardContent className="flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            {/* 上段：整備種別バッジ & 走行距離 */}
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className={badgeClass}>
                 {MAINTENANCE_TYPE_LABELS[record.maintenanceType]}
               </Badge>
@@ -46,32 +46,34 @@ export function MaintenanceRecordCard({ record }: MaintenanceRecordCardProps) {
                 {record.mileage.toLocaleString()} km
               </span>
             </div>
-            <p className="font-semibold text-foreground">
-              ¥{record.totalCost.toLocaleString()}
-            </p>
-          </div>
 
-          {/* 中段：対象車両名 & 整備タイトル */}
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-xs text-muted-foreground">{vehicleName}</span>
-            <h3 className="text-base font-semibold text-foreground">
-              {record.title}
-            </h3>
-          </div>
+            {/* 中段：対象車両名 & 整備タイトル */}
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-xs text-muted-foreground">{vehicleName}</span>
+              <h3 className="text-base font-semibold text-foreground">
+                {record.title}
+              </h3>
+            </div>
 
-          {/* 下段：作業期間 & ショップ名（DIYの場合は非表示） */}
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <CalendarIcon className="h-3 w-3" />
-              {formatWorkPeriod(record.workDateFrom, record.workDateTo)}
-            </span>
-            {record.shopName && (
+            {/* 下段：作業期間 & ショップ名（DIYの場合は非表示） */}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <StoreIcon className="h-3 w-3" />
-                {record.shopName}
+                <CalendarIcon className="h-3 w-3" />
+                {formatWorkPeriod(record.workDateFrom, record.workDateTo)}
               </span>
-            )}
+              {record.shopName && (
+                <span className="flex items-center gap-1">
+                  <StoreIcon className="h-3 w-3" />
+                  {record.shopName}
+                </span>
+              )}
+            </div>
           </div>
+
+          {/* 右端：合計費用（カード全体の縦中央に配置） */}
+          <p className="shrink-0 text-lg font-semibold text-foreground">
+            ¥{record.totalCost.toLocaleString()}
+          </p>
         </CardContent>
       </Card>
     </Link>
