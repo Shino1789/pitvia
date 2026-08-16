@@ -1,0 +1,20 @@
+info:
+  name: 整備履歴一覧：異常系（未認証）
+  type: http
+  seq: 9
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  Authorizationヘッダーを付けずにリクエストし、401 Unauthorizedが返ることを確認する。
+
+  ※このリクエストはログイン不要（意図的にトークンを付与しない）です。

@@ -2,14 +2,17 @@ package com.pitvia.api.maintenance.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.pitvia.api.maintenance.entity.MaintenanceRecord;
+import com.pitvia.api.maintenance.repository.projection.MaintenanceRecordListProjection;
 import com.pitvia.api.maintenance.repository.projection.RecentMaintenanceProjection;
 
 /**
@@ -187,4 +190,141 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
             ORDER BY mr.workDateFrom DESC, mr.createdAt DESC
             """)
     List<RecentMaintenanceProjection> findRecentShopMaintenances(@Param("shopId") UUID shopId, Pageable pageable);
+
+    /**
+     * ユーザーが所有する車両の整備履歴を、ページング・絞り込み・並び替え付きで取得する
+     *
+     * @param userId               ユーザーID
+     * @param vehicleId            対象車両ID（任意。未指定時は全車両が対象）
+     * @param maintenanceTypeCodes 整備種別コードによる絞り込み（任意。未指定時は絞り込みなし）
+     * @param keyword              整備タイトルの部分一致キーワード（任意）
+     * @param pageable             ページング・並び替え情報
+     * @return 整備履歴一覧（ページング付き）
+     */
+    @Query(value = """
+            SELECT
+                mr.id AS id,
+                v.id AS vehicleId,
+                v.modelName AS vehicleModelName,
+                v.modelCode AS vehicleModelCode,
+                mt.code AS maintenanceTypeCode,
+                mr.title AS title,
+                mr.workDateFrom AS workDateFrom,
+                mr.workDateTo AS workDateTo,
+                mr.mileage AS mileage,
+                COALESCE(
+                    (
+                        SELECT SUM(wi.laborCost)
+                        FROM MaintenanceWorkItem wi
+                        WHERE wi.maintenanceRecord = mr
+                    ), 0)
+                +
+                COALESCE(
+                    (
+                        SELECT SUM(p.unitPrice * p.quantity)
+                        FROM MaintenancePart p
+                        JOIN p.maintenanceWorkItem wi
+                        WHERE wi.maintenanceRecord = mr
+                    ), 0) AS totalCost,
+                su.userName AS shopName
+            FROM MaintenanceRecord mr
+            JOIN mr.vehicle v
+            JOIN mr.maintenanceType mt
+            LEFT JOIN mr.shop s
+            LEFT JOIN s.user su
+            WHERE v.user.id = :userId
+              AND mr.isDraft = false
+              AND (:vehicleId IS NULL OR v.id = :vehicleId)
+              AND (:maintenanceTypeCodes IS NULL OR mt.code IN :maintenanceTypeCodes)
+              AND (:keyword IS NULL OR LOWER(mr.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            """, countQuery = """
+            SELECT COUNT(mr)
+            FROM MaintenanceRecord mr
+            JOIN mr.vehicle v
+            WHERE v.user.id = :userId
+              AND mr.isDraft = false
+              AND (:vehicleId IS NULL OR v.id = :vehicleId)
+              AND (:maintenanceTypeCodes IS NULL OR mr.maintenanceType.code IN :maintenanceTypeCodes)
+              AND (:keyword IS NULL OR LOWER(mr.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            """)
+    Page<MaintenanceRecordListProjection> findSelfMaintenanceRecords(
+            @Param("userId") UUID userId,
+            @Param("vehicleId") UUID vehicleId,
+            @Param("maintenanceTypeCodes") Set<String> maintenanceTypeCodes,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    /**
+     * SHOPが、指定オーナー（顧客）とAPPROVED状態で連携している車両の整備履歴を、
+     * ページング・絞り込み・並び替え付きで取得する
+     *
+     * @param shopId               ショップユーザーID
+     * @param ownerId              対象オーナーのユーザーID
+     * @param maintenanceTypeCodes 整備種別コードによる絞り込み（任意。未指定時は絞り込みなし）
+     * @param keyword              整備タイトルの部分一致キーワード（任意）
+     * @param pageable             ページング・並び替え情報
+     * @return 整備履歴一覧（ページング付き）
+     */
+    @Query(value = """
+            SELECT
+                mr.id AS id,
+                v.id AS vehicleId,
+                v.modelName AS vehicleModelName,
+                v.modelCode AS vehicleModelCode,
+                mt.code AS maintenanceTypeCode,
+                mr.title AS title,
+                mr.workDateFrom AS workDateFrom,
+                mr.workDateTo AS workDateTo,
+                mr.mileage AS mileage,
+                COALESCE(
+                    (
+                        SELECT SUM(wi.laborCost)
+                        FROM MaintenanceWorkItem wi
+                        WHERE wi.maintenanceRecord = mr
+                    ), 0)
+                +
+                COALESCE(
+                    (
+                        SELECT SUM(p.unitPrice * p.quantity)
+                        FROM MaintenancePart p
+                        JOIN p.maintenanceWorkItem wi
+                        WHERE wi.maintenanceRecord = mr
+                    ), 0) AS totalCost,
+                su.userName AS shopName
+            FROM MaintenanceRecord mr
+            JOIN mr.vehicle v
+            JOIN mr.maintenanceType mt
+            LEFT JOIN mr.shop s
+            LEFT JOIN s.user su
+            WHERE v.user.id = :ownerId
+              AND mr.isDraft = false
+              AND EXISTS (
+                  SELECT 1 FROM VehicleShopLink vsl
+                  WHERE vsl.vehicle = v
+                    AND vsl.shop.id = :shopId
+                    AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              )
+              AND (:maintenanceTypeCodes IS NULL OR mt.code IN :maintenanceTypeCodes)
+              AND (:keyword IS NULL OR LOWER(mr.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            """, countQuery = """
+            SELECT COUNT(mr)
+            FROM MaintenanceRecord mr
+            JOIN mr.vehicle v
+            WHERE v.user.id = :ownerId
+              AND mr.isDraft = false
+              AND EXISTS (
+                  SELECT 1 FROM VehicleShopLink vsl
+                  WHERE vsl.vehicle = v
+                    AND vsl.shop.id = :shopId
+                    AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              )
+              AND (:maintenanceTypeCodes IS NULL OR mr.maintenanceType.code IN :maintenanceTypeCodes)
+              AND (:keyword IS NULL OR LOWER(mr.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            """)
+    Page<MaintenanceRecordListProjection> findOwnerMaintenanceRecords(
+            @Param("shopId") UUID shopId,
+            @Param("ownerId") UUID ownerId,
+            @Param("maintenanceTypeCodes") Set<String> maintenanceTypeCodes,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 }

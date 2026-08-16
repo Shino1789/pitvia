@@ -17,6 +17,9 @@ export const apiClient = axios.create({
   timeout: 10000,
   // クッキー（HttpOnlyのrefresh_token等）をクロスドメイン間でも常に送信・保持する
   withCredentials: true,
+  // 配列パラメータを key[]=a&key[]=b ではなく key=a&key=b の形式で送信する
+  // （Backendの@ModelAttribute受け取り側はkey[]形式のパラメータ名を認識できないため）
+  paramsSerializer: { indexes: null },
 });
 
 // APIリクエストインターセプター登録

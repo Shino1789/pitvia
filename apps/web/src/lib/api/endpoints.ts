@@ -37,4 +37,9 @@ export const ENDPOINTS = {
     /** 車両詳細取得・更新・削除API */
     byId: (vehicleId: string) => `/vehicles/${vehicleId}`,
   },
+
+  maintenanceRecord: {
+    /** 整備履歴一覧取得API */
+    list: "/maintenance-records",
+  },
 } as const;
