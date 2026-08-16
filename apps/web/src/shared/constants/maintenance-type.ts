@@ -35,24 +35,24 @@ export const MAINTENANCE_TYPE_LABELS: Record<MaintenanceType, string> = {
  * 一覧・ダッシュボードで同一の色を使うための単一のソース。
  */
 export const MAINTENANCE_TYPE_BADGE_CLASS: Record<MaintenanceType, string> = {
-  [MAINTENANCE_TYPE.PERIODIC_MAINTENANCE]: "bg-emerald-500/20 text-emerald-400",
-  [MAINTENANCE_TYPE.VEHICLE_INSPECTION]: "bg-blue-500/20 text-blue-400",
-  [MAINTENANCE_TYPE.INSPECTION]: "bg-blue-500/20 text-blue-400",
-  [MAINTENANCE_TYPE.REPAIR]: "bg-amber-500/20 text-amber-400",
-  [MAINTENANCE_TYPE.CUSTOM]: "bg-primary/20 text-primary",
-  [MAINTENANCE_TYPE.TUNING]: "bg-primary/20 text-primary",
-  [MAINTENANCE_TYPE.SETTING]: "bg-violet-500/20 text-violet-400",
+  [MAINTENANCE_TYPE.PERIODIC_MAINTENANCE]: "bg-green-500/20 text-green-700",
+  [MAINTENANCE_TYPE.VEHICLE_INSPECTION]: "bg-blue-500/20 text-blue-500",
+  [MAINTENANCE_TYPE.INSPECTION]: "bg-teal-500/20 text-teal-600",
+  [MAINTENANCE_TYPE.REPAIR]: "bg-red-500/20 text-red-400",
+  [MAINTENANCE_TYPE.CUSTOM]: "bg-orange-500/20 text-orange-600",
+  [MAINTENANCE_TYPE.TUNING]: "bg-violet-500/20 text-violet-500",
+  [MAINTENANCE_TYPE.SETTING]: "bg-amber-500/20 text-amber-500",
   [MAINTENANCE_TYPE.OTHER]: "bg-secondary text-muted-foreground",
 };
 
 /** グラフのツールチップ内訳で使うカテゴリ別カラー */
 export const MAINTENANCE_TYPE_CHART_COLOR: Record<MaintenanceType, string> = {
-  [MAINTENANCE_TYPE.PERIODIC_MAINTENANCE]: "#34d399",
-  [MAINTENANCE_TYPE.VEHICLE_INSPECTION]: "#60a5fa",
-  [MAINTENANCE_TYPE.INSPECTION]: "#38bdf8",
-  [MAINTENANCE_TYPE.REPAIR]: "#fbbf24",
-  [MAINTENANCE_TYPE.CUSTOM]: "#22d3ee",
-  [MAINTENANCE_TYPE.TUNING]: "#818cf8",
-  [MAINTENANCE_TYPE.SETTING]: "#e879f9",
+  [MAINTENANCE_TYPE.PERIODIC_MAINTENANCE]: "#15803d",
+  [MAINTENANCE_TYPE.VEHICLE_INSPECTION]: "#3b82f6",
+  [MAINTENANCE_TYPE.INSPECTION]: "#0d9488",
+  [MAINTENANCE_TYPE.REPAIR]: "#f87171",
+  [MAINTENANCE_TYPE.CUSTOM]: "#ea580c",
+  [MAINTENANCE_TYPE.TUNING]: "#8b5cf6",
+  [MAINTENANCE_TYPE.SETTING]: "#f59e0b",
   [MAINTENANCE_TYPE.OTHER]: "#94a3b8",
 };
