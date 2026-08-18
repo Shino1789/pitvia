@@ -1,0 +1,50 @@
+info:
+  name: 整備履歴登録：異常系（不正な整備種別コード）
+  type: http
+  seq: 19
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/maintenance-records
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+            "title": "車検対応",
+            "maintenanceType": "UNKNOWN_TYPE",
+            "workDateFrom": "2026-04-10",
+            "workDateTo": null,
+            "mileage": 86200,
+            "remarks": null,
+            "workItems": [
+              {
+                "maintenanceCategory": "ENGINE",
+                "workContent": "エンジンオイル交換",
+                "performedBy": "オーナー本人（DIY）",
+                "laborCost": 0,
+                "parts": []
+              }
+            ]
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  存在しない整備種別コード（`UNKNOWN_TYPE`）を送信した場合、`maintenanceType`が
+  列挙型（`MaintenanceType`）にバインドできずJSONパースエラーとなり、
+  400 Bad Requestが返ることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

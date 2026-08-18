@@ -1,0 +1,59 @@
+info:
+  name: 整備履歴登録：正常系（SHOP・連携済み顧客車両）
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/maintenance-records
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+            "title": "ブレーキパッド交換",
+            "maintenanceType": "REPAIR",
+            "workDateFrom": "2026-06-15",
+            "workDateTo": null,
+            "mileage": 86500,
+            "remarks": "Brunoテスト用（SHOPによる顧客車両への登録）",
+            "workItems": [
+              {
+                "maintenanceCategory": "BRAKE",
+                "workContent": "フロントブレーキパッド交換",
+                "performedBy": "ガレージ田中",
+                "laborCost": 8000,
+                "parts": [
+                  {
+                    "partCondition": "NEW",
+                    "partName": "ブレーキパッド",
+                    "manufacturerName": "プロジェクトミュー",
+                    "partModelNumber": "F328",
+                    "quantity": 4,
+                    "unitPrice": 6500
+                  }
+                ]
+              }
+            ]
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  SHOPが、車両共有関係（APPROVED）にある顧客（オーナーテスト）の車両（RX-7）に対して
+  整備履歴を登録し、201 Created が返ることを確認する。登録者がSHOPのため、
+  登録された整備記録の`shop`には登録実行者のショップが紐づけられる（DIYではない扱い）。
+
+  ※実行前に `auth/login_success_shop.yml` でログインし、トークンが保持されている必要があります。
