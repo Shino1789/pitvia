@@ -47,3 +47,13 @@ export function vehicleDetailRoute(
   const path = `${ROUTES.VEHICLES}/${vehicleId}`;
   return ownerId ? `${path}?ownerId=${ownerId}` : path;
 }
+
+/**
+ * 整備履歴詳細・更新画面のパスを生成する
+ *
+ * @param maintenanceRecordId 整備履歴ID
+ * @returns 整備履歴詳細画面のパス
+ */
+export function maintenanceRecordDetailRoute(maintenanceRecordId: string): string {
+  return `${ROUTES.MAINTENANCES}/${maintenanceRecordId}`;
+}

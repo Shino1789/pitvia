@@ -1,5 +1,6 @@
 import type { PageResponse } from "@/shared/types/response";
 import type { MaintenanceType } from "@/shared/constants/maintenance-type";
+import type { MaintenanceCategory } from "@/shared/constants/maintenance-category";
 
 /**
  * 整備履歴一覧の並び替え条件
@@ -74,4 +75,121 @@ export interface MaintenanceRecordListResponse {
   owner: MaintenanceRecordOwnerSummary | null;
   /** 整備履歴一覧（ページング付き） */
   records: PageResponse<MaintenanceRecordSummary>;
+}
+
+/**
+ * 交換部品の状態
+ * Spring: PartCondition（maintenance.enums.PartCondition）
+ */
+export const PART_CONDITION = {
+  NEW: "NEW",
+  USED: "USED",
+  REBUILT: "REBUILT",
+} as const;
+
+export type PartCondition = (typeof PART_CONDITION)[keyof typeof PART_CONDITION];
+
+/**
+ * 交換部品の状態の表示用ラベルマップ
+ */
+export const PART_CONDITION_LABELS: Record<PartCondition, string> = {
+  [PART_CONDITION.NEW]: "新品",
+  [PART_CONDITION.USED]: "中古",
+  [PART_CONDITION.REBUILT]: "リビルト品",
+};
+
+/**
+ * 交換部品登録リクエスト
+ * Spring: PartRequest
+ */
+export interface PartRequest {
+  /** 部品の状態（任意項目） */
+  partCondition: PartCondition | null;
+  partName: string;
+  manufacturerName: string | null;
+  partModelNumber: string | null;
+  quantity: number;
+  unitPrice: number;
+}
+
+/**
+ * 整備作業明細登録リクエスト
+ * Spring: WorkItemRequest
+ */
+export interface WorkItemRequest {
+  maintenanceCategory: MaintenanceCategory;
+  workContent: string;
+  performedBy: string;
+  laborCost: number;
+  /** 交換部品リスト（部品を伴わない作業項目の場合は空配列） */
+  parts: PartRequest[];
+}
+
+/**
+ * 整備履歴登録リクエスト
+ * Spring: CreateMaintenanceRecordRequest
+ */
+export interface CreateMaintenanceRecordRequest {
+  vehicleId: string;
+  title: string;
+  maintenanceType: MaintenanceType;
+  workDateFrom: string;
+  /** 任意項目。指定する場合はworkDateFrom以降の日付であること */
+  workDateTo: string | null;
+  mileage: number;
+  remarks: string | null;
+  /** 紐づく作業項目リスト（1件以上必須） */
+  workItems: WorkItemRequest[];
+}
+
+/**
+ * 交換部品詳細情報（詳細・更新画面用）
+ * Spring: PartResponse相当（詳細取得APIは今回未実装のため、将来の実装に備えた先行定義）
+ */
+export interface PartDetail extends PartRequest {
+  id: number;
+}
+
+/**
+ * 整備作業明細詳細情報（詳細・更新画面用）
+ * Spring: WorkItemResponse相当（詳細取得APIは今回未実装のため、将来の実装に備えた先行定義）
+ */
+export interface WorkItemDetail {
+  id: number;
+  maintenanceCategory: MaintenanceCategory;
+  workContent: string;
+  performedBy: string;
+  laborCost: number;
+  /** 整備画像の公開URL（未設定の場合はnull） */
+  imageUrl: string | null;
+  parts: PartDetail[];
+}
+
+/**
+ * 整備履歴詳細情報（詳細・更新画面用）
+ *
+ * 詳細取得API（`GET /maintenance-records/{id}`）は今回のスコープ外のため未実装。
+ * 登録画面とのUI共通化（閲覧/編集モード切り替え）を先行実装するための型定義のみ用意する。
+ * Spring: MaintenanceRecordResponse相当（未実装）
+ */
+export interface MaintenanceRecordDetail {
+  id: string;
+  vehicleId: string;
+  vehicleModelName: string;
+  vehicleModelCode: string | null;
+  title: string;
+  maintenanceType: MaintenanceType;
+  workDateFrom: string;
+  workDateTo: string | null;
+  mileage: number;
+  remarks: string | null;
+  /** DIYによる整備の場合はnull */
+  shopName: string | null;
+  workItems: WorkItemDetail[];
+  /**
+   * ログインユーザーがこの整備履歴を編集できるかどうか
+   *
+   * 車両所有者/SHOP権限ではなく、この整備履歴を登録したユーザー本人の場合のみtrue。
+   */
+  canEdit: boolean;
 }
