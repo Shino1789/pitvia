@@ -96,9 +96,9 @@ export function VehicleCard({ vehicle, ownerId }: VehicleCardProps) {
               <ArrowRightIcon className="h-3.5 w-3.5" />
             </Button>
           </Link>
-          {/* 「車両詳細を見る」と同様、SHOPが特定顧客の車両一覧から遷移した場合はownerIdも
-              引き継ぎ、整備履歴一覧画面で対象顧客の履歴を正しく絞り込めるようにする */}
-          <Link href={maintenanceRecordListRoute(vehicle.id, ownerId)}>
+          {/* vehicleId指定時は対象車両の所有者が一意に決まるため、ownerIdは付与しない
+              （バックエンドAPIはvehicleId+ownerIdの同時指定を許容しないため） */}
+          <Link href={maintenanceRecordListRoute(vehicle.id)}>
             <Button
               variant="outline"
               size="sm"

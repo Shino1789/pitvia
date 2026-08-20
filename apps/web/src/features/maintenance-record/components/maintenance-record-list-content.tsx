@@ -18,8 +18,8 @@ import { ErrorState } from "@/shared/components/state/error-state";
 import { MaintenanceRecordListSkeleton } from "./maintenance-record-list-skeleton";
 import { MaintenanceRecordCard } from "./maintenance-record-card";
 import { MaintenanceTypeFilter } from "./maintenance-type-filter";
+import { VehicleFilterSelect } from "./maintenance-record-vehicle-filter";
 import { useMaintenanceRecordList } from "../hooks/use-maintenance-record-list";
-import { useVehicleList } from "@/features/vehicle/hooks/use-vehicle-list";
 import { useHeader } from "@/shared/hooks/use-header";
 import {
   buildReturnTo,
@@ -34,9 +34,6 @@ import {
 
 /** 1ページあたりの表示件数（現状は固定。件数選択UIは今回のスコープ外） */
 const DEFAULT_PAGE_SIZE = 20;
-
-/** 車両フィルターの「すべて」を表すsentinel値 */
-const ALL_VEHICLES_VALUE = "ALL";
 
 /** 並び替え選択肢 */
 const SORT_OPTIONS: { value: MaintenanceRecordSort; label: string }[] = [
@@ -57,8 +54,12 @@ export function MaintenanceRecordListContent() {
 
   // 車両フィルターの選択中車両ID（未指定＝すべて）
   const vehicleId = searchParams.get("vehicleId") ?? undefined;
-  // 遷移元から引き継いだ対象オーナーID（この画面からは変更しない）
-  const ownerId = searchParams.get("ownerId") ?? undefined;
+  // 遷移元から引き継いだ対象オーナーID（この画面からは変更しない）。
+  // vehicleId指定時は所有者が一意に決まるため、ownerIdはAPI制約
+  // （VEHICLE_ID_OWNER_ID_CONFLICT）に抵触しないよう無視する
+  const ownerId = vehicleId
+    ? undefined
+    : (searchParams.get("ownerId") ?? undefined);
   // 選択中の整備種別（複数可、空＝すべて）
   const maintenanceTypes = searchParams.getAll(
     "maintenanceType",
@@ -85,18 +86,6 @@ export function MaintenanceRecordListContent() {
     page,
     size,
   });
-
-  // 車両フィルターSelectの選択肢取得（ownerId指定時はその顧客の車両一覧）
-  const { data: vehicleListResponse, isPending: isVehiclesPending } =
-    useVehicleList(ownerId);
-  // Selectの選択肢形式（value/label）に変換した車両一覧
-  const vehicleOptions =
-    vehicleListResponse?.vehicles.map((vehicle) => ({
-      value: vehicle.id,
-      label: vehicle.modelCode
-        ? `${vehicle.modelName} ${vehicle.modelCode}`
-        : vehicle.modelName,
-    })) ?? [];
 
   // 詳細/登録画面へ引き継ぐ、キャンセル時の戻り先としての現在のURL
   const returnTo = useMemo(
@@ -162,13 +151,10 @@ export function MaintenanceRecordListContent() {
   /**
    * 車両フィルター変更時のハンドラー（pageを1へリセット）
    *
-   * @param value 選択された車両ID（{@link ALL_VEHICLES_VALUE}＝「すべて」）
+   * @param next 選択された車両ID（未指定＝「すべて」）
    */
-  const handleVehicleChange = (value: string) => {
-    updateParams(
-      { vehicleId: value === ALL_VEHICLES_VALUE ? null : value },
-      true,
-    );
+  const handleVehicleChange = (next?: string) => {
+    updateParams({ vehicleId: next ?? null }, true);
   };
 
   /**
@@ -312,24 +298,12 @@ export function MaintenanceRecordListContent() {
         </Button>
 
         <div className="flex items-center gap-2">
-          {/* 車両フィルタープルダウン */}
-          <Select
-            value={vehicleId ?? ALL_VEHICLES_VALUE}
-            onValueChange={handleVehicleChange}
-            disabled={isVehiclesPending}
-          >
-            <SelectTrigger className="w-auto min-w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_VEHICLES_VALUE}>すべて</SelectItem>
-              {vehicleOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* 車両フィルタープルダウン（対象車両一覧の所有者はdata.ownerから解決する） */}
+          <VehicleFilterSelect
+            ownerId={data.owner?.id}
+            value={vehicleId}
+            onChange={handleVehicleChange}
+          />
 
           {/* 並び替えプルダウン */}
           <Select

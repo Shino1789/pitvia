@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
-// 整備履歴一覧取得フックのモック化用関数
+// 整備履歴一覧取得フックのモック化用関数（呼び出し引数を検証できるようspyにする）
 let listState: {
   data: MaintenanceRecordListResponse | undefined;
   isPending: boolean;
@@ -29,16 +29,19 @@ let listState: {
 };
 
 const mockRefetch = vi.fn();
+const mockUseMaintenanceRecordList = vi.fn((_params: unknown) => listState);
 
 vi.mock("../hooks/use-maintenance-record-list", () => ({
-  useMaintenanceRecordList: () => listState,
+  useMaintenanceRecordList: (params: unknown) =>
+    mockUseMaintenanceRecordList(params),
 }));
 
-// 車両フィルタープルダウン用の車両一覧取得フックのモック化用関数
+// 車両フィルタープルダウン用の車両一覧取得フックのモック化用関数（同様にspy化）
 let vehicleListState: { data: unknown; isPending: boolean };
+const mockUseVehicleList = vi.fn((_ownerId?: string) => vehicleListState);
 
 vi.mock("@/features/vehicle/hooks/use-vehicle-list", () => ({
-  useVehicleList: () => vehicleListState,
+  useVehicleList: (ownerId?: string) => mockUseVehicleList(ownerId),
 }));
 
 const VEHICLE_LIST_RESPONSE = {
@@ -430,6 +433,43 @@ describe("MaintenanceRecordListContent", () => {
     const [url] = mockReplace.mock.calls.at(-1) as [string];
     expect(url).toContain("sort=WORK_DATE_ASC");
     expect(url).not.toContain("page=");
+  });
+
+  /**
+   * @test URLにvehicleIdとownerIdが両方指定されている場合、ownerIdを無視してAPIへ渡す
+   * ことを確認（バックエンドAPIはvehicleId+ownerIdの同時指定を許容しないため）
+   */
+  test("vehicleId・ownerIdが両方指定されている場合はownerIdを無視してAPIへ渡す", () => {
+    mockSearchParams = new URLSearchParams(
+      "vehicleId=vehicle-1&ownerId=owner-1",
+    );
+
+    renderWithHeader();
+
+    expect(mockUseMaintenanceRecordList).toHaveBeenCalledWith(
+      expect.objectContaining({ vehicleId: "vehicle-1", ownerId: undefined }),
+    );
+  });
+
+  /**
+   * @test 車両フィルターの選択肢取得元は、URLの生のownerIdではなく、整備履歴一覧APIの
+   * レスポンス（data.owner）から解決した所有者であることを確認
+   */
+  test("車両フィルターはdata.ownerを車両一覧の取得元に使う", () => {
+    // URLにownerIdは無いが、vehicleId指定によりdata.ownerで対象顧客が解決されるケース
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    listState = {
+      data: buildResponse([RECORD_OIL], {
+        owner: { id: "owner-1", userName: "田中 健太" },
+      }),
+      isPending: false,
+      isError: false,
+      refetch: mockRefetch,
+    };
+
+    renderWithHeader();
+
+    expect(mockUseVehicleList).toHaveBeenCalledWith("owner-1");
   });
 
   /**
