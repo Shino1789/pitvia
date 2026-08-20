@@ -7,7 +7,7 @@ import {
   MAINTENANCE_TYPE_BADGE_CLASS,
 } from "@/shared/constants/maintenance-type";
 import { formatWorkPeriod } from "@/shared/utils/format";
-import { ROUTES } from "@/shared/constants/routes";
+import { maintenanceRecordDetailRoute } from "@/shared/constants/routes";
 import type { MaintenanceRecordSummary } from "../types/maintenance-record";
 
 /**
@@ -16,6 +16,8 @@ import type { MaintenanceRecordSummary } from "../types/maintenance-record";
 interface MaintenanceRecordCardProps {
   /** 表示対象の整備履歴情報 */
   record: MaintenanceRecordSummary;
+  /** 詳細画面のキャンセル時に戻る一覧画面のパス（一覧画面の現在のURL） */
+  returnTo?: string;
 }
 
 /**
@@ -23,7 +25,10 @@ interface MaintenanceRecordCardProps {
  *
  * @component
  */
-export function MaintenanceRecordCard({ record }: MaintenanceRecordCardProps) {
+export function MaintenanceRecordCard({
+  record,
+  returnTo,
+}: MaintenanceRecordCardProps) {
   const badgeClass = MAINTENANCE_TYPE_BADGE_CLASS[record.maintenanceType];
 
   // 車両名の表記は車両一覧画面と統一し、車種名→型式の順で表示する（例: "GT-R R32"）
@@ -32,7 +37,7 @@ export function MaintenanceRecordCard({ record }: MaintenanceRecordCardProps) {
     : record.vehicleModelName;
 
   return (
-    <Link href={`${ROUTES.MAINTENANCES}/${record.id}`}>
+    <Link href={maintenanceRecordDetailRoute(record.id, returnTo)}>
       <Card className="bg-card border-border transition-colors hover:bg-accent/40">
         <CardContent className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-2">

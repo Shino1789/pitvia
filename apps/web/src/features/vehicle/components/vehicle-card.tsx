@@ -10,7 +10,10 @@ import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar";
-import { ROUTES, vehicleDetailRoute } from "@/shared/constants/routes";
+import {
+  maintenanceRecordListRoute,
+  vehicleDetailRoute,
+} from "@/shared/constants/routes";
 import type { VehicleDetail } from "../types/vehicle";
 
 /**
@@ -93,9 +96,9 @@ export function VehicleCard({ vehicle, ownerId }: VehicleCardProps) {
               <ArrowRightIcon className="h-3.5 w-3.5" />
             </Button>
           </Link>
-          {/* 整備履歴機能は別Issueのスコープのため、一覧画面自体は未実装だがルートは予約済み
-              （RecentMaintenanceCard等と同様、リンク自体は先に用意しておく） */}
-          <Link href={`${ROUTES.MAINTENANCES}?vehicleId=${vehicle.id}`}>
+          {/* 「車両詳細を見る」と同様、SHOPが特定顧客の車両一覧から遷移した場合はownerIdも
+              引き継ぎ、整備履歴一覧画面で対象顧客の履歴を正しく絞り込めるようにする */}
+          <Link href={maintenanceRecordListRoute(vehicle.id, ownerId)}>
             <Button
               variant="outline"
               size="sm"

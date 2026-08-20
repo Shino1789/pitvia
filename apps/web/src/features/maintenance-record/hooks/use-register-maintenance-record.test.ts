@@ -79,6 +79,29 @@ describe("useRegisterMaintenanceRecord", () => {
   });
 
   /**
+   * @test redirectToを指定した場合、固定の整備履歴一覧ではなく指定した遷移先へ
+   * replaceで遷移することを確認（車両ごとに絞り込んだ一覧から登録した場合の挙動）
+   */
+  test("redirectTo指定時はその遷移先へreplaceで遷移する", async () => {
+    const { maintenanceRecordApi } = await import("../api/maintenance-record-api");
+    vi.mocked(maintenanceRecordApi.register).mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useRegisterMaintenanceRecord());
+
+    await act(async () => {
+      await result.current.registerMaintenanceRecord(
+        REQUEST,
+        new Map(),
+        "/maintenances?vehicleId=vehicle-1",
+      );
+    });
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      "/maintenances?vehicleId=vehicle-1",
+    );
+  });
+
+  /**
    * @test 登録APIが失敗した際、エラーメッセージがstateにセットされ、
    * 画面遷移も成功トーストも発生しないことを確認
    */

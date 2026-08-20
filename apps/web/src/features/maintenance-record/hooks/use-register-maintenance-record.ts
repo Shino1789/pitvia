@@ -27,11 +27,14 @@ export function useRegisterMaintenanceRecord() {
    *
    * @param data           整備履歴登録リクエスト
    * @param workItemImages 作業項目のインデックスをキーとした画像ファイルのMap
+   * @param redirectTo     登録成功後の遷移先（未指定時は整備履歴一覧。車両ごとに絞り込んだ
+   *                       一覧から登録した場合は、同じ絞り込み状態の一覧へ戻すために使う）
    * @returns 登録成否のフラグ
    */
   const registerMaintenanceRecord = async (
     data: CreateMaintenanceRecordRequest,
     workItemImages: Map<number, File>,
+    redirectTo: string = ROUTES.MAINTENANCES,
   ): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
@@ -43,7 +46,7 @@ export function useRegisterMaintenanceRecord() {
       appToast.success(TOAST_MESSAGES.SUCCESS.MAINTENANCE_RECORD.REGISTER);
 
       // 二重送信防止のため、ブラウザの「戻る」で登録画面に戻らないreplaceで遷移
-      router.replace(ROUTES.MAINTENANCES);
+      router.replace(redirectTo);
 
       return true;
     } catch (e) {

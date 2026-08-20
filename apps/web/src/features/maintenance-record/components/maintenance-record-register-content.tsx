@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent } from "@/shared/ui/card";
@@ -20,6 +20,7 @@ import {
 } from "../schemas/maintenance-record.schema";
 import { useHeader } from "@/shared/hooks/use-header";
 import { useDiscardGuard } from "@/shared/hooks/use-discard-guard";
+import { useReturnTo } from "@/shared/hooks/use-return-to";
 import { ROUTES } from "@/shared/constants/routes";
 
 /**
@@ -30,6 +31,13 @@ import { ROUTES } from "@/shared/constants/routes";
  */
 export function MaintenanceRecordRegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 一覧画面から車両ごとに絞り込んだ状態で遷移してきた場合、対象車両プルダウンの初期選択値にする
+  const vehicleIdParam = searchParams.get("vehicleId") ?? undefined;
+  // キャンセル・登録完了時に戻る一覧画面のパス（一覧画面から引き継いだ`returnTo`。未指定時は
+  // 通常の整備履歴一覧へ戻る）
+  const returnTo = useReturnTo(ROUTES.MAINTENANCES);
 
   // 対象車両の選択肢取得（ログインユーザー自身の車両一覧。OWNERは自身の所有車両、
   // SHOPは自身の所有車両（デモカー等）が対象。連携済み顧客車両の選択は今回のスコープ外）
@@ -61,10 +69,13 @@ export function MaintenanceRecordRegisterContent() {
   // 動的ヘッダーにタイトルを登録
   useHeader({ title: "整備履歴登録" });
 
-  // フォームバリデーションスキーマの初期化
+  // フォームバリデーションスキーマの初期化。URLに対象車両が指定されている場合は初期選択値にする
   const form = useForm<MaintenanceRecordFormValues>({
     resolver: zodResolver(maintenanceRecordSchema),
-    defaultValues: EMPTY_MAINTENANCE_RECORD_FORM_VALUES,
+    defaultValues: {
+      ...EMPTY_MAINTENANCE_RECORD_FORM_VALUES,
+      vehicleId: vehicleIdParam ?? EMPTY_MAINTENANCE_RECORD_FORM_VALUES.vehicleId,
+    },
   });
 
   // formStateはレンダリング中に参照して初めて内部の購読が有効化される（react-hook-formの仕様）
@@ -161,7 +172,7 @@ export function MaintenanceRecordRegisterContent() {
    * キャンセルボタン押下時のハンドラー
    */
   const handleCancel = () => {
-    guard(hasUnsavedChanges, () => router.push(ROUTES.MAINTENANCES));
+    guard(hasUnsavedChanges, () => router.push(returnTo));
   };
 
   /**
@@ -183,6 +194,7 @@ export function MaintenanceRecordRegisterContent() {
     registerMaintenanceRecord(
       toCreateMaintenanceRecordRequest(data),
       indexedImages,
+      returnTo,
     );
   };
 

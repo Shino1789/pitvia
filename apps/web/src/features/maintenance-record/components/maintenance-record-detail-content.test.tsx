@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import {
   MaintenanceRecordDetailContent,
   MOCK_MAINTENANCE_RECORD_DETAIL,
@@ -8,12 +8,15 @@ import {
 
 // ルーター移動を検証するためのモック関数
 const mockPush = vi.fn();
+// URLクエリパラメータ（returnTo）を制御するためのモック用変数
+let mockSearchParams = new URLSearchParams();
 
 // Next.js のナビゲーション関連フックをモック化
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる）
@@ -30,6 +33,11 @@ const TITLE_PLACEHOLDER = "例：車検対応、オイル交換";
  * 閲覧/編集モード切り替え・登録者本人のみ編集可能なUIの検証に主眼を置く。
  */
 describe("MaintenanceRecordDetailContent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSearchParams = new URLSearchParams();
+  });
+
   /**
    * @test 初期表示は閲覧モードであり、入力欄ではなく読み取り専用テキストで表示されることを確認
    */
@@ -42,6 +50,22 @@ describe("MaintenanceRecordDetailContent", () => {
     expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /削除/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /保存/ })).not.toBeInTheDocument();
+  });
+
+  /**
+   * @test URLにreturnToが指定されている場合、キャンセル時に固定の一覧画面ではなく
+   * returnToが示す元の絞り込み状態の一覧画面へ遷移することを確認
+   */
+  test("returnTo指定時はキャンセルでその戻り先へ遷移する", async () => {
+    mockSearchParams = new URLSearchParams(
+      "returnTo=%2Fmaintenances%3FvehicleId%3Dvehicle-1",
+    );
+    const user = userEvent.setup();
+    render(<MaintenanceRecordDetailContent />);
+
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(mockPush).toHaveBeenCalledWith("/maintenances?vehicleId=vehicle-1");
   });
 
   /**

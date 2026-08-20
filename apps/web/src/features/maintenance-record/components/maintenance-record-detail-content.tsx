@@ -20,6 +20,7 @@ import {
 import type { MaintenanceRecordDetail } from "../types/maintenance-record";
 import { useHeader } from "@/shared/hooks/use-header";
 import { useDiscardGuard } from "@/shared/hooks/use-discard-guard";
+import { useReturnTo } from "@/shared/hooks/use-return-to";
 import { ROUTES } from "@/shared/constants/routes";
 
 /** 閲覧モード/編集モードの切り替え選択肢 */
@@ -69,7 +70,9 @@ export const MOCK_MAINTENANCE_RECORD_DETAIL: MaintenanceRecordDetail = {
  * @param record 整備履歴詳細情報
  * @returns フォーム入力値
  */
-function toFormValues(record: MaintenanceRecordDetail): MaintenanceRecordFormValues {
+function toFormValues(
+  record: MaintenanceRecordDetail,
+): MaintenanceRecordFormValues {
   return {
     vehicleId: record.vehicleId,
     title: record.title,
@@ -125,6 +128,9 @@ export function MaintenanceRecordDetailContent({
 }: MaintenanceRecordDetailContentProps) {
   const router = useRouter();
 
+  // 一覧画面から引き継いだキャンセル時の遷移先URLを取得
+  const returnTo = useReturnTo(ROUTES.MAINTENANCES);
+
   // 表示モード（閲覧/編集）を管理するstate
   const [mode, setMode] = useState<"view" | "edit">("view");
   // 未保存の変更を破棄する前の確認ダイアログ制御
@@ -157,7 +163,8 @@ export function MaintenanceRecordDetailContent({
 
   const { isDirty } = form.formState;
   // 閲覧モードでは編集操作自体が無いため、編集モード時のみ未保存判定を行う
-  const hasUnsavedChanges = mode === "edit" && (isDirty || workItemImages.size > 0);
+  const hasUnsavedChanges =
+    mode === "edit" && (isDirty || workItemImages.size > 0);
 
   // 作業項目リストの動的追加・削除
   const {
@@ -210,10 +217,10 @@ export function MaintenanceRecordDetailContent({
   };
 
   /**
-   * キャンセルボタン押下時のハンドラー（閲覧モードのフッター、編集モードのフッター共通）
+   * キャンセルボタン押下時のハンドラー
    */
   const handleCancel = () => {
-    guard(hasUnsavedChanges, () => router.push(ROUTES.MAINTENANCES));
+    guard(hasUnsavedChanges, () => router.push(returnTo));
   };
 
   /**
@@ -226,7 +233,10 @@ export function MaintenanceRecordDetailContent({
    */
   const handleSubmit = (data: MaintenanceRecordFormValues) => {
     // TODO: 更新API実装後、maintenanceRecordApi.update(...) 相当の呼び出しへ差し替える。
-    console.info("整備履歴の更新APIは未実装のため、送信内容は保存されません。", data);
+    console.info(
+      "整備履歴の更新APIは未実装のため、送信内容は保存されません。",
+      data,
+    );
     setMode("view");
   };
 

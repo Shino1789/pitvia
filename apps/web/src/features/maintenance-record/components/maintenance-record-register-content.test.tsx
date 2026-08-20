@@ -5,12 +5,15 @@ import { MaintenanceRecordRegisterContent } from "./maintenance-record-register-
 
 // ルーター移動を検証するためのモック関数
 const mockPush = vi.fn();
+// URLクエリパラメータ（vehicleId, returnTo）を制御するためのモック用変数
+let mockSearchParams = new URLSearchParams();
 
 // Next.js のナビゲーション関連フックをモック化
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる）
@@ -115,6 +118,7 @@ async function fillRequiredFieldsAndSubmit(
 describe("MaintenanceRecordRegisterContent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParams = new URLSearchParams();
     vehicleListState = {
       data: VEHICLE_LIST_RESPONSE,
       isPending: false,
@@ -160,6 +164,20 @@ describe("MaintenanceRecordRegisterContent", () => {
 
     await user.click(screen.getByRole("button", { name: /再試行/ }));
     expect(mockRefetchVehicles).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * @test URLにvehicleIdが指定されている場合、対象車両プルダウンにその車両が
+   * 初期選択されていることを確認（車両ごとに絞り込んだ一覧から遷移した場合の挙動）
+   */
+  test("URLのvehicleIdが対象車両プルダウンに初期選択される", () => {
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-2");
+
+    render(<MaintenanceRecordRegisterContent />);
+
+    expect(
+      screen.getByRole("combobox", { name: /対象車両/ }),
+    ).toHaveTextContent("GT-R");
   });
 
   /**
@@ -315,6 +333,22 @@ describe("MaintenanceRecordRegisterContent", () => {
       screen.queryByText("入力内容を破棄しますか？"),
     ).not.toBeInTheDocument();
     expect(mockPush).toHaveBeenCalledWith("/maintenances");
+  });
+
+  /**
+   * @test URLにreturnToが指定されている場合、キャンセル時に固定の一覧画面ではなく
+   * returnToが示す元の絞り込み状態の一覧画面へ遷移することを確認
+   */
+  test("returnTo指定時はキャンセルでその戻り先へ遷移する", async () => {
+    mockSearchParams = new URLSearchParams(
+      "returnTo=%2Fmaintenances%3FvehicleId%3Dvehicle-1",
+    );
+    const user = userEvent.setup();
+    render(<MaintenanceRecordRegisterContent />);
+
+    await user.click(screen.getByRole("button", { name: /キャンセル/ }));
+
+    expect(mockPush).toHaveBeenCalledWith("/maintenances?vehicleId=vehicle-1");
   });
 
   /**

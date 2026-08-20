@@ -49,11 +49,71 @@ export function vehicleDetailRoute(
 }
 
 /**
+ * 現在のURL（パス＋クエリ）を、`returnTo`クエリパラメータへ渡す値として組み立てる
+ *
+ * 一覧画面が持つ絞り込み・並び替え・ページング条件を丸ごと詳細/登録画面へ引き継ぎ、
+ * キャンセル・登録完了時に同じ状態へ戻れるようにするために使用する。
+ *
+ * @param pathname     現在のパス
+ * @param searchParams 現在のクエリパラメータ
+ * @returns `returnTo`用の値（クエリが無い場合はパスのみ）
+ */
+export function buildReturnTo(
+  pathname: string,
+  searchParams: URLSearchParams,
+): string {
+  const query = searchParams.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+/**
+ * 整備履歴一覧画面のパスを生成する
+ *
+ * @param vehicleId 対象車両ID（指定した車両の整備履歴に絞り込む場合）
+ * @param ownerId   遷移元の対象オーナーID（顧客の車両一覧からの遷移時のみ指定）
+ * @returns 整備履歴一覧画面のパス
+ */
+export function maintenanceRecordListRoute(
+  vehicleId?: string,
+  ownerId?: string,
+): string {
+  const params = new URLSearchParams();
+  if (vehicleId) params.set("vehicleId", vehicleId);
+  if (ownerId) params.set("ownerId", ownerId);
+  const query = params.toString();
+  return query ? `${ROUTES.MAINTENANCES}?${query}` : ROUTES.MAINTENANCES;
+}
+
+/**
  * 整備履歴詳細・更新画面のパスを生成する
  *
  * @param maintenanceRecordId 整備履歴ID
+ * @param returnTo            キャンセル時に戻る一覧画面のパス（{@link buildReturnTo}で組み立てた値）
  * @returns 整備履歴詳細画面のパス
  */
-export function maintenanceRecordDetailRoute(maintenanceRecordId: string): string {
-  return `${ROUTES.MAINTENANCES}/${maintenanceRecordId}`;
+export function maintenanceRecordDetailRoute(
+  maintenanceRecordId: string,
+  returnTo?: string,
+): string {
+  const path = `${ROUTES.MAINTENANCES}/${maintenanceRecordId}`;
+  if (!returnTo) return path;
+  return `${path}?${new URLSearchParams({ returnTo }).toString()}`;
+}
+
+/**
+ * 整備履歴登録画面のパスを生成する
+ *
+ * @param options.vehicleId 対象車両IDの初期選択値（車両ごとの一覧から遷移する場合）
+ * @param options.returnTo  キャンセル・登録完了時に戻る一覧画面のパス（{@link buildReturnTo}で組み立てた値）
+ * @returns 整備履歴登録画面のパス
+ */
+export function maintenanceRecordNewRoute(options?: {
+  vehicleId?: string;
+  returnTo?: string;
+}): string {
+  const params = new URLSearchParams();
+  if (options?.vehicleId) params.set("vehicleId", options.vehicleId);
+  if (options?.returnTo) params.set("returnTo", options.returnTo);
+  const query = params.toString();
+  return query ? `${ROUTES.MAINTENANCE_NEW}?${query}` : ROUTES.MAINTENANCE_NEW;
 }
