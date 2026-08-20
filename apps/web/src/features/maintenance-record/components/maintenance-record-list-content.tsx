@@ -255,7 +255,13 @@ export function MaintenanceRecordListContent() {
           </Button>
         )}
 
-        <Link href={maintenanceRecordNewRoute({ vehicleId, returnTo })}>
+        <Link
+          href={maintenanceRecordNewRoute({
+            vehicleId,
+            ownerId: viewedOwnerId,
+            returnTo,
+          })}
+        >
           <Button type="button" size="sm" className="gap-1.5">
             <PlusIcon className="h-4 w-4" />
             履歴を追加
@@ -269,6 +275,7 @@ export function MaintenanceRecordListContent() {
     keywordParam,
     updateParams,
     vehicleId,
+    viewedOwnerId,
     returnTo,
   ]);
 

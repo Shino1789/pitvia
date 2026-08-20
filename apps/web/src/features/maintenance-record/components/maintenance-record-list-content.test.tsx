@@ -658,6 +658,31 @@ describe("MaintenanceRecordListContent", () => {
   });
 
   /**
+   * @test 顧客車両（vehicleId指定・data.ownerあり）を表示中に「履歴を追加」を押下すると、
+   * 登録画面のURLにownerId（viewedOwnerId）も引き継がれ、登録画面の対象車両プルダウンが
+   * 顧客の車両一覧から取得できるようにすることを確認
+   */
+  test("顧客車両を表示中は「履歴を追加」のリンクにownerIdも引き継がれる", () => {
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    listState = {
+      data: buildResponse([RECORD_OIL], {
+        owner: { id: "owner-1", userName: "田中 健太" },
+      }),
+      isPending: false,
+      isError: false,
+      refetch: mockRefetch,
+    };
+    renderWithHeader();
+
+    const link = screen.getByRole("link", { name: /履歴を追加/ });
+    const href = link.getAttribute("href") ?? "";
+    const [, query] = href.split("?");
+    const params = new URLSearchParams(query);
+    expect(params.get("vehicleId")).toBe("vehicle-1");
+    expect(params.get("ownerId")).toBe("owner-1");
+  });
+
+  /**
    * @test ヘッダー内に検索・追加ボタンが表示されることを確認（AppHeader経由）
    */
   test("ヘッダーに検索ボタンが表示される", () => {

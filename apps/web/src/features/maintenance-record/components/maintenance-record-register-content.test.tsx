@@ -21,7 +21,7 @@ vi.mock("@/shared/hooks/use-header", () => ({
   useHeader: vi.fn(),
 }));
 
-// 車両一覧取得フックのモック化用関数
+// 車両一覧取得フックのモック化用関数（呼び出し引数を検証できるようspyにする）
 const mockRefetchVehicles = vi.fn();
 let vehicleListState: {
   data: unknown;
@@ -29,9 +29,13 @@ let vehicleListState: {
   isError: boolean;
   refetch: typeof mockRefetchVehicles;
 };
+// 型引数で呼び出しシグネチャを明示することで、実装側に未使用の仮引数を持たせずに済む
+const mockUseVehicleList = vi.fn<(ownerId?: string) => typeof vehicleListState>(
+  () => vehicleListState,
+);
 
 vi.mock("@/features/vehicle/hooks/use-vehicle-list", () => ({
-  useVehicleList: () => vehicleListState,
+  useVehicleList: (ownerId?: string) => mockUseVehicleList(ownerId),
 }));
 
 // 整備履歴登録処理フックのモック化
@@ -178,6 +182,30 @@ describe("MaintenanceRecordRegisterContent", () => {
     expect(
       screen.getByRole("combobox", { name: /対象車両/ }),
     ).toHaveTextContent("GT-R");
+  });
+
+  /**
+   * @test URLにownerIdが指定されている場合（連携済み顧客の車両一覧から遷移した場合）、
+   * その顧客の車両一覧取得のためownerIdがuseVehicleListへ渡されることを確認
+   */
+  test("URLのownerIdが車両一覧取得フックへ渡される", () => {
+    mockSearchParams = new URLSearchParams(
+      "vehicleId=vehicle-2&ownerId=owner-1",
+    );
+
+    render(<MaintenanceRecordRegisterContent />);
+
+    expect(mockUseVehicleList).toHaveBeenCalledWith("owner-1");
+  });
+
+  /**
+   * @test URLにownerIdが指定されていない場合は、従来通りログインユーザー自身の
+   * 車両一覧を取得すること（undefinedが渡ること）を確認（デグレ防止）
+   */
+  test("URLにownerIdが無い場合はundefinedで車両一覧取得フックが呼ばれる", () => {
+    render(<MaintenanceRecordRegisterContent />);
+
+    expect(mockUseVehicleList).toHaveBeenCalledWith(undefined);
   });
 
   /**

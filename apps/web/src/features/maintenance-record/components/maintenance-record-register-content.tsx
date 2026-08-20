@@ -35,18 +35,20 @@ export function MaintenanceRecordRegisterContent() {
 
   // 一覧画面から車両ごとに絞り込んだ状態で遷移してきた場合、対象車両プルダウンの初期選択値にする
   const vehicleIdParam = searchParams.get("vehicleId") ?? undefined;
+  // 一覧画面から引き継いだ、対象車両一覧の取得元オーナーID
+  const ownerIdParam = searchParams.get("ownerId") ?? undefined;
   // キャンセル・登録完了時に戻る一覧画面のパス（一覧画面から引き継いだ`returnTo`。未指定時は
   // 通常の整備履歴一覧へ戻る）
   const returnTo = useReturnTo(ROUTES.MAINTENANCES);
 
-  // 対象車両の選択肢取得（ログインユーザー自身の車両一覧。OWNERは自身の所有車両、
-  // SHOPは自身の所有車両（デモカー等）が対象。連携済み顧客車両の選択は今回のスコープ外）
+  // 対象車両の選択肢取得。ownerIdParam指定時はその顧客の車両一覧、未指定時は
+  // ログインユーザー自身の車両一覧（OWNERは自身の所有車両、SHOPは自身の所有車両が対象）
   const {
     data: vehicleListResponse,
     isPending: isVehiclesPending,
     isError: isVehiclesError,
     refetch: refetchVehicles,
-  } = useVehicleList();
+  } = useVehicleList(ownerIdParam);
 
   // 整備履歴登録処理カスタムフックから状態と関数を取得
   const {
@@ -74,7 +76,8 @@ export function MaintenanceRecordRegisterContent() {
     resolver: zodResolver(maintenanceRecordSchema),
     defaultValues: {
       ...EMPTY_MAINTENANCE_RECORD_FORM_VALUES,
-      vehicleId: vehicleIdParam ?? EMPTY_MAINTENANCE_RECORD_FORM_VALUES.vehicleId,
+      vehicleId:
+        vehicleIdParam ?? EMPTY_MAINTENANCE_RECORD_FORM_VALUES.vehicleId,
     },
   });
 

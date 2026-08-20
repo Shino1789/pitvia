@@ -104,15 +104,18 @@ export function maintenanceRecordDetailRoute(
  * 整備履歴登録画面のパスを生成する
  *
  * @param options.vehicleId 対象車両IDの初期選択値（車両ごとの一覧から遷移する場合）
+ * @param options.ownerId   対象車両一覧の取得元オーナーID（連携済み顧客の車両から遷移する場合）
  * @param options.returnTo  キャンセル・登録完了時に戻る一覧画面のパス（{@link buildReturnTo}で組み立てた値）
  * @returns 整備履歴登録画面のパス
  */
 export function maintenanceRecordNewRoute(options?: {
   vehicleId?: string;
+  ownerId?: string;
   returnTo?: string;
 }): string {
   const params = new URLSearchParams();
   if (options?.vehicleId) params.set("vehicleId", options.vehicleId);
+  if (options?.ownerId) params.set("ownerId", options.ownerId);
   if (options?.returnTo) params.set("returnTo", options.returnTo);
   const query = params.toString();
   return query ? `${ROUTES.MAINTENANCE_NEW}?${query}` : ROUTES.MAINTENANCE_NEW;
