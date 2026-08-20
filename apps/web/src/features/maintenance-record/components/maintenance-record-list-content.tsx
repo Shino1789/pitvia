@@ -87,6 +87,12 @@ export function MaintenanceRecordListContent() {
     size,
   });
 
+  // 現在表示している整備履歴の所有者ID（自分自身の場合はundefined）。
+  // vehicleId指定時はAPIレスポンス（data.owner）から解決された値、ownerId指定時は
+  // URLの値がそのまま該当する。車両フィルターの選択肢取得・「一覧へ戻る」・「すべて」への
+  // 切り替え時のownerId補完で共通して使う
+  const viewedOwnerId = data?.owner?.id;
+
   // 詳細/登録画面へ引き継ぐ、キャンセル時の戻り先としての現在のURL
   const returnTo = useMemo(
     () => buildReturnTo(pathname, searchParams),
@@ -151,10 +157,19 @@ export function MaintenanceRecordListContent() {
   /**
    * 車両フィルター変更時のハンドラー（pageを1へリセット）
    *
+   * vehicleId・ownerIdはAPI制約上同時にURLへ乗せられないため、どちらに切り替える
+   * 場合も常に両方のキーを明示的に管理する。「すべて」への切り替え時は、直前まで
+   * 見ていた対象の所有者（viewedOwnerId）をownerIdとして引き継ぐことで、
+   * 顧客の車両を見ていた場合はその顧客の全車両分の一覧に留まる（自分の一覧には戻らない）。
+   *
    * @param next 選択された車両ID（未指定＝「すべて」）
    */
   const handleVehicleChange = (next?: string) => {
-    updateParams({ vehicleId: next ?? null }, true);
+    if (next) {
+      updateParams({ vehicleId: next, ownerId: null }, true);
+      return;
+    }
+    updateParams({ vehicleId: null, ownerId: viewedOwnerId ?? null }, true);
   };
 
   /**
@@ -263,7 +278,7 @@ export function MaintenanceRecordListContent() {
    * 「一覧へ戻る」押下時のハンドラー（車両一覧画面へ遷移する）
    */
   const handleBackToList = () => {
-    router.push(vehicleListRoute(data?.owner?.id));
+    router.push(vehicleListRoute(viewedOwnerId));
   };
 
   // データ取得中はスケルトンUIを表示
@@ -300,7 +315,7 @@ export function MaintenanceRecordListContent() {
         <div className="flex items-center gap-2">
           {/* 車両フィルタープルダウン（対象車両一覧の所有者はdata.ownerから解決する） */}
           <VehicleFilterSelect
-            ownerId={data.owner?.id}
+            ownerId={viewedOwnerId}
             value={vehicleId}
             onChange={handleVehicleChange}
           />

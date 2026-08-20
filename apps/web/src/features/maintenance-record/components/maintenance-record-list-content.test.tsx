@@ -29,7 +29,10 @@ let listState: {
 };
 
 const mockRefetch = vi.fn();
-const mockUseMaintenanceRecordList = vi.fn((_params: unknown) => listState);
+// 型引数で呼び出しシグネチャを明示することで、実装側に未使用の仮引数を持たせずに済む
+const mockUseMaintenanceRecordList = vi.fn<(params: unknown) => typeof listState>(
+  () => listState,
+);
 
 vi.mock("../hooks/use-maintenance-record-list", () => ({
   useMaintenanceRecordList: (params: unknown) =>
@@ -38,7 +41,9 @@ vi.mock("../hooks/use-maintenance-record-list", () => ({
 
 // 車両フィルタープルダウン用の車両一覧取得フックのモック化用関数（同様にspy化）
 let vehicleListState: { data: unknown; isPending: boolean };
-const mockUseVehicleList = vi.fn((_ownerId?: string) => vehicleListState);
+const mockUseVehicleList = vi.fn<(ownerId?: string) => typeof vehicleListState>(
+  () => vehicleListState,
+);
 
 vi.mock("@/features/vehicle/hooks/use-vehicle-list", () => ({
   useVehicleList: (ownerId?: string) => mockUseVehicleList(ownerId),
@@ -470,6 +475,84 @@ describe("MaintenanceRecordListContent", () => {
     renderWithHeader();
 
     expect(mockUseVehicleList).toHaveBeenCalledWith("owner-1");
+  });
+
+  /**
+   * @test 特定車両（顧客の車両）を表示中に車両フィルターで「すべて」を選ぶと、
+   * 自分自身の一覧（パラメータ無し）ではなく、その顧客の全車両分の一覧
+   * （ownerId指定）へ切り替わることを確認
+   */
+  test("顧客車両を表示中に「すべて」を選ぶとその顧客のownerId指定へ切り替わる", async () => {
+    const user = userEvent.setup();
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    listState = {
+      data: buildResponse([RECORD_OIL], {
+        owner: { id: "owner-1", userName: "田中 健太" },
+      }),
+      isPending: false,
+      isError: false,
+      refetch: mockRefetch,
+    };
+    renderWithHeader();
+
+    const comboboxes = screen.getAllByRole("combobox");
+    await user.click(comboboxes[0]);
+    await user.click(await screen.findByRole("option", { name: "すべて" }));
+
+    const [url] = mockReplace.mock.calls.at(-1) as [string];
+    expect(url).toContain("ownerId=owner-1");
+    expect(url).not.toContain("vehicleId=");
+  });
+
+  /**
+   * @test 自分の車両を表示中に「すべて」を選ぶと、従来通りパラメータ無し
+   * （自分自身の一覧）へ遷移することを確認（デグレ防止）
+   */
+  test("自分の車両を表示中に「すべて」を選ぶとパラメータ無しの一覧へ戻る", async () => {
+    const user = userEvent.setup();
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    // data.owner が null ＝ 自分自身の車両
+    listState = {
+      data: buildResponse([RECORD_OIL], { owner: null }),
+      isPending: false,
+      isError: false,
+      refetch: mockRefetch,
+    };
+    renderWithHeader();
+
+    const comboboxes = screen.getAllByRole("combobox");
+    await user.click(comboboxes[0]);
+    await user.click(await screen.findByRole("option", { name: "すべて" }));
+
+    const [url] = mockReplace.mock.calls.at(-1) as [string];
+    expect(url).not.toContain("vehicleId=");
+    expect(url).not.toContain("ownerId=");
+  });
+
+  /**
+   * @test 顧客の全車両一覧（ownerId指定）から特定の車両を選ぶと、URLにownerIdが
+   * 残らずvehicleIdのみになることを確認（vehicleId+ownerId同時指定の再発防止）
+   */
+  test("ownerId指定中に特定車両を選ぶとownerIdが残らない", async () => {
+    const user = userEvent.setup();
+    mockSearchParams = new URLSearchParams("ownerId=owner-1");
+    listState = {
+      data: buildResponse([RECORD_OIL], {
+        owner: { id: "owner-1", userName: "田中 健太" },
+      }),
+      isPending: false,
+      isError: false,
+      refetch: mockRefetch,
+    };
+    renderWithHeader();
+
+    const comboboxes = screen.getAllByRole("combobox");
+    await user.click(comboboxes[0]);
+    await user.click(await screen.findByRole("option", { name: "RX-7 FD3S" }));
+
+    const [url] = mockReplace.mock.calls.at(-1) as [string];
+    expect(url).toContain("vehicleId=vehicle-1");
+    expect(url).not.toContain("ownerId=");
   });
 
   /**

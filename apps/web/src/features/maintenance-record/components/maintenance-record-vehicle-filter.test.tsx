@@ -5,7 +5,10 @@ import { VehicleFilterSelect } from "./maintenance-record-vehicle-filter";
 
 // 車両一覧取得フックのモック化用関数
 let vehicleListState: { data: unknown; isPending: boolean };
-const mockUseVehicleList = vi.fn((_ownerId?: string) => vehicleListState);
+// 型引数で呼び出しシグネチャを明示することで、実装側に未使用の仮引数を持たせずに済む
+const mockUseVehicleList = vi.fn<(ownerId?: string) => typeof vehicleListState>(
+  () => vehicleListState,
+);
 
 vi.mock("@/features/vehicle/hooks/use-vehicle-list", () => ({
   useVehicleList: (ownerId?: string) => mockUseVehicleList(ownerId),
