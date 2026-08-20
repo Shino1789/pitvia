@@ -34,6 +34,21 @@ vi.mock("../hooks/use-maintenance-record-list", () => ({
   useMaintenanceRecordList: () => listState,
 }));
 
+// 車両フィルタープルダウン用の車両一覧取得フックのモック化用関数
+let vehicleListState: { data: unknown; isPending: boolean };
+
+vi.mock("@/features/vehicle/hooks/use-vehicle-list", () => ({
+  useVehicleList: () => vehicleListState,
+}));
+
+const VEHICLE_LIST_RESPONSE = {
+  owner: null,
+  vehicles: [
+    { id: "vehicle-1", modelName: "RX-7", modelCode: "FD3S" },
+    { id: "vehicle-2", modelName: "GT-R", modelCode: null },
+  ],
+};
+
 const RECORD_OIL: MaintenanceRecordListResponse["records"]["content"][number] = {
   id: "record-1",
   vehicleId: "vehicle-1",
@@ -130,6 +145,7 @@ describe("MaintenanceRecordListContent", () => {
       isError: false,
       refetch: mockRefetch,
     };
+    vehicleListState = { data: VEHICLE_LIST_RESPONSE, isPending: false };
   });
 
   /**
@@ -258,7 +274,8 @@ describe("MaintenanceRecordListContent", () => {
   });
 
   /**
-   * @test 整備履歴カードクリックで整備履歴詳細画面へのリンクになっていることを確認
+   * @test 整備履歴カードクリックで整備履歴詳細画面へのリンクになっており、キャンセル時に
+   * 一覧へ戻れるよう現在のURL（returnTo）を引き継いでいることを確認
    */
   test("整備履歴カードは詳細画面へのリンクになっている", () => {
     renderWithHeader();
@@ -266,7 +283,10 @@ describe("MaintenanceRecordListContent", () => {
     const link = screen.getByRole("link", {
       name: /エンジンオイル＆フィルター交換/,
     });
-    expect(link).toHaveAttribute("href", "/maintenances/record-1");
+    expect(link).toHaveAttribute(
+      "href",
+      "/maintenances/record-1?returnTo=%2Fmaintenances",
+    );
   });
 
   /**
@@ -402,12 +422,49 @@ describe("MaintenanceRecordListContent", () => {
     mockSearchParams = new URLSearchParams("page=2");
     renderWithHeader();
 
-    await user.click(screen.getByRole("combobox"));
+    // 車両フィルター・並び替えの2つのプルダウンが並ぶため、2番目（並び替え）を操作する
+    const comboboxes = screen.getAllByRole("combobox");
+    await user.click(comboboxes[1]);
     await user.click(await screen.findByRole("option", { name: "日付（古い順）" }));
 
     const [url] = mockReplace.mock.calls.at(-1) as [string];
     expect(url).toContain("sort=WORK_DATE_ASC");
     expect(url).not.toContain("page=");
+  });
+
+  /**
+   * @test 車両フィルターで特定の車両を選択すると、URLのvehicleIdが更新され、
+   * 他の絞り込み条件（keyword）は維持されたままpageがリセットされることを確認
+   */
+  test("車両フィルターを変更するとURLのvehicleIdが更新される", async () => {
+    const user = userEvent.setup();
+    mockSearchParams = new URLSearchParams("keyword=オイル&page=2");
+    renderWithHeader();
+
+    const comboboxes = screen.getAllByRole("combobox");
+    await user.click(comboboxes[0]);
+    await user.click(await screen.findByRole("option", { name: "RX-7 FD3S" }));
+
+    const [url] = mockReplace.mock.calls.at(-1) as [string];
+    expect(url).toContain("vehicleId=vehicle-1");
+    expect(url).toContain("keyword=");
+    expect(url).not.toContain("page=");
+  });
+
+  /**
+   * @test 車両で絞り込み中に「すべて」を選択すると、URLからvehicleIdが削除されることを確認
+   */
+  test("車両フィルターで「すべて」を選択するとvehicleIdが削除される", async () => {
+    const user = userEvent.setup();
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    renderWithHeader();
+
+    const comboboxes = screen.getAllByRole("combobox");
+    await user.click(comboboxes[0]);
+    await user.click(await screen.findByRole("option", { name: "すべて" }));
+
+    const [url] = mockReplace.mock.calls.at(-1) as [string];
+    expect(url).not.toContain("vehicleId=");
   });
 
   /**
@@ -449,13 +506,32 @@ describe("MaintenanceRecordListContent", () => {
   });
 
   /**
-   * @test 「+ 履歴を追加」ボタンが表示され、履歴登録画面へのリンクになっていることを確認
+   * @test 「+ 履歴を追加」ボタンが表示され、履歴登録画面へのリンクになっていることを確認。
+   * 対象車両で絞り込み中の場合はvehicleIdを、キャンセル時に戻れるようreturnToも引き継ぐ。
    */
   test("「履歴を追加」ボタンが表示される", () => {
     renderWithHeader();
 
     const link = screen.getByRole("link", { name: /履歴を追加/ });
-    expect(link).toHaveAttribute("href", "/maintenances/new");
+    expect(link).toHaveAttribute(
+      "href",
+      "/maintenances/new?returnTo=%2Fmaintenances",
+    );
+  });
+
+  /**
+   * @test vehicleIdで絞り込み中に「履歴を追加」を押下すると、登録画面のURLに
+   * vehicleIdが引き継がれ、対象車両プルダウンの初期選択に使われることを確認
+   */
+  test("車両で絞り込み中は「履歴を追加」のリンクにvehicleIdが引き継がれる", () => {
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    renderWithHeader();
+
+    const link = screen.getByRole("link", { name: /履歴を追加/ });
+    expect(link).toHaveAttribute(
+      "href",
+      "/maintenances/new?vehicleId=vehicle-1&returnTo=%2Fmaintenances%3FvehicleId%3Dvehicle-1",
+    );
   });
 
   /**
