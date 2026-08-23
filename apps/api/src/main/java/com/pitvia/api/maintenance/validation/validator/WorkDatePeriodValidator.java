@@ -34,7 +34,17 @@ public class WorkDatePeriodValidator implements ConstraintValidator<ValidWorkDat
             return true;
         }
 
-        return !request.workDateTo().isBefore(request.workDateFrom());
+        boolean valid = !request.workDateTo().isBefore(request.workDateFrom());
+
+        // クラスレベル制約はデフォルトのままだとフィールドに紐づかないため、違反時は明示的にworkDateToへ紐づけ直す
+        if (!valid) {
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())
+                    .addPropertyNode("workDateTo")
+                    .addConstraintViolation();
+        }
+
+        return valid;
     }
 
 }
