@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,10 +64,24 @@ export function MaintenanceRecordRegisterContent() {
   const [workItemImages, setWorkItemImages] = useState<Map<string, File>>(
     new Map(),
   );
-  // 作業項目ごとの画像プレビューURL（キー: useFieldArrayの安定id）
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<Map<string, string>>(
-    new Map(),
-  );
+
+  // 作業項目ごとの画像プレビューURLは、選択中ファイルから都度導出する（vehicle-register-content.tsxと
+  // 同じ方式）。stateとして個別管理すると生成・解放のタイミング管理が煩雑になり、
+  // 画面遷移時にオブジェクトURLが解放されずメモリリークする原因になるため避ける
+  const imagePreviewUrls = useMemo(() => {
+    const map = new Map<string, string>();
+    workItemImages.forEach((file, fieldId) => {
+      map.set(fieldId, URL.createObjectURL(file));
+    });
+    return map;
+  }, [workItemImages]);
+
+  // 導出したオブジェクトURLは、再生成・アンマウントの度に確実に解放する
+  useEffect(() => {
+    return () => {
+      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [imagePreviewUrls]);
 
   // 動的ヘッダーにタイトルを登録。連携済み顧客の車両を対象に登録している場合は対象オーナー名を表示する
   useHeader({
@@ -100,22 +114,13 @@ export function MaintenanceRecordRegisterContent() {
   } = useFieldArray({ control: form.control, name: "workItems" });
 
   /**
-   * 作業項目に紐づく画像・プレビューURLを削除する（画像削除ボタン押下時、作業項目削除時の両方で利用）
+   * 作業項目に紐づく選択画像を削除する（画像削除ボタン押下時、作業項目削除時の両方で利用）
    *
    * @param fieldId 対象作業項目の安定id
    */
   const removeImageForField = (fieldId: string) => {
     setWorkItemImages((prev) => {
       const next = new Map(prev);
-      next.delete(fieldId);
-      return next;
-    });
-    setImagePreviewUrls((prev) => {
-      const next = new Map(prev);
-      const url = next.get(fieldId);
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
       next.delete(fieldId);
       return next;
     });
@@ -149,15 +154,6 @@ export function MaintenanceRecordRegisterContent() {
    */
   const handleWorkItemImageSelect = (fieldId: string, file: File) => {
     setWorkItemImages((prev) => new Map(prev).set(fieldId, file));
-    setImagePreviewUrls((prev) => {
-      const next = new Map(prev);
-      const oldUrl = next.get(fieldId);
-      if (oldUrl) {
-        URL.revokeObjectURL(oldUrl);
-      }
-      next.set(fieldId, URL.createObjectURL(file));
-      return next;
-    });
   };
 
   // データ取得中はスケルトンUIを表示
