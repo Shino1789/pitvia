@@ -1,7 +1,11 @@
 package com.pitvia.api.maintenance.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -173,13 +177,25 @@ public class MaintenanceRecordService {
      */
     private void attachWorkItems(MaintenanceRecord record, List<WorkItemRequest> workItemReqs) {
 
+        // 整備カテゴリマスタを作業項目件数分のN+1クエリにせず、まとめて1回で解決する
+        Set<String> categoryCodes = workItemReqs.stream()
+                .map(req -> req.maintenanceCategory().getCode())
+                .collect(Collectors.toSet());
+        Map<String, com.pitvia.api.master.entity.MaintenanceCategory> categoryByCode = maintenanceCategoryRepository
+                .findAllByCodeIn(categoryCodes)
+                .stream()
+                .collect(Collectors.toMap(
+                        com.pitvia.api.master.entity.MaintenanceCategory::getCode, Function.identity()));
+
         for (int i = 0; i < workItemReqs.size(); i++) {
             WorkItemRequest workItemReq = workItemReqs.get(i);
 
             // 整備カテゴリマスタの存在チェック
-            com.pitvia.api.master.entity.MaintenanceCategory maintenanceCategory = maintenanceCategoryRepository
-                    .findByCode(workItemReq.maintenanceCategory().getCode())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.MAINTENANCE_CATEGORY_NOT_FOUND));
+            com.pitvia.api.master.entity.MaintenanceCategory maintenanceCategory = categoryByCode
+                    .get(workItemReq.maintenanceCategory().getCode());
+            if (maintenanceCategory == null) {
+                throw new BusinessException(ErrorCode.MAINTENANCE_CATEGORY_NOT_FOUND);
+            }
 
             // sortOrderはクライアントの入力値を信頼せず、リストのインデックスから採番する
             MaintenanceWorkItem workItem = MaintenanceWorkItem.builder()
