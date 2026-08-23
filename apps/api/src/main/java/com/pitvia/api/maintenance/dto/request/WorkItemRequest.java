@@ -51,4 +51,11 @@ public record WorkItemRequest(
          */
         @Valid
         List<PartRequest> parts) {
+
+    /**
+     * partsが省略・nullで送信された場合に空リストへ正規化するコンパクトコンストラクタ
+     */
+    public WorkItemRequest {
+        parts = parts != null ? parts : List.of();
+    }
 }

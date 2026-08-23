@@ -510,7 +510,109 @@ class MaintenanceRecordRegisterControllerTest extends AbstractIntegrationTest {
         mockMvc.perform(multipart(ApiPaths.MAINTENANCE_RECORD)
                 .file(requestPart)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.validationErrors[?(@.field=='workDateTo')]").exists());
+    }
+
+    /**
+     * 作業項目の{@code parts}キー自体を省略した場合の正常系テスト。
+     *
+     * <p>
+     * 「部品が任意」（0件でも登録できる）と「partsフィールド自体が任意」（キー省略・nullも許容する）は
+     * 別の関心事であり、後者を検証する。{@code WorkItemRequest}のコンパクトコンストラクタで
+     * 空リストへ正規化されるため、NPE（500）にならず正常登録できることを確認する。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("整備履歴登録（作業項目のpartsキーを省略）：正常系")
+    void register_workItemPartsOmitted_success() throws Exception {
+
+        // Arrange
+        LoginSession owner = testUserHelper.loginOwner(mockMvc);
+        User ownerUser = findUser(owner);
+        Vehicle vehicle = createVehicle(ownerUser, "RX-7", "FD3S");
+        String title = "partsキー省略-" + UUID.randomUUID();
+
+        String requestJson = """
+                {
+                    "vehicleId": "%s",
+                    "title": "%s",
+                    "maintenanceType": "REPAIR",
+                    "workDateFrom": "2026-06-15",
+                    "mileage": 86500,
+                    "workItems": [
+                        {
+                            "maintenanceCategory": "BRAKE",
+                            "workContent": "ブレーキパッド交換",
+                            "performedBy": "ガレージ田中",
+                            "laborCost": 8000
+                        }
+                    ]
+                }
+                """.formatted(vehicle.getId(), title);
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", "application/json", requestJson.getBytes());
+
+        // Act
+        mockMvc.perform(multipart(ApiPaths.MAINTENANCE_RECORD)
+                .file(requestPart)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isCreated());
+
+        // Assert
+        MaintenanceRecord saved = findRecordByTitle(title);
+        assertThat(saved.getWorkItems().get(0).getParts()).isEmpty();
+    }
+
+    /**
+     * 作業項目の{@code parts}に{@code null}を送信した場合の正常系テスト（上記と同じ観点の別ケース）。
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("整備履歴登録（作業項目のpartsがnull）：正常系")
+    void register_workItemPartsNull_success() throws Exception {
+
+        // Arrange
+        LoginSession owner = testUserHelper.loginOwner(mockMvc);
+        User ownerUser = findUser(owner);
+        Vehicle vehicle = createVehicle(ownerUser, "RX-7", "FD3S");
+        String title = "partsがnull-" + UUID.randomUUID();
+
+        String requestJson = """
+                {
+                    "vehicleId": "%s",
+                    "title": "%s",
+                    "maintenanceType": "REPAIR",
+                    "workDateFrom": "2026-06-15",
+                    "mileage": 86500,
+                    "workItems": [
+                        {
+                            "maintenanceCategory": "BRAKE",
+                            "workContent": "ブレーキパッド交換",
+                            "performedBy": "ガレージ田中",
+                            "laborCost": 8000,
+                            "parts": null
+                        }
+                    ]
+                }
+                """.formatted(vehicle.getId(), title);
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", "application/json", requestJson.getBytes());
+
+        // Act
+        mockMvc.perform(multipart(ApiPaths.MAINTENANCE_RECORD)
+                .file(requestPart)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isCreated());
+
+        // Assert
+        MaintenanceRecord saved = findRecordByTitle(title);
+        assertThat(saved.getWorkItems().get(0).getParts()).isEmpty();
     }
 
     /**
