@@ -185,4 +185,84 @@ describe("MaintenanceRecordDetailContent", () => {
       await screen.findByText("編集内容を破棄しますか？"),
     ).toBeInTheDocument();
   });
+
+  /**
+   * @test 作業項目を削除しても、残りの作業項目の画像がインデックスのずれにより
+   * 誤表示されないことを確認（fieldId単位で画像状態を紐付けているため）
+   */
+  test("作業項目削除後も残りの作業項目の画像が正しいまま表示される", async () => {
+    const user = userEvent.setup();
+    const record = {
+      ...MOCK_MAINTENANCE_RECORD_DETAIL,
+      workItems: [
+        { ...MOCK_MAINTENANCE_RECORD_DETAIL.workItems[0], id: 1, imageUrl: null },
+        {
+          ...MOCK_MAINTENANCE_RECORD_DETAIL.workItems[0],
+          id: 2,
+          imageUrl: "https://example.com/work-2.jpg",
+        },
+      ],
+    };
+    render(<MaintenanceRecordDetailContent record={record} />);
+
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+    // 作業項目1（画像なし）を削除する
+    await user.click(
+      screen.getAllByRole("button", { name: /作業項目を削除/ })[0],
+    );
+
+    // 残った作業項目（元は作業項目2）の画像が引き続き正しく表示されること
+    const image = screen.getByAltText("整備画像プレビュー");
+    expect(image).toHaveAttribute("src", "https://example.com/work-2.jpg");
+  });
+
+  /**
+   * @test 既存画像の削除ボタンを押すと、フォールバックで元画像へ復活せず
+   * 非表示のまま維持されることを確認
+   */
+  test("既存画像の削除ボタン押下後は元画像が復活しない", async () => {
+    const user = userEvent.setup();
+    const record = {
+      ...MOCK_MAINTENANCE_RECORD_DETAIL,
+      workItems: [
+        {
+          ...MOCK_MAINTENANCE_RECORD_DETAIL.workItems[0],
+          imageUrl: "https://example.com/work-1.jpg",
+        },
+      ],
+    };
+    render(<MaintenanceRecordDetailContent record={record} />);
+
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+    expect(screen.getByAltText("整備画像プレビュー")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "画像を削除" }));
+
+    expect(screen.queryByAltText("整備画像プレビュー")).not.toBeInTheDocument();
+  });
+
+  /**
+   * @test 画像を差し替えて保存すると、その後編集モードへ再度入っても
+   * 未保存の画像変更として誤検出されず、確認ダイアログが出ないことを確認
+   */
+  test("画像差し替え後に保存すると、再度編集モードに入っても未保存扱いにならない", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<MaintenanceRecordDetailContent />);
+
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+
+    const file = new File(["dummy"], "work.png", { type: "image/png" });
+    const input = container.querySelector('input[type="file"]');
+    expect(input).not.toBeNull();
+    await user.upload(input as HTMLInputElement, file);
+
+    await user.click(screen.getByRole("button", { name: /保存/ }));
+    await user.click(screen.getByRole("button", { name: "編集モード" }));
+    await user.click(screen.getByRole("button", { name: "閲覧モード" }));
+
+    // 直前の保存内容はクリア済みのため、破棄確認ダイアログは表示されない
+    expect(
+      screen.queryByText("編集内容を破棄しますか？"),
+    ).not.toBeInTheDocument();
+  });
 });

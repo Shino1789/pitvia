@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,15 @@ const MODE_OPTIONS: SegmentedToggleOption<"view" | "edit">[] = [
   { value: "view", label: "閲覧モード", icon: EyeIcon },
   { value: "edit", label: "編集モード", icon: PencilIcon },
 ];
+
+/**
+ * 作業項目1件分の画像に対する、元画像からの変更状態（キー: useFieldArrayの安定id）
+ *
+ * - `replaced`: 新しい画像に差し替え中
+ * - `removed`: 元画像を明示的に削除
+ * - （エントリ無し）: 未操作。元画像（{@link MaintenanceRecordDetailContent}内の`originalImageUrls`）のまま
+ */
+type WorkItemImageState = { type: "replaced"; file: File } | { type: "removed" };
 
 /**
  * 整備履歴詳細・更新画面の表示・動作確認用モックデータ
@@ -151,14 +160,16 @@ export function MaintenanceRecordDetailContent({
   // 削除確認ダイアログの表示状態
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  // 作業項目ごとに選択された画像ファイル（キー: useFieldArrayの安定id）
-  const [workItemImages, setWorkItemImages] = useState<Map<string, File>>(
-    new Map(),
-  );
-  // 作業項目ごとの画像プレビューURL（キー: useFieldArrayの安定id）
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<Map<string, string>>(
-    new Map(),
-  );
+  // 直近保存済みの作業項目画像状態（閲覧モードでの表示、および編集キャンセル時の復元先）
+  const [savedWorkItemImageStates, setSavedWorkItemImageStates] = useState<
+    Map<string, WorkItemImageState>
+  >(new Map());
+  // 編集中の作業項目画像状態（保存するとsavedWorkItemImageStatesへ反映される）
+  const [workItemImageStates, setWorkItemImageStates] = useState<
+    Map<string, WorkItemImageState>
+  >(new Map());
+  // 今回の編集セッションで画像に変更（差し替え・削除）が加えられたかどうか
+  const [hasPendingImageChanges, setHasPendingImageChanges] = useState(false);
 
   // 動的ヘッダーにタイトルを登録。連携済み顧客の車両を対象に閲覧・編集している場合は
   // 対象オーナー名を表示する
@@ -177,8 +188,7 @@ export function MaintenanceRecordDetailContent({
 
   const { isDirty } = form.formState;
   // 閲覧モードでは編集操作自体が無いため、編集モード時のみ未保存判定を行う
-  const hasUnsavedChanges =
-    mode === "edit" && (isDirty || workItemImages.size > 0);
+  const hasUnsavedChanges = mode === "edit" && (isDirty || hasPendingImageChanges);
 
   // 作業項目リストの動的追加・削除
   const {
@@ -187,26 +197,72 @@ export function MaintenanceRecordDetailContent({
     remove: removeWorkItem,
   } = useFieldArray({ control: form.control, name: "workItems" });
 
-  // 各作業項目の初期表示用画像URL（インデックス対応。新規に画像が選択された場合はそちらを優先する）
-  const initialImageUrls = record.workItems.map((item) => item.imageUrl);
+  // 各作業項目の元画像URL（キー: useFieldArrayの安定id）。マウント時の並び順を基準に一度だけ
+  // 記録し、以降は作業項目の追加・削除・並び替えが起きてもfieldId単位で正しく参照できるようにする
+  const [originalImageUrls] = useState<Map<string, string | null>>(
+    () =>
+      new Map(
+        workItemFields.map((field, index) => [
+          field.id,
+          record.workItems[index]?.imageUrl ?? null,
+        ]),
+      ),
+  );
+
+  // 現在の表示モードに応じて参照する画像状態（閲覧モードは直近保存済み、編集モードは編集中のもの）
+  const activeImageStates =
+    mode === "edit" ? workItemImageStates : savedWorkItemImageStates;
+
+  // 差し替え中（type: "replaced"）の画像のみ、プレビュー用オブジェクトURLを導出する
+  const imagePreviewUrls = useMemo(() => {
+    const map = new Map<string, string>();
+    activeImageStates.forEach((state, fieldId) => {
+      if (state.type === "replaced") {
+        map.set(fieldId, URL.createObjectURL(state.file));
+      }
+    });
+    return map;
+  }, [activeImageStates]);
+
+  // 導出したオブジェクトURLは、再生成・アンマウントの度に確実に解放する
+  useEffect(() => {
+    return () => {
+      imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [imagePreviewUrls]);
 
   /**
-   * 作業項目に紐づく画像・プレビューURLを削除する
+   * 作業項目の画像削除ボタン押下時のハンドラー（元画像がある場合、明示的な削除として記録する）
    *
    * @param fieldId 対象作業項目の安定id
    */
-  const removeImageForField = (fieldId: string) => {
-    setWorkItemImages((prev) => {
+  const handleWorkItemImageRemove = (fieldId: string) => {
+    setWorkItemImageStates((prev) => new Map(prev).set(fieldId, { type: "removed" }));
+    setHasPendingImageChanges(true);
+  };
+
+  /**
+   * 作業項目の画像選択時のハンドラー
+   *
+   * @param fieldId 対象作業項目の安定id
+   * @param file    選択された画像ファイル
+   */
+  const handleWorkItemImageSelect = (fieldId: string, file: File) => {
+    setWorkItemImageStates((prev) =>
+      new Map(prev).set(fieldId, { type: "replaced", file }),
+    );
+    setHasPendingImageChanges(true);
+  };
+
+  /**
+   * 作業項目そのものが削除された際、紐づく画像状態を後始末する（明示的な削除操作ではないため、
+   * hasPendingImageChangesはisDirty側で既に検知されるフォームの削除操作に委ねる）
+   *
+   * @param fieldId 削除された作業項目の安定id
+   */
+  const handleWorkItemRowRemoved = (fieldId: string) => {
+    setWorkItemImageStates((prev) => {
       const next = new Map(prev);
-      next.delete(fieldId);
-      return next;
-    });
-    setImagePreviewUrls((prev) => {
-      const next = new Map(prev);
-      const url = next.get(fieldId);
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
       next.delete(fieldId);
       return next;
     });
@@ -225,7 +281,9 @@ export function MaintenanceRecordDetailContent({
     // 未保存の変更があれば確認ダイアログを挟む
     guard(hasUnsavedChanges, () => {
       form.reset(toFormValues(record));
-      workItemImages.forEach((_file, fieldId) => removeImageForField(fieldId));
+      // 編集中の画像状態を直近保存済みの状態へ戻す（破棄）
+      setWorkItemImageStates(savedWorkItemImageStates);
+      setHasPendingImageChanges(false);
       setMode("view");
     });
   };
@@ -251,6 +309,11 @@ export function MaintenanceRecordDetailContent({
       "整備履歴の更新APIは未実装のため、送信内容は保存されません。",
       data,
     );
+    // 編集中の画像状態を直近保存済みの状態へ反映し、未保存の変更フラグをクリアする。
+    // これを怠ると、閲覧モードへ戻った後に再度編集モードへ入っただけで、直前の保存内容が
+    // 「未保存の変更」として誤検出されてしまう
+    setSavedWorkItemImageStates(workItemImageStates);
+    setHasPendingImageChanges(false);
     setMode("view");
   };
 
@@ -299,30 +362,21 @@ export function MaintenanceRecordDetailContent({
               const fieldId = workItemFields[index]?.id;
               removeWorkItem(index);
               if (fieldId) {
-                removeImageForField(fieldId);
+                handleWorkItemRowRemoved(fieldId);
               }
             }}
             getWorkItemImagePreviewUrl={(fieldId) => {
-              const selected = imagePreviewUrls.get(fieldId);
-              if (selected) {
-                return selected;
+              const state = activeImageStates.get(fieldId);
+              if (state?.type === "replaced") {
+                return imagePreviewUrls.get(fieldId) ?? null;
               }
-              const index = workItemFields.findIndex((f) => f.id === fieldId);
-              return index >= 0 ? (initialImageUrls[index] ?? null) : null;
+              if (state?.type === "removed") {
+                return null;
+              }
+              return originalImageUrls.get(fieldId) ?? null;
             }}
-            onWorkItemImageSelect={(fieldId, file) => {
-              setWorkItemImages((prev) => new Map(prev).set(fieldId, file));
-              setImagePreviewUrls((prev) => {
-                const next = new Map(prev);
-                const oldUrl = next.get(fieldId);
-                if (oldUrl) {
-                  URL.revokeObjectURL(oldUrl);
-                }
-                next.set(fieldId, URL.createObjectURL(file));
-                return next;
-              });
-            }}
-            onWorkItemImageRemove={removeImageForField}
+            onWorkItemImageSelect={handleWorkItemImageSelect}
+            onWorkItemImageRemove={handleWorkItemImageRemove}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             onDelete={
