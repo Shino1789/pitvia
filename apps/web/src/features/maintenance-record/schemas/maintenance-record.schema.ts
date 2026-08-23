@@ -225,7 +225,7 @@ export function toCreateMaintenanceRecordRequest(
 /**
  * フォームの現在値から、合計金額（工賃合計＋部品代合計）を算出する
  *
- * @param workItems フォームの作業項目リスト（`form.watch("workItems")`の値）
+ * @param workItems フォームの作業項目リスト（`useWatch({ name: "workItems" })`の値）
  * @returns 合計金額
  */
 export function calculateTotalCost(

@@ -1,6 +1,6 @@
 "use client";
 
-import type { UseFormReturn } from "react-hook-form";
+import { useWatch, type UseFormReturn } from "react-hook-form";
 import { PlusIcon } from "lucide-react";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -94,8 +94,9 @@ export function MaintenanceRecordForm({
   const isReadOnly = mode === "view";
   const showRequiredMark = !isReadOnly;
 
-  // 合計金額はフォームの現在値（工賃＋部品代）から都度算出する
-  const totalCost = calculateTotalCost(form.watch("workItems"));
+  // 合計金額はフォームの現在値（工賃＋部品代）から都度算出する。
+  const workItems = useWatch({ control: form.control, name: "workItems" });
+  const totalCost = calculateTotalCost(workItems);
 
   return (
     <Form {...form}>
