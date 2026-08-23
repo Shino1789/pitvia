@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { vehicleApi } from "../api/vehicle-api";
+import { vehicleKeys } from "../constants/vehicle-keys";
 import type { CreateVehicleRequest } from "../types/vehicle";
 import { ROUTES } from "@/shared/constants/routes";
+import { queryClient } from "@/providers/query-provider";
 import { appToast } from "@/lib/toast";
 import { TOAST_MESSAGES } from "@/shared/messages/toast";
 import { getErrorMessage } from "@/lib/api/get-error-message";
@@ -39,6 +41,11 @@ export function useRegisterVehicle() {
     try {
       // 車両登録APIリクエスト実行
       await vehicleApi.register(data, image);
+
+      // キャッシュ済みの車両一覧を無効化し、次回参照時に最新値を再取得させる
+      await queryClient.invalidateQueries({
+        queryKey: vehicleKeys.list(),
+      });
 
       appToast.success(TOAST_MESSAGES.SUCCESS.VEHICLE.REGISTER);
 

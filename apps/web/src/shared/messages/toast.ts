@@ -20,6 +20,11 @@ export const TOAST_MESSAGES = {
       /** 車両削除完了 */
       DELETE: "車両を削除しました。",
     },
+
+    MAINTENANCE_RECORD: {
+      /** 整備履歴登録完了 */
+      REGISTER: "整備履歴を登録しました。",
+    },
   },
 
   ERROR: {

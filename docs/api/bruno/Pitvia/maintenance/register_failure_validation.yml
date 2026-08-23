@@ -1,0 +1,49 @@
+info:
+  name: 整備履歴登録：異常系（バリデーションエラー）
+  type: http
+  seq: 17
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/maintenance-records
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleId": null,
+            "title": "",
+            "maintenanceType": null,
+            "workDateFrom": null,
+            "workDateTo": "2026-01-01",
+            "mileage": -1,
+            "remarks": null,
+            "workItems": []
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト：Bean Validation】
+  不正な形式の値を送信した際、Spring BootのBean Validationが正常に作動し、
+  400 Bad Request と共に `validationErrors` 配列に各フィールドのエラーが返ることを確認する。
+
+  【テスト項目】
+  1. vehicleId: 未指定（@NotNull違反）
+  2. title: 空文字（@NotBlank違反）
+  3. maintenanceType: 未指定（@NotNull違反）
+  4. workDateFrom: 未指定（@NotNull違反）
+  5. mileage: 負数（@Min違反）
+  6. workItems: 空配列（@NotEmpty違反）
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

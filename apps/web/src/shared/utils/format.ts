@@ -101,6 +101,24 @@ export function formatPeriodRangeLabel(from: string, to: string): string {
 }
 
 /**
+ * 対象オーナー名を伴う画面タイトルを組み立てる
+ * (例: "田中 健太", "整備履歴一覧" → "田中 健太 様の整備履歴一覧")
+ *
+ * 車両一覧・整備履歴一覧・整備履歴登録・整備履歴詳細の各画面で、SHOPが顧客を対象に
+ * 操作している場合のヘッダータイトル表記を統一するために使用する。
+ *
+ * @param ownerUserName 対象オーナー名（自分自身の場合はnull/undefined）
+ * @param baseTitle     基本タイトル
+ * @returns 整形後のタイトル
+ */
+export function formatOwnerScopedTitle(
+  ownerUserName: string | null | undefined,
+  baseTitle: string,
+): string {
+  return ownerUserName ? `${ownerUserName} 様の${baseTitle}` : baseTitle;
+}
+
+/**
  * 整備作業期間の表示整形。
  * 単日 (workDateTo が null または開始日と同一) の場合は1つの日付のみ表示し、
  * 複数日にまたがる場合は "2026/04/11 〜 2026/04/18" 形式で表示。

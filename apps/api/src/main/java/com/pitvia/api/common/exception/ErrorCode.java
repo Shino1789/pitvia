@@ -156,7 +156,17 @@ public enum ErrorCode {
      * 両方を同時に指定すること自体を不正なリクエストとして扱う。
      * </p>
      */
-    VEHICLE_ID_OWNER_ID_CONFLICT("vehicleIdとownerIdは同時に指定できません");
+    VEHICLE_ID_OWNER_ID_CONFLICT("vehicleIdとownerIdは同時に指定できません"),
+
+    /**
+     * 指定された整備種別が存在しない
+     */
+    MAINTENANCE_TYPE_NOT_FOUND("指定された整備種別が見つかりません"),
+
+    /**
+     * 指定された整備カテゴリが存在しない
+     */
+    MAINTENANCE_CATEGORY_NOT_FOUND("指定された整備カテゴリが見つかりません");
 
     /**
      * クライアント向けデフォルトメッセージ

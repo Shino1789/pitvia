@@ -17,4 +17,18 @@ export const FIELD = {
   CURRENT_MILEAGE: "走行距離",
   TRANSMISSION_TYPE: "トランスミッション",
   DRIVE_TYPE: "駆動方式",
+
+  // 整備履歴登録・詳細画面用
+  VEHICLE: "対象車両",
+  TITLE: "タイトル",
+  MAINTENANCE_TYPE: "整備種別",
+  WORK_DATE_FROM: "作業開始日",
+  MILEAGE: "整備完了時の走行距離",
+  MAINTENANCE_CATEGORY: "作業カテゴリ",
+  WORK_CONTENT: "作業内容",
+  PERFORMED_BY: "担当者名",
+  LABOR_COST: "工賃",
+  PART_NAME: "部品名",
+  QUANTITY: "数量",
+  UNIT_PRICE: "単価",
 } as const;

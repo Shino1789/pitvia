@@ -12,6 +12,7 @@ import { VehicleCard } from "./vehicle-card";
 import { useVehicleList } from "../hooks/use-vehicle-list";
 import { useHeader } from "@/shared/hooks/use-header";
 import { ROUTES } from "@/shared/constants/routes";
+import { formatOwnerScopedTitle } from "@/shared/utils/format";
 
 /**
  * 車両一覧画面表示用メインコンテンツコンポーネント
@@ -32,9 +33,7 @@ export function VehicleListContent() {
   const [keyword, setKeyword] = useState("");
 
   // ownerId指定時は対象オーナーの表示名を、未指定時は固定タイトルを表示する
-  const title = data?.owner
-    ? `${data.owner.userName} 様の車両一覧`
-    : "車両一覧";
+  const title = formatOwnerScopedTitle(data?.owner?.userName, "車両一覧");
 
   // データ取得完了かつ自分自身の一覧を見ている場合のみ、ヘッダーへ検索・追加アクションを表示する
   const showActions = !isPending && !isError && !!data;

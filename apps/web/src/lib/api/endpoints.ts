@@ -39,7 +39,11 @@ export const ENDPOINTS = {
   },
 
   maintenanceRecord: {
-    /** 整備履歴一覧取得API */
+    /** 整備履歴一覧取得・登録API（GET: 一覧取得、POST: 登録） */
     list: "/maintenance-records",
+
+    /** 整備履歴詳細取得・更新・削除API */
+    byId: (maintenanceRecordId: string) =>
+      `/maintenance-records/${maintenanceRecordId}`,
   },
 } as const;

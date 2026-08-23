@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { useRegisterVehicle } from "./use-register-vehicle";
+import { vehicleKeys } from "../constants/vehicle-keys";
 import type { CreateVehicleRequest } from "../types/vehicle";
 
 // ルーター移動を検証するためのモック関数
@@ -42,13 +43,18 @@ describe("useRegisterVehicle", () => {
   });
 
   /**
-   * @test 登録が成功した際、成功トーストを表示し、二重送信防止のためreplaceで
-   * 車両一覧へ遷移することを確認
+   * @test 登録が成功した際、車両一覧キャッシュを無効化したうえで成功トーストを表示し、
+   * 二重送信防止のためreplaceで車両一覧へ遷移することを確認
+   *
+   * 一覧キャッシュを無効化することで、一覧画面へ戻った際に登録直後の車両が
+   * 表示されない不具合（staleTime内はキャッシュがそのまま再利用される）を防ぐ。
    */
-  test("登録成功時にトーストを表示し、車両一覧へreplaceで遷移する", async () => {
+  test("登録成功時に車両一覧キャッシュを無効化し、車両一覧へreplaceで遷移する", async () => {
     const { vehicleApi } = await import("../api/vehicle-api");
     const { appToast } = await import("@/lib/toast");
+    const { queryClient } = await import("@/providers/query-provider");
     vi.mocked(vehicleApi.register).mockResolvedValue(undefined);
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
     const { result } = renderHook(() => useRegisterVehicle());
     const image = new File(["dummy"], "icon.png", { type: "image/png" });
@@ -59,6 +65,9 @@ describe("useRegisterVehicle", () => {
     });
 
     expect(vehicleApi.register).toHaveBeenCalledWith(REQUEST, image);
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: vehicleKeys.list(),
+    });
     expect(appToast.success).toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith("/vehicles");
     expect(success).toBe(true);

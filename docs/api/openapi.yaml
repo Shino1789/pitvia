@@ -12,8 +12,8 @@ info:
     REST API 通信で使用する。
 
     ⚠️ `Users` タグ配下のエンドポイントは、現時点ではController未実装のため疎通しない
-    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得APIのみ実装済みで、
-    登録・詳細取得・更新は未実装。
+    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得・登録APIのみ
+    実装済みで、詳細取得・更新は未実装。
 
 servers:
   - url: http://localhost:8080/api/v1
@@ -37,8 +37,8 @@ tags:
     description: |
       整備記録API
 
-      一覧取得（`GET /maintenance-records`）のみ実装済み。
-      登録・詳細取得・更新は⚠️ 未実装（将来対応予定）。
+      一覧取得（`GET /maintenance-records`）・登録（`POST /maintenance-records`）のみ実装済み。
+      詳細取得・更新は⚠️ 未実装（将来対応予定）。
 
 paths:
   # ==========================================================================
@@ -759,6 +759,84 @@ paths:
             指定された`vehicleId`の車両が存在しない・閲覧できない場合（`VEHICLE_NOT_FOUND`）、
             または指定された`ownerId`のユーザーが存在しない・共有関係が無い場合
             （`VEHICLE_OWNER_NOT_FOUND`）。いずれも存在有無を外部から推測できないよう区別しない。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴登録
+      description: |
+        整備履歴を新規登録する。作業項目・交換部品・作業項目ごとの整備画像を同時に登録できる。
+
+        車両所有者本人、またはSHOPが対象車両にAPPROVED状態で連携している場合に登録できる
+        （車両閲覧の可否と同じ条件。詳しくは`GET /maintenance-records`の説明を参照）。
+
+        `multipart/form-data`形式で送信し、`request`パートに整備履歴情報（JSON）を格納する。
+        作業項目ごとの整備画像は任意で、`workItemImage_{index}`（`index`は
+        `request.workItems`のリスト内インデックス、0始まり）という名前のパートとして追加する。
+        例えば1件目の作業項目にのみ画像を添付する場合は`workItemImage_0`パートのみを送信する。
+
+        登録者（`createdByUser`）は、認証済みユーザー情報（アクセストークン）から取得する。
+        SHOPが登録した場合のみ実施ショップとして紐づけられる（OWNERの登録はDIY扱い）。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/CreateMaintenanceRecordRequest"
+              additionalProperties:
+                type: string
+                format: binary
+              description: |
+                `workItemImage_{index}`パート（任意、jpg/jpeg/png/webp、10MB以内）は
+                `additionalProperties`として動的に受け付ける。
+            encoding:
+              request:
+                contentType: application/json
+      responses:
+        "201":
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、指定された整備種別・整備カテゴリが存在しない
+            （`MAINTENANCE_TYPE_NOT_FOUND` / `MAINTENANCE_CATEGORY_NOT_FOUND`）、画像が空／
+            サイズ超過／未対応形式／解像度超過（`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` /
+            `UNSUPPORTED_IMAGE_TYPE` / `IMAGE_RESOLUTION_EXCEEDED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された`vehicleId`の車両が存在しない、またはログインユーザーに登録権限がない
+            （`VEHICLE_NOT_FOUND`）。両者を区別せず、存在有無を外部から推測できないようにする。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
           content:
             application/json:
               schema:
@@ -1626,3 +1704,135 @@ components:
             整備履歴を取得した場合のみ設定される。
         records:
           $ref: "#/components/schemas/MaintenanceRecordPage"
+
+    MaintenanceCategory:
+      type: string
+      enum:
+        - ENGINE
+        - INTAKE_EXHAUST
+        - COOLING
+        - DRIVETRAIN
+        - SUSPENSION
+        - BRAKE
+        - ELECTRICAL
+        - BODY
+        - INTERIOR
+        - AIR_CONDITIONER
+        - BODY_REPAIR
+        - CLEANING
+        - OTHER
+
+    PartCondition:
+      type: string
+      enum:
+        - NEW
+        - USED
+        - REBUILT
+
+    PartRequest:
+      type: object
+      required:
+        - partName
+        - quantity
+        - unitPrice
+      properties:
+        partCondition:
+          allOf:
+            - $ref: "#/components/schemas/PartCondition"
+          nullable: true
+        partName:
+          type: string
+          maxLength: 255
+          example: "ブレーキパッド"
+        manufacturerName:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: "プロジェクトミュー"
+        partModelNumber:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "F328"
+        quantity:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          example: 4
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 6500
+
+    WorkItemRequest:
+      type: object
+      required:
+        - maintenanceCategory
+        - workContent
+        - performedBy
+        - laborCost
+      properties:
+        maintenanceCategory:
+          $ref: "#/components/schemas/MaintenanceCategory"
+        workContent:
+          type: string
+          maxLength: 255
+          example: "ブレーキパッド交換"
+        performedBy:
+          type: string
+          maxLength: 255
+          example: "ガレージ田中"
+        laborCost:
+          type: number
+          format: double
+          minimum: 0
+          example: 8000
+        parts:
+          type: array
+          description: 交換部品リスト（部品を伴わない作業項目の場合は空配列）
+          items:
+            $ref: "#/components/schemas/PartRequest"
+
+    CreateMaintenanceRecordRequest:
+      type: object
+      required:
+        - vehicleId
+        - title
+        - maintenanceType
+        - workDateFrom
+        - mileage
+        - workItems
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 255
+          example: "車検対応"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 任意項目。指定する場合はworkDateFrom以降の日付であること
+        mileage:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 70600
+        remarks:
+          type: string
+          nullable: true
+          example: "次回はブレーキフルードも交換予定"
+        workItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/WorkItemRequest"
