@@ -26,6 +26,7 @@ import {
   maintenanceRecordNewRoute,
   vehicleListRoute,
 } from "@/shared/constants/routes";
+import { formatOwnerScopedTitle } from "@/shared/utils/format";
 import type { MaintenanceType } from "@/shared/constants/maintenance-type";
 import {
   MAINTENANCE_RECORD_SORT,
@@ -203,9 +204,7 @@ export function MaintenanceRecordListContent() {
   };
 
   // ownerId指定時は対象オーナーの表示名を、未指定時は固定タイトルを表示する
-  const title = data?.owner
-    ? `${data.owner.userName} 様の整備履歴一覧`
-    : "整備履歴一覧";
+  const title = formatOwnerScopedTitle(data?.owner?.userName, "整備履歴一覧");
 
   // データ取得完了かつエラーが無い場合のみ、ヘッダーへ検索・追加アクションを表示する
   const showActions = !isPending && !isError && !!data;
@@ -368,6 +367,7 @@ export function MaintenanceRecordListContent() {
             <MaintenanceRecordCard
               key={record.id}
               record={record}
+              ownerId={viewedOwnerId}
               returnTo={returnTo}
             />
           ))}

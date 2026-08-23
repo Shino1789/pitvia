@@ -88,16 +88,21 @@ export function maintenanceRecordListRoute(
  * 整備履歴詳細・更新画面のパスを生成する
  *
  * @param maintenanceRecordId 整備履歴ID
- * @param returnTo            キャンセル時に戻る一覧画面のパス（{@link buildReturnTo}で組み立てた値）
+ * @param options.ownerId     対象車両一覧の取得元オーナーID（連携済み顧客の車両から遷移する場合。
+ *                            ヘッダーへの対象オーナー名表示に使う）
+ * @param options.returnTo    キャンセル時に戻る一覧画面のパス（{@link buildReturnTo}で組み立てた値）
  * @returns 整備履歴詳細画面のパス
  */
 export function maintenanceRecordDetailRoute(
   maintenanceRecordId: string,
-  returnTo?: string,
+  options?: { ownerId?: string; returnTo?: string },
 ): string {
   const path = `${ROUTES.MAINTENANCES}/${maintenanceRecordId}`;
-  if (!returnTo) return path;
-  return `${path}?${new URLSearchParams({ returnTo }).toString()}`;
+  const params = new URLSearchParams();
+  if (options?.ownerId) params.set("ownerId", options.ownerId);
+  if (options?.returnTo) params.set("returnTo", options.returnTo);
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 /**

@@ -19,9 +19,20 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
-// ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる）
+// ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる。
+// 呼び出し引数（タイトル文字列）を検証できるようspyにする）
+const mockUseHeader = vi.fn();
 vi.mock("@/shared/hooks/use-header", () => ({
-  useHeader: vi.fn(),
+  useHeader: (args: unknown) => mockUseHeader(args),
+}));
+
+// 車両一覧取得フックのモック化用関数（ヘッダーへの対象オーナー名表示にのみ使用）
+let vehicleListState: { data: unknown };
+const mockUseVehicleList = vi.fn<(ownerId?: string) => typeof vehicleListState>(
+  () => vehicleListState,
+);
+vi.mock("@/features/vehicle/hooks/use-vehicle-list", () => ({
+  useVehicleList: (ownerId?: string) => mockUseVehicleList(ownerId),
 }));
 
 const TITLE_PLACEHOLDER = "例：車検対応、オイル交換";
@@ -36,6 +47,7 @@ describe("MaintenanceRecordDetailContent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearchParams = new URLSearchParams();
+    vehicleListState = { data: { owner: null, vehicles: [] } };
   });
 
   /**
@@ -66,6 +78,38 @@ describe("MaintenanceRecordDetailContent", () => {
     await user.click(screen.getByRole("button", { name: "キャンセル" }));
 
     expect(mockPush).toHaveBeenCalledWith("/maintenances?vehicleId=vehicle-1");
+  });
+
+  /**
+   * @test URLにownerIdが指定されている場合、useVehicleListへ渡され、その結果得られる
+   * 対象オーナー名がヘッダータイトルへ反映されることを確認（顧客の履歴を操作している
+   * ことが分かるようにするための対応）
+   */
+  test("URLのownerIdから対象オーナー名を取得しヘッダータイトルへ反映する", () => {
+    mockSearchParams = new URLSearchParams("ownerId=owner-1");
+    vehicleListState = {
+      data: { owner: { id: "owner-1", userName: "田中 健太" }, vehicles: [] },
+    };
+
+    render(<MaintenanceRecordDetailContent />);
+
+    expect(mockUseVehicleList).toHaveBeenCalledWith("owner-1");
+    expect(mockUseHeader).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "田中 健太 様の整備履歴詳細" }),
+    );
+  });
+
+  /**
+   * @test URLにownerIdが無い場合（自分自身の整備履歴）は、従来通り固定タイトルの
+   * ままであることを確認（デグレ防止）
+   */
+  test("URLにownerIdが無い場合は固定タイトルのまま", () => {
+    render(<MaintenanceRecordDetailContent />);
+
+    expect(mockUseVehicleList).toHaveBeenCalledWith(undefined);
+    expect(mockUseHeader).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "整備履歴詳細" }),
+    );
   });
 
   /**

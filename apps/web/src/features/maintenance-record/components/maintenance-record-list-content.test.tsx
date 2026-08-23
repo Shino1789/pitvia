@@ -298,6 +298,31 @@ describe("MaintenanceRecordListContent", () => {
   });
 
   /**
+   * @test 顧客車両（vehicleId指定・data.ownerあり）を表示中は、整備履歴カードのリンクに
+   * ownerIdも引き継がれ、詳細画面のヘッダーに対象オーナー名を表示できるようにすることを確認
+   */
+  test("顧客車両を表示中は整備履歴カードのリンクにownerIdも引き継がれる", () => {
+    mockSearchParams = new URLSearchParams("vehicleId=vehicle-1");
+    listState = {
+      data: buildResponse([RECORD_OIL], {
+        owner: { id: "owner-1", userName: "田中 健太" },
+      }),
+      isPending: false,
+      isError: false,
+      refetch: mockRefetch,
+    };
+    renderWithHeader();
+
+    const link = screen.getByRole("link", {
+      name: /エンジンオイル＆フィルター交換/,
+    });
+    const href = link.getAttribute("href") ?? "";
+    const [, query] = href.split("?");
+    const params = new URLSearchParams(query);
+    expect(params.get("ownerId")).toBe("owner-1");
+  });
+
+  /**
    * @test 「一覧へ戻る」押下で車両一覧画面へ遷移することを確認（自分自身の整備履歴の場合）
    */
   test("「一覧へ戻る」押下で車両一覧画面へ遷移する", async () => {

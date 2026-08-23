@@ -16,9 +16,11 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
-// ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる）
+// ヘッダータイトル制御フックをモック化（HeaderProvider無しで動作させる。
+// 呼び出し引数（タイトル文字列）を検証できるようspyにする）
+const mockUseHeader = vi.fn();
 vi.mock("@/shared/hooks/use-header", () => ({
-  useHeader: vi.fn(),
+  useHeader: (args: unknown) => mockUseHeader(args),
 }));
 
 // 車両一覧取得フックのモック化用関数（呼び出し引数を検証できるようspyにする）
@@ -182,6 +184,41 @@ describe("MaintenanceRecordRegisterContent", () => {
     expect(
       screen.getByRole("combobox", { name: /対象車両/ }),
     ).toHaveTextContent("GT-R");
+  });
+
+  /**
+   * @test 連携済み顧客の車両一覧（ownerId指定）を取得した場合、その対象オーナー名が
+   * ヘッダータイトルへ反映されることを確認（顧客の履歴を登録していることが分かるようにする）
+   */
+  test("車両一覧レスポンスのownerからヘッダータイトルへ対象オーナー名を反映する", () => {
+    mockSearchParams = new URLSearchParams("ownerId=owner-1");
+    vehicleListState = {
+      data: {
+        owner: { id: "owner-1", userName: "田中 健太" },
+        vehicles: VEHICLE_LIST_RESPONSE.vehicles,
+      },
+      isPending: false,
+      isError: false,
+      refetch: mockRefetchVehicles,
+    };
+
+    render(<MaintenanceRecordRegisterContent />);
+
+    expect(mockUseHeader).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "田中 健太 様の整備履歴登録" }),
+    );
+  });
+
+  /**
+   * @test 車両一覧レスポンスのownerが無い場合（自分自身の車両）は、従来通り固定タイトルの
+   * ままであることを確認（デグレ防止）
+   */
+  test("ownerが無い場合は固定タイトルのまま", () => {
+    render(<MaintenanceRecordRegisterContent />);
+
+    expect(mockUseHeader).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "整備履歴登録" }),
+    );
   });
 
   /**

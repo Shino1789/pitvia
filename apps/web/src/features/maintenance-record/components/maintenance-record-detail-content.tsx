@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeIcon, PencilIcon } from "lucide-react";
@@ -12,6 +12,7 @@ import {
 } from "@/shared/ui/segmented-toggle";
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { MaintenanceRecordForm } from "./maintenance-record-form";
+import { useVehicleList } from "@/features/vehicle/hooks/use-vehicle-list";
 import {
   maintenanceRecordSchema,
   EMPTY_WORK_ITEM_FORM_VALUES,
@@ -22,6 +23,7 @@ import { useHeader } from "@/shared/hooks/use-header";
 import { useDiscardGuard } from "@/shared/hooks/use-discard-guard";
 import { useReturnTo } from "@/shared/hooks/use-return-to";
 import { ROUTES } from "@/shared/constants/routes";
+import { formatOwnerScopedTitle } from "@/shared/utils/format";
 
 /** 閲覧モード/編集モードの切り替え選択肢 */
 const MODE_OPTIONS: SegmentedToggleOption<"view" | "edit">[] = [
@@ -127,9 +129,15 @@ export function MaintenanceRecordDetailContent({
   record = MOCK_MAINTENANCE_RECORD_DETAIL,
 }: MaintenanceRecordDetailContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // 一覧画面から引き継いだキャンセル時の遷移先URLを取得
   const returnTo = useReturnTo(ROUTES.MAINTENANCES);
+
+  // 一覧画面から引き継いだ、対象車両一覧の取得元オーナーID。ヘッダーへの対象オーナー名表示にのみ
+  // 使用する（詳細取得API未実装のため、この画面自体の対象車両プルダウンは持たない）
+  const ownerIdParam = searchParams.get("ownerId") ?? undefined;
+  const { data: vehicleListResponse } = useVehicleList(ownerIdParam);
 
   // 表示モード（閲覧/編集）を管理するstate
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -152,8 +160,14 @@ export function MaintenanceRecordDetailContent({
     new Map(),
   );
 
-  // 動的ヘッダーにタイトルを登録
-  useHeader({ title: "整備履歴詳細" });
+  // 動的ヘッダーにタイトルを登録。連携済み顧客の車両を対象に閲覧・編集している場合は
+  // 対象オーナー名を表示する
+  useHeader({
+    title: formatOwnerScopedTitle(
+      vehicleListResponse?.owner?.userName,
+      "整備履歴詳細",
+    ),
+  });
 
   // フォームバリデーションスキーマの初期化（詳細データをそのまま初期値として利用）
   const form = useForm<MaintenanceRecordFormValues>({

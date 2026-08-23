@@ -22,6 +22,7 @@ import { useHeader } from "@/shared/hooks/use-header";
 import { useDiscardGuard } from "@/shared/hooks/use-discard-guard";
 import { useReturnTo } from "@/shared/hooks/use-return-to";
 import { ROUTES } from "@/shared/constants/routes";
+import { formatOwnerScopedTitle } from "@/shared/utils/format";
 
 /**
  * 整備履歴登録画面表示用メインコンテンツコンポーネント
@@ -68,8 +69,13 @@ export function MaintenanceRecordRegisterContent() {
     new Map(),
   );
 
-  // 動的ヘッダーにタイトルを登録
-  useHeader({ title: "整備履歴登録" });
+  // 動的ヘッダーにタイトルを登録。連携済み顧客の車両を対象に登録している場合は対象オーナー名を表示する
+  useHeader({
+    title: formatOwnerScopedTitle(
+      vehicleListResponse?.owner?.userName,
+      "整備履歴登録",
+    ),
+  });
 
   // フォームバリデーションスキーマの初期化。URLに対象車両が指定されている場合は初期選択値にする
   const form = useForm<MaintenanceRecordFormValues>({
