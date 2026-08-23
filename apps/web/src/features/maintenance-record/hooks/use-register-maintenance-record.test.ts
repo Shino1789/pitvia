@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { useRegisterMaintenanceRecord } from "./use-register-maintenance-record";
+import { maintenanceRecordKeys } from "../constants/maintenance-record-keys";
 import type { CreateMaintenanceRecordRequest } from "../types/maintenance-record";
 
 // ルーター移動を検証するためのモック関数
@@ -51,13 +52,18 @@ describe("useRegisterMaintenanceRecord", () => {
   });
 
   /**
-   * @test 登録が成功した際、成功トーストを表示し、二重送信防止のためreplaceで
-   * 整備履歴一覧へ遷移することを確認
+   * @test 登録が成功した際、整備履歴一覧キャッシュを無効化したうえで成功トーストを表示し、
+   * 二重送信防止のためreplaceで整備履歴一覧へ遷移することを確認
+   *
+   * 一覧キャッシュを無効化することで、一覧画面へ戻った際に登録直後の整備履歴が
+   * 表示されない不具合（staleTime内はキャッシュがそのまま再利用される）を防ぐ。
    */
-  test("登録成功時にトーストを表示し、整備履歴一覧へreplaceで遷移する", async () => {
+  test("登録成功時に整備履歴一覧キャッシュを無効化し、整備履歴一覧へreplaceで遷移する", async () => {
     const { maintenanceRecordApi } = await import("../api/maintenance-record-api");
     const { appToast } = await import("@/lib/toast");
+    const { queryClient } = await import("@/providers/query-provider");
     vi.mocked(maintenanceRecordApi.register).mockResolvedValue(undefined);
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
     const { result } = renderHook(() => useRegisterMaintenanceRecord());
     const images = new Map<number, File>([
@@ -70,6 +76,9 @@ describe("useRegisterMaintenanceRecord", () => {
     });
 
     expect(maintenanceRecordApi.register).toHaveBeenCalledWith(REQUEST, images);
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: [...maintenanceRecordKeys.all, "list"],
+    });
     expect(appToast.success).toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith("/maintenances");
     expect(success).toBe(true);

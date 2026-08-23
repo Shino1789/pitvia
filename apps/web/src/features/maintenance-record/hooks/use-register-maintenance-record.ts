@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { maintenanceRecordApi } from "../api/maintenance-record-api";
+import { maintenanceRecordKeys } from "../constants/maintenance-record-keys";
 import type { CreateMaintenanceRecordRequest } from "../types/maintenance-record";
 import { ROUTES } from "@/shared/constants/routes";
+import { queryClient } from "@/providers/query-provider";
 import { appToast } from "@/lib/toast";
 import { TOAST_MESSAGES } from "@/shared/messages/toast";
 import { getErrorMessage } from "@/lib/api/get-error-message";
@@ -42,6 +44,13 @@ export function useRegisterMaintenanceRecord() {
     try {
       // 整備履歴登録APIリクエスト実行
       await maintenanceRecordApi.register(data, workItemImages);
+
+      // キャッシュ済みの整備履歴一覧を無効化し、次回参照時に最新値を再取得させる。
+      // 一覧は絞り込み条件（vehicleId/ownerId等）ごとに別キーで多数キャッシュされ得るため、
+      // vehicleKeys.list()のような厳密一致ではなく"list"配下をまとめて無効化するプレフィックス指定にする
+      await queryClient.invalidateQueries({
+        queryKey: [...maintenanceRecordKeys.all, "list"],
+      });
 
       appToast.success(TOAST_MESSAGES.SUCCESS.MAINTENANCE_RECORD.REGISTER);
 
