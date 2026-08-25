@@ -1,6 +1,6 @@
 -- =============================================================================
--- V1000__mock_dashboard_data.sql
--- ダッシュボードおよび全機能検証用 高高度モックデータ
+-- V1000__mock_data.sql
+-- ダッシュボードおよび主要機能検証用モックデータ
 -- パスワードハッシュ: 'password123' (BCrypt $2a$10$...)
 -- =============================================================================
 
@@ -9,6 +9,14 @@
 -- SHOP User : 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22'
 -- Owner 車両: 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33'
 -- Shop  車両: 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44'
+
+-- 【重要】maintenance_records の created_by_user_id / shop_id の整合性について
+-- shop_id を設定する（NULL以外にする）場合、created_by_user_id は必ずそのショップの
+-- ユーザーID（SHOPロール側）にすること。MaintenanceRecordService.register の実装上、
+-- shop_id が非NULLになるのはSHOPロールが登録した場合のみであり、OWNERが登録した
+-- レコードでshop_idが設定されることはあり得ない（実施ショップの紐付けと登録者は
+-- 常に一致する）。この不変条件を破ると、整備履歴詳細・更新画面の編集可否判定
+-- （createdByUser一致で判定）がアプリの実際の挙動と矛盾するモックデータになる。
 
 -- -----------------------------------------------------------------------------
 -- 1. USERS (オーナーテスト & ショップテスト)
@@ -52,7 +60,7 @@ BEGIN
     -- [1] 過去データ（canMoveBackward検証用: 2025-05-10 / ショップ依頼）
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, work_date_to, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, '12ヶ月法定点検', 3, '2025-05-10', '2025-05-11', 70000, FALSE, '2025-05-10 10:00:00+09', '2025-05-11 17:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, '12ヶ月法定点検', 3, '2025-05-10', '2025-05-11', 70000, FALSE, '2025-05-10 10:00:00+09', '2025-05-11 17:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 5, '足回り点検・ブレーキ清掃', 'ショップテスト', 15000.00, '2025-05-10 10:00:00+09', '2025-05-10 10:00:00+09') RETURNING id INTO v_item_id;
@@ -77,7 +85,7 @@ BEGIN
     -- [3] 2026-02: 車検（複数日跨ぎ / 高額データ / ショップ依頼）
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, work_date_to, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, '継続車検整備', 2, '2026-02-10', '2026-02-12', 79500, FALSE, '2026-02-10 09:00:00+09', '2026-02-12 18:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, '継続車検整備', 2, '2026-02-10', '2026-02-12', 79500, FALSE, '2026-02-10 09:00:00+09', '2026-02-12 18:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 5, '車検法定点検一式', 'ショップテスト', 45000.00, '2026-02-10 09:00:00+09', '2026-02-10 09:00:00+09') RETURNING id INTO v_item_id;
@@ -136,7 +144,7 @@ BEGIN
     -- [8] 2026-05: チューニング (ショップ依頼)
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, work_date_to, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, '車高調装着・アライメント調整', 6, '2026-05-18', '2026-05-19', 82300, FALSE, '2026-05-18 09:00:00+09', '2026-05-19 17:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, '車高調装着・アライメント調整', 6, '2026-05-18', '2026-05-19', 82300, FALSE, '2026-05-18 09:00:00+09', '2026-05-19 17:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 5, 'サスペンション交換・アライメント測定', 'ショップテスト', 35000.00, '2026-05-18 09:00:00+09', '2026-05-18 09:00:00+09') RETURNING id INTO v_item_id;
@@ -148,7 +156,7 @@ BEGIN
     -- [9] 2026-06: セッティング (ショップ依頼)
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, 'シャシダイ現車ECUセッティング', 7, '2026-06-25', 83000, FALSE, '2026-06-25 10:00:00+09', '2026-06-25 18:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, 'シャシダイ現車ECUセッティング', 7, '2026-06-25', 83000, FALSE, '2026-06-25 10:00:00+09', '2026-06-25 18:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 1, 'ECUセッティング作業代', 'ショップテスト', 80000.00, '2026-06-25 10:00:00+09', '2026-06-25 10:00:00+09') RETURNING id INTO v_item_id;
@@ -169,7 +177,7 @@ BEGIN
     -- [10.5] 2026-07: ショップ売上・顧客車両施工確認用 (工賃:30,000円 + 部品:10,000円 = 売上40,000円)
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, '顧客車両 7月定期点検整備', 3, '2026-07-15', 84500, FALSE, '2026-07-15 10:00:00+09', '2026-07-15 10:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, '顧客車両 7月定期点検整備', 3, '2026-07-15', 84500, FALSE, '2026-07-15 10:00:00+09', '2026-07-15 10:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 1, 'エンジン周り点検・プラグ清掃', 'ショップテスト', 30000.00, '2026-07-15 10:00:00+09', '2026-07-15 10:00:00+09') RETURNING id INTO v_item_id;
@@ -219,7 +227,7 @@ BEGIN
     -- [14] 未来データ（canMoveForwardの検証用: 2027-01-10）
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, '来年予定の車検予約（仮登録）', 2, '2027-01-10', 90000, FALSE, '2026-07-01 10:00:00+09', '2026-07-01 10:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, '来年予定の車検予約（仮登録）', 2, '2027-01-10', 90000, FALSE, '2026-07-01 10:00:00+09', '2026-07-01 10:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 5, '事前事前点検', 'ショップテスト', 5000.00, '2026-07-01 10:00:00+09', '2026-07-01 10:00:00+09') RETURNING id INTO v_item_id;
