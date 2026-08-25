@@ -17,4 +17,12 @@ export const maintenanceRecordKeys = {
    */
   list: (params: MaintenanceRecordListParams) =>
     [...maintenanceRecordKeys.all, "list", params] as const,
+
+  /**
+   * 整備履歴詳細
+   *
+   * @param maintenanceRecordId 整備履歴ID
+   */
+  detail: (maintenanceRecordId: string) =>
+    [...maintenanceRecordKeys.all, "detail", maintenanceRecordId] as const,
 };

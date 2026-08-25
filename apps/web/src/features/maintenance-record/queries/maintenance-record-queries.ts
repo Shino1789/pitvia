@@ -17,4 +17,17 @@ export const maintenanceRecordQueries = {
       queryKey: maintenanceRecordKeys.list(params),
       queryFn: () => maintenanceRecordApi.getList(params),
     }),
+
+  /**
+   * 整備履歴詳細 Query Options
+   *
+   * @param maintenanceRecordId 整備履歴ID
+   */
+  detail: (maintenanceRecordId: string) =>
+    queryOptions({
+      queryKey: maintenanceRecordKeys.detail(maintenanceRecordId),
+      queryFn: () => maintenanceRecordApi.getDetail(maintenanceRecordId),
+      // 整備履歴IDが確定している場合のみクエリを実行
+      enabled: !!maintenanceRecordId,
+    }),
 };
