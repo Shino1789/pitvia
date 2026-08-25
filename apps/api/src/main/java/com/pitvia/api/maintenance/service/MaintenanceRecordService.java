@@ -3,11 +3,9 @@ package com.pitvia.api.maintenance.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,9 +32,7 @@ import com.pitvia.api.storage.transaction.StorageTransactionManager;
 import com.pitvia.api.user.entity.User;
 import com.pitvia.api.user.repository.UserRepository;
 import com.pitvia.api.vehicle.entity.Vehicle;
-import com.pitvia.api.vehicle.enums.LinkStatus;
-import com.pitvia.api.vehicle.repository.VehicleRepository;
-import com.pitvia.api.vehicle.repository.VehicleShopLinkRepository;
+import com.pitvia.api.vehicle.service.VehicleAccessGuard;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,11 +51,8 @@ public class MaintenanceRecordService {
     /** 整備記録リポジトリ */
     private final MaintenanceRecordRepository maintenanceRecordRepository;
 
-    /** 車両リポジトリ */
-    private final VehicleRepository vehicleRepository;
-
-    /** 車両・ショップ連携リポジトリ */
-    private final VehicleShopLinkRepository vehicleShopLinkRepository;
+    /** 車両閲覧可否の共通判定クラス */
+    private final VehicleAccessGuard vehicleAccessGuard;
 
     /** 整備種別マスタリポジトリ */
     private final MaintenanceTypeRepository maintenanceTypeRepository;
@@ -96,7 +89,7 @@ public class MaintenanceRecordService {
                 principal.userId(), request.vehicleId());
 
         // 対象車両の存在確認と登録権限チェック
-        Vehicle vehicle = resolveAccessibleVehicle(request.vehicleId(), principal);
+        Vehicle vehicle = vehicleAccessGuard.resolveViewableVehicle(principal, request.vehicleId());
 
         // 整備種別マスタの存在チェック
         com.pitvia.api.master.entity.MaintenanceType maintenanceType = maintenanceTypeRepository
@@ -138,34 +131,6 @@ public class MaintenanceRecordService {
 
         log.info("Maintenance record registration completed. maintenanceRecordId={}, userId={}",
                 saved.getId(), principal.userId());
-    }
-
-    /**
-     * 対象車両を取得し、ログインユーザーに登録権限があるかを検証する
-     *
-     * @param vehicleId 対象車両ID
-     * @param principal 認証済みユーザー情報
-     * @return 検証済みの車両エンティティ
-     * @throws BusinessException 車両が存在しない、または登録権限が無い場合（404）
-     */
-    private Vehicle resolveAccessibleVehicle(UUID vehicleId, JwtPrincipal principal) {
-
-        // 対象車両を取得（存在しない場合はここで404）
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.VEHICLE_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-        // 所有者本人か、SHOPがAPPROVED状態で連携している車両かを判定
-        boolean isOwner = vehicle.getUser().getId().equals(principal.userId());
-        boolean isLinkedShop = !isOwner && principal.role() == UserRole.SHOP
-                && vehicleShopLinkRepository.existsByShop_IdAndVehicle_IdAndStatus(
-                        principal.userId(), vehicleId, LinkStatus.APPROVED);
-
-        if (!isOwner && !isLinkedShop) {
-            // 存在しない場合と登録権限が無い場合を区別せず、存在有無を外部から推測できないようにする
-            throw new BusinessException(ErrorCode.VEHICLE_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
-
-        return vehicle;
     }
 
     /**
