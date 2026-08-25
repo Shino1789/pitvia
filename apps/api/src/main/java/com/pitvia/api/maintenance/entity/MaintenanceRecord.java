@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import com.pitvia.api.common.entity.BaseEntity;
+import com.pitvia.api.maintenance.dto.request.UpdateMaintenanceRecordRequest;
 import com.pitvia.api.master.entity.MaintenanceType;
 import com.pitvia.api.shop.entity.Shop;
 import com.pitvia.api.user.entity.User;
@@ -123,5 +125,21 @@ public class MaintenanceRecord extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "maintenanceRecord", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
+    @BatchSize(size = 20)
     private List<MaintenanceWorkItem> workItems = new ArrayList<>();
+
+    /**
+     * 整備記録ヘッダーの基本情報を更新する
+     *
+     * @param request         更新リクエスト
+     * @param maintenanceType 検証済みの整備種別マスタエンティティ
+     */
+    public void update(UpdateMaintenanceRecordRequest request, MaintenanceType maintenanceType) {
+        this.title = request.title();
+        this.maintenanceType = maintenanceType;
+        this.workDateFrom = request.workDateFrom();
+        this.workDateTo = request.workDateTo();
+        this.mileage = request.mileage();
+        this.remarks = request.remarks();
+    }
 }

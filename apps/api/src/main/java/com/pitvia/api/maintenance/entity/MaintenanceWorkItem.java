@@ -5,10 +5,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.pitvia.api.maintenance.dto.request.WorkItemRequest;
 import com.pitvia.api.master.entity.MaintenanceCategory;
 
 import jakarta.persistence.CascadeType;
@@ -117,6 +119,7 @@ public class MaintenanceWorkItem {
     @Builder.Default
     @OneToMany(mappedBy = "maintenanceWorkItem", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
+    @BatchSize(size = 20)
     private List<MaintenancePart> parts = new ArrayList<>();
 
     /**
@@ -125,6 +128,27 @@ public class MaintenanceWorkItem {
     @Builder.Default
     @OneToMany(mappedBy = "maintenanceWorkItem", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
+    @BatchSize(size = 20)
     private List<MaintenanceWorkItemImage> images = new ArrayList<>();
+
+    /**
+     * 作業項目の基本情報を更新する
+     *
+     * <p>
+     * 部品（{@code parts}）・画像（{@code images}）の更新は
+     * {@code MaintenanceRecordDetailService}側で個別に行う。
+     * </p>
+     *
+     * @param request             更新リクエスト（作業項目1件分）
+     * @param maintenanceCategory 検証済みの整備カテゴリマスタエンティティ
+     * @param sortOrder           リクエスト内での並び順（クライアントの入力値は信頼しない）
+     */
+    public void update(WorkItemRequest request, MaintenanceCategory maintenanceCategory, int sortOrder) {
+        this.maintenanceCategory = maintenanceCategory;
+        this.workContent = request.workContent();
+        this.performedBy = request.performedBy();
+        this.laborCost = request.laborCost();
+        this.sortOrder = sortOrder;
+    }
 
 }

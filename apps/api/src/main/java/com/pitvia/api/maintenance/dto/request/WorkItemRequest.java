@@ -12,12 +12,22 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * 整備作業明細登録リクエストDTO
+ * 整備作業明細登録・更新リクエストDTO
  *
  * @author pitvia
  * @version 1.0
  */
 public record WorkItemRequest(
+
+        /**
+         * 作業項目ID（更新時のみ使用）
+         *
+         * <p>
+         * 既存の作業項目を更新する場合はそのID、新規追加する場合はnullを指定する。
+         * 登録（{@code POST}）時は常にnull。
+         * </p>
+         */
+        Long id,
 
         /**
          * 整備カテゴリ
@@ -45,6 +55,16 @@ public record WorkItemRequest(
         @NotNull(message = "{validation.maintenanceRecord.workItem.laborCost.required}")
         @DecimalMin(value = "0", message = "{validation.maintenanceRecord.workItem.laborCost.min}")
         BigDecimal laborCost,
+
+        /**
+         * 既存の整備画像を削除するかどうか（更新時のみ使用。未指定時はfalse扱い）
+         *
+         * <p>
+         * 新しい画像ファイル（{@code workItemImage_{index}}パート）が指定されている場合は、
+         * この値に関わらずファイルの差し替えが優先される（{@code CreateVehicleRequest.removeImage}と同じ設計）。
+         * </p>
+         */
+        boolean removeImage,
 
         /**
          * 紐づく交換部品リスト（部品なしの作業項目もあり得るため空リストを許容）

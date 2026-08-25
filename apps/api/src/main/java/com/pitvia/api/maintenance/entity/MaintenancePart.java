@@ -7,6 +7,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.pitvia.api.maintenance.dto.request.PartRequest;
 import com.pitvia.api.maintenance.enums.PartCondition;
 
 import jakarta.persistence.Column;
@@ -117,4 +118,20 @@ public class MaintenancePart {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
+
+    /**
+     * 部品の情報を更新する
+     *
+     * @param request    更新リクエスト（部品1件分）
+     * @param sortOrder  リクエスト内での並び順（クライアントの入力値は信頼しない）
+     */
+    public void update(PartRequest request, int sortOrder) {
+        this.partCondition = request.partCondition();
+        this.partName = request.partName();
+        this.manufacturerName = request.manufacturerName();
+        this.partModelNumber = request.partModelNumber();
+        this.quantity = request.quantity();
+        this.unitPrice = request.unitPrice();
+        this.sortOrder = sortOrder;
+    }
 }

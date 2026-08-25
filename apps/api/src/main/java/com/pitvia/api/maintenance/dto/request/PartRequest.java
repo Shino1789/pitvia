@@ -10,12 +10,21 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * 交換部品登録リクエストDTO
+ * 交換部品登録・更新リクエストDTO
  *
  * @author pitvia
  * @version 1.0
  */
 public record PartRequest(
+
+        /**
+         * 部品ID
+         *
+         * <p>
+         * 既存の部品を更新する場合はそのID、新規追加する場合はnullが送られることを想定
+         * </p>
+         */
+        Long id,
 
         /**
          * 部品の状態（任意項目）
