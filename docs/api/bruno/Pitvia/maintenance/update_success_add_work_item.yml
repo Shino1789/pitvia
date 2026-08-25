@@ -1,0 +1,70 @@
+info:
+  name: 整備履歴更新（作業項目追加・画像付き）：正常系（OWNER）
+  type: http
+  seq: 24
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/maintenance-records/{{maintenanceRecordId}}
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "title": "Brunoテストで更新（作業項目追加）",
+            "maintenanceType": "REPAIR",
+            "workDateFrom": "2026-05-01",
+            "mileage": 90200,
+            "workItems": [
+              {
+                "id": {{workItemId}},
+                "maintenanceCategory": "ENGINE",
+                "workContent": "既存作業項目",
+                "performedBy": "Bruno",
+                "laborCost": 3000,
+                "parts": []
+              },
+              {
+                "maintenanceCategory": "BRAKE",
+                "workContent": "Brunoテストで追加した作業項目",
+                "performedBy": "Bruno",
+                "laborCost": 5000,
+                "parts": [
+                  { "partName": "Brunoテスト部品", "quantity": 1, "unitPrice": 1000 }
+                ]
+              }
+            ]
+          }
+      - name: workItemImage_1
+        type: file
+        value:
+          - vehicle/assets/sample-icon.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  登録者本人（OWNER）が、既存の作業項目（`id`指定）に加えて、部品・画像付きの新規作業項目
+  （`id`省略）を追加する。200 OKが返り、作業項目が2件になることを確認する。
+  作業項目ごとの画像は登録APIと同じく `workItemImage_{index}`（`index`はworkItems配列の
+  インデックス）という名前のパートで送信する。本ケースは新規追加分（workItems[1]）に画像を
+  添付するため `workItemImage_1`パートのみ送信する。
+
+  ⚠️ 注意：このリクエストはモックデータの整備履歴を実際に書き換えます。
+  再実行するには、DBを再作成してモックデータを再投入してください（`./scripts/reset.sh` 等）。
+
+  ※実行前に `auth/login_success_owner.yml` → `list_success_owner.yml` → `detail_success_owner.yml`
+  の順で実行し、`maintenanceRecordId` / `workItemId` を保存しておく必要があります。
+  ※ファイルパスがBruno上で解決できない場合は、コレクション内の
+  `vehicle/assets/sample-icon.png` を選択し直してください。

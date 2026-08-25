@@ -1,0 +1,50 @@
+info:
+  name: 整備履歴更新（顧客の登録・SHOP編集）：異常系（編集権限なし）
+  type: http
+  seq: 26
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/maintenance-records/{{maintenanceRecordId}}
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "title": "不正な更新試行",
+            "maintenanceType": "REPAIR",
+            "workDateFrom": "2026-05-01",
+            "mileage": 90000,
+            "workItems": [
+              {
+                "id": {{workItemId}},
+                "maintenanceCategory": "ENGINE",
+                "workContent": "改ざん試行",
+                "performedBy": "Bruno",
+                "laborCost": 0,
+                "parts": []
+              }
+            ]
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  SHOPが、APPROVED状態で連携している顧客車両（RX-7）の整備履歴（OWNER自身が登録したもの）を
+  更新しようとした場合、403 Forbidden（`MAINTENANCE_RECORD_EDIT_NOT_ALLOWED`）が返ることを確認する。
+  「車両所有者/連携先だから編集可能」ではなく、登録者本人のみが編集できる仕様の確認。
+
+  ※実行前に、OWNERで `auth/login_success_owner.yml` → `list_success_owner.yml` →
+  `detail_success_owner.yml` を実行して `maintenanceRecordId` / `workItemId` を保存したうえで、
+  `auth/login_success_shop.yml` でSHOPへログインし直してください。

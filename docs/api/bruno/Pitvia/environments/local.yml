@@ -2,3 +2,7 @@ name: local
 variables:
   - name: accessToken
     value: ""
+  - name: maintenanceRecordId
+    value: ""
+  - name: workItemId
+    value: ""
