@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { ReadOnlyValue } from "@/shared/ui/read-only-value";
 import { PART_CONDITION_LABELS } from "../types/maintenance-record";
 import type { MaintenanceRecordFormValues } from "../schemas/maintenance-record.schema";
 
@@ -65,13 +66,13 @@ export function PartFields({
                 <FormLabel className="text-xs" required={showRequiredMark}>
                   部品名
                 </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="例：ブレーキパッド"
-                    disabled={isReadOnly}
-                    {...field}
-                  />
-                </FormControl>
+                {isReadOnly ? (
+                  <ReadOnlyValue value={field.value} />
+                ) : (
+                  <FormControl>
+                    <Input placeholder="例：ブレーキパッド" {...field} />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -84,26 +85,32 @@ export function PartFields({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">部品状態</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={isReadOnly}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="選択してください" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.entries(PART_CONDITION_LABELS).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
+                {isReadOnly ? (
+                  <ReadOnlyValue
+                    value={
+                      PART_CONDITION_LABELS[
+                        field.value as keyof typeof PART_CONDITION_LABELS
+                      ]
+                    }
+                  />
+                ) : (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="選択してください" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(PART_CONDITION_LABELS).map(
+                        ([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -116,13 +123,13 @@ export function PartFields({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">部品メーカー</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="例：プロジェクトミュー"
-                    disabled={isReadOnly}
-                    {...field}
-                  />
-                </FormControl>
+                {isReadOnly ? (
+                  <ReadOnlyValue value={field.value} />
+                ) : (
+                  <FormControl>
+                    <Input placeholder="例：プロジェクトミュー" {...field} />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -135,9 +142,13 @@ export function PartFields({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">部品型番</FormLabel>
-                <FormControl>
-                  <Input placeholder="例：F328" disabled={isReadOnly} {...field} />
-                </FormControl>
+                {isReadOnly ? (
+                  <ReadOnlyValue value={field.value} />
+                ) : (
+                  <FormControl>
+                    <Input placeholder="例：F328" {...field} />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -152,14 +163,13 @@ export function PartFields({
                 <FormLabel className="text-xs" required={showRequiredMark}>
                   数量
                 </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    disabled={isReadOnly}
-                    {...field}
-                  />
-                </FormControl>
+                {isReadOnly ? (
+                  <ReadOnlyValue value={field.value} />
+                ) : (
+                  <FormControl>
+                    <Input type="number" inputMode="decimal" {...field} />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -174,14 +184,17 @@ export function PartFields({
                 <FormLabel className="text-xs" required={showRequiredMark}>
                   単価（¥）
                 </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    disabled={isReadOnly}
-                    {...field}
+                {isReadOnly ? (
+                  <ReadOnlyValue
+                    value={
+                      field.value ? Number(field.value).toLocaleString() : ""
+                    }
                   />
-                </FormControl>
+                ) : (
+                  <FormControl>
+                    <Input type="number" inputMode="decimal" {...field} />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}

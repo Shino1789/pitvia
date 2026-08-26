@@ -10,6 +10,24 @@ http:
     type: bearer
     token: "{{accessToken}}"
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        // 詳細・更新・削除API（detail_*/update_*/delete_*）の動作確認用に、
+        // 一覧の先頭（OWNER自身が登録した整備履歴）のIDを環境変数へ保持しておく
+        const record = body.data?.records?.content?.[0];
+        if (res.status === 200 && record?.id) {
+          bru.setEnvVar("maintenanceRecordId", record.id);
+          console.log("maintenanceRecordId saved: " + record.id);
+        }
+
 settings:
   encodeUrl: true
   timeout: 0
@@ -24,3 +42,5 @@ docs: |-
 
   ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
   ※このシナリオは開発環境の初期モックデータ（V1000__mock_data.sql）に依存します。
+  ※このリクエストの実行後、一覧先頭の整備履歴IDが環境変数 `maintenanceRecordId` に保存されます。
+  同フォルダの `detail_*` / `update_*` / `delete_*` シナリオは、このIDを前提に動作します。

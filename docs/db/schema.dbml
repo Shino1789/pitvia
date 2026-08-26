@@ -341,6 +341,10 @@ Table maintenance_records {
     ref: > users.id,
     note: '記録を作成したユーザーID'
   ]
+  shop_id uuid [
+    ref: > shops.id,
+    note: '整備を実施したショップID（DIYの場合はNULL）'
+  ]
   title varchar [
     not null,
     note: '整備タイトル'
@@ -389,6 +393,7 @@ Table maintenance_records {
   indexes {
     (vehicle_id, work_date_from)
     (created_by_user_id)
+    (shop_id, work_date_from)
   }
 
 }

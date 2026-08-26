@@ -2,7 +2,6 @@ package com.pitvia.api.maintenance.dto.request;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 import com.pitvia.api.maintenance.enums.MaintenanceType;
 import com.pitvia.api.maintenance.validation.WorkDatePeriod;
@@ -16,19 +15,19 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * 整備履歴登録リクエストDTO
+ * 整備履歴更新リクエストDTO
+ *
+ * <p>
+ * {@code workItems}の各要素は{@link WorkItemRequest#id()}の有無で、既存作業項目の更新（IDあり）と
+ * 新規追加（IDなし）を区別する。リクエストに含まれなかった既存作業項目・部品は削除対象として扱う
+ * （{@code MaintenanceRecordDetailService}参照）。
+ * </p>
  *
  * @author pitvia
  * @version 1.0
  */
 @ValidWorkDatePeriod
-public record CreateMaintenanceRecordRequest(
-
-        /**
-         * 対象車両ID
-         */
-        @NotNull(message = "{validation.maintenanceRecord.vehicleId.required}")
-        UUID vehicleId,
+public record UpdateMaintenanceRecordRequest(
 
         /**
          * 整備タイトル

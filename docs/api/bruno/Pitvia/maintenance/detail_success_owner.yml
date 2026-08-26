@@ -1,0 +1,44 @@
+info:
+  name: 整備履歴詳細（登録者本人）：正常系（OWNER）
+  type: http
+  seq: 20
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records/{{maintenanceRecordId}}
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        // update_*シナリオの動作確認用に、先頭の作業項目IDを環境変数へ保持しておく
+        const workItem = body.data?.workItems?.[0];
+        if (res.status === 200 && workItem?.id) {
+          bru.setEnvVar("workItemId", workItem.id);
+          console.log("workItemId saved: " + workItem.id);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  ログインユーザー（OWNER）が、自身が登録した整備履歴の詳細を取得する。
+  `data.canEdit`がtrue（登録者本人）であること、作業項目・部品の詳細が含まれることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、
+  `list_success_owner.yml` を実行して `maintenanceRecordId` を保存しておく必要があります。
+  ※このリクエストの実行後、先頭の作業項目IDが環境変数 `workItemId` に保存されます。
+  `update_*` シナリオはこのIDを前提に動作します。

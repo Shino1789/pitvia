@@ -20,7 +20,7 @@ BEGIN
     -- -------------------------------------------------------------------------
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, 'エンジンフルリビルド＆フルコンセッティング', 4, '2026-07-20', 85000, FALSE, '2026-07-20 10:00:00+09', '2026-07-20 10:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, 'エンジンフルリビルド＆フルコンセッティング', 4, '2026-07-20', 85000, FALSE, '2026-07-20 10:00:00+09', '2026-07-20 10:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 1, 'エンジンオーバーホール工賃', 'ショップテスト', 200000.00, '2026-07-20 10:00:00+09', '2026-07-20 10:00:00+09') RETURNING id INTO v_item_id;
@@ -36,7 +36,7 @@ BEGIN
     -- -------------------------------------------------------------------------
     v_rec_id := gen_random_uuid();
     INSERT INTO maintenance_records (id, vehicle_id, created_by_user_id, shop_id, title, maintenance_type_id, work_date_from, mileage, is_draft, created_at, updated_at)
-    VALUES (v_rec_id, v_veh_id, v_owner_id, v_shop_id, 'ビッグタービンキット導入＆全塗装', 5, '2026-08-01', 85200, FALSE, '2026-08-01 10:00:00+09', '2026-08-01 10:00:00+09');
+    VALUES (v_rec_id, v_veh_id, v_shop_id, v_shop_id, 'ビッグタービンキット導入＆全塗装', 5, '2026-08-01', 85200, FALSE, '2026-08-01 10:00:00+09', '2026-08-01 10:00:00+09');
 
     INSERT INTO maintenance_work_items (maintenance_record_id, maintenance_category_id, work_content, performed_by, labor_cost, created_at, updated_at)
     VALUES (v_rec_id, 2, 'タービンキット取付・ボディオールペン', 'ショップテスト', 300000.00, '2026-08-01 10:00:00+09', '2026-08-01 10:00:00+09') RETURNING id INTO v_item_id;

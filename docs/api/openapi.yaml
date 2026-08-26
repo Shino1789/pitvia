@@ -12,8 +12,8 @@ info:
     REST API 通信で使用する。
 
     ⚠️ `Users` タグ配下のエンドポイントは、現時点ではController未実装のため疎通しない
-    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得・登録APIのみ
-    実装済みで、詳細取得・更新は未実装。
+    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得・登録・
+    詳細取得・更新・削除まで実装済み。
 
 servers:
   - url: http://localhost:8080/api/v1
@@ -37,8 +37,7 @@ tags:
     description: |
       整備記録API
 
-      一覧取得（`GET /maintenance-records`）・登録（`POST /maintenance-records`）のみ実装済み。
-      詳細取得・更新は⚠️ 未実装（将来対応予定）。
+      一覧取得・登録・詳細取得・更新・削除まで実装済み。
 
 paths:
   # ==========================================================================
@@ -842,6 +841,202 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /maintenance-records/{maintenanceRecordId}:
+    get:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴詳細取得
+      description: |
+        整備履歴の詳細を取得する。対象車両の所有者本人、またはSHOPが対象車両にAPPROVED状態で
+        連携している場合に閲覧できる（車両閲覧の可否と同じ条件。`GET /maintenance-records`と同様）。
+
+        レスポンスの`canEdit`は、ログインユーザーがこの整備履歴を編集（更新・削除）できるか
+        どうかを表す。車両所有者かどうかではなく、この整備履歴を実際に登録したユーザー本人
+        （`createdByUser`）かどうかで判定される点に注意（車両所有者と整備履歴登録者は別概念）。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: maintenanceRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 整備履歴詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceRecordApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された整備履歴が存在しない、またはログインユーザーから閲覧できない
+            （`MAINTENANCE_RECORD_NOT_FOUND`）。両者を区別せず、存在有無を外部から
+            推測できないようにする。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴更新
+      description: |
+        整備履歴を更新する。**この整備履歴を実際に登録したユーザー本人のみ**実行できる
+        （車両所有者であっても、登録者本人でなければ403）。対象車両（`vehicleId`）は
+        登録後に変更できないため、リクエストには含まない。
+
+        `multipart/form-data`形式で送信し、`request`パートに整備履歴情報（JSON）を格納する。
+        作業項目ごとの整備画像は登録APIと同じく`workItemImage_{index}`
+        （`index`は`request.workItems`のリスト内インデックス、0始まり）という名前の
+        パートとして追加する。
+
+        作業項目・部品は`id`の有無で反映方法が変わる（全件送信の全体更新）。
+
+        - `id`あり：既存の作業項目/部品を更新（このID自身が対象の整備記録に存在しない
+          場合は`400`）
+        - `id`なし（省略）：新規追加
+        - リクエストに含まれなかった既存の作業項目/部品：削除（紐づく部品・画像も連動して削除）
+
+        作業項目ごとの整備画像は`removeImage`と`workItemImage_{index}`パートの組み合わせで
+        決まる（車両更新の`removeImage`と同じ設計）。
+
+        - `workItemImage_{index}`パートあり：`removeImage`の値に関わらず、新しい画像へ差し替える
+        - パートなし・`removeImage=true`：既存の画像を削除する
+        - パートなし・`removeImage=false`（未指定時のデフォルト）：既存の画像を維持する
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: maintenanceRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/UpdateMaintenanceRecordRequest"
+              additionalProperties:
+                type: string
+                format: binary
+              description: |
+                `workItemImage_{index}`パート（任意、jpg/jpeg/png/webp、10MB以内）は
+                `additionalProperties`として動的に受け付ける。
+            encoding:
+              request:
+                contentType: application/json
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、指定された整備種別・整備カテゴリが存在しない
+            （`MAINTENANCE_TYPE_NOT_FOUND` / `MAINTENANCE_CATEGORY_NOT_FOUND`）、リクエストの
+            作業項目/部品IDが対象の整備記録に存在しない（`MAINTENANCE_WORK_ITEM_NOT_FOUND` /
+            `MAINTENANCE_PART_NOT_FOUND`）、画像が空／サイズ超過／未対応形式／解像度超過
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE` /
+            `IMAGE_RESOLUTION_EXCEEDED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            整備履歴は閲覧できるが、登録者本人ではないため編集できない
+            （`MAINTENANCE_RECORD_EDIT_NOT_ALLOWED`）。車両所有者やAPPROVED連携済みSHOPで
+            あっても、登録者本人でなければ発生する。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された整備履歴が存在しない、またはログインユーザーから閲覧できない
+            （`MAINTENANCE_RECORD_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴削除
+      description: |
+        整備履歴を削除する（論理削除）。**この整備履歴を実際に登録したユーザー本人のみ**
+        実行できる（車両所有者であっても、登録者本人でなければ403）。
+
+        紐づく作業項目・部品・画像は連動して削除される。ストレージ上の整備画像は即時には
+        削除されず、孤児ファイルクリーンアップの定期処理により猶予期間経過後に自動的に
+        回収される。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: maintenanceRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: 削除成功
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            整備履歴は閲覧できるが、登録者本人ではないため削除できない
+            （`MAINTENANCE_RECORD_EDIT_NOT_ALLOWED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された整備履歴が存在しない、またはログインユーザーから閲覧できない
+            （`MAINTENANCE_RECORD_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ==========================================================================
   # Users（未実装 / 将来対応予定）
   # ==========================================================================
@@ -1123,6 +1318,17 @@ components:
           $ref: "#/components/schemas/Meta"
         data:
           $ref: "#/components/schemas/MaintenanceRecordListResponse"
+
+    MaintenanceRecordApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/MaintenanceRecordResponse"
 
     # --- Auth ---
     RegisterRequest:
@@ -1736,6 +1942,18 @@ components:
         - quantity
         - unitPrice
       properties:
+        id:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            部品ID（整備履歴更新 `PUT /maintenance-records/{maintenanceRecordId}` でのみ使用）。
+
+            - 既存の部品を更新する場合はそのID
+            - 新規追加する場合はnull（省略可）
+
+            整備履歴登録（`POST /maintenance-records`）では常にnull扱い（送信しても無視される）。
+          example: null
         partCondition:
           allOf:
             - $ref: "#/components/schemas/PartCondition"
@@ -1774,6 +1992,18 @@ components:
         - performedBy
         - laborCost
       properties:
+        id:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            作業項目ID（整備履歴更新 `PUT /maintenance-records/{maintenanceRecordId}` でのみ使用）。
+
+            - 既存の作業項目を更新する場合はそのID
+            - 新規追加する場合はnull（省略可）
+
+            整備履歴登録（`POST /maintenance-records`）では常にnull扱い（送信しても無視される）。
+          example: null
         maintenanceCategory:
           $ref: "#/components/schemas/MaintenanceCategory"
         workContent:
@@ -1789,6 +2019,14 @@ components:
           format: double
           minimum: 0
           example: 8000
+        removeImage:
+          type: boolean
+          default: false
+          description: |
+            既存の整備画像を削除するかどうか（整備履歴更新でのみ使用。登録では無視される）。
+            `workItemImage_{index}`パートが指定されている場合は、この値に関わらず
+            ファイルによる画像差し替えを優先する（`CreateVehicleRequest.removeImage`と同じ設計）。
+          example: false
         parts:
           type: array
           description: 交換部品リスト（部品を伴わない作業項目の場合は空配列）
@@ -1836,3 +2074,154 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/WorkItemRequest"
+
+    UpdateMaintenanceRecordRequest:
+      type: object
+      description: |
+        整備履歴更新リクエスト。対象車両（`vehicleId`）は登録後に変更できないため、
+        `CreateMaintenanceRecordRequest`とは異なり本DTOには含めない。
+
+        `workItems`は全件送信の全体更新で、各要素の`id`の有無で反映方法が変わる
+        （詳しくは`PUT /maintenance-records/{maintenanceRecordId}`の説明を参照）。
+      required:
+        - title
+        - maintenanceType
+        - workDateFrom
+        - mileage
+        - workItems
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          example: "車検対応"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 任意項目。指定する場合はworkDateFrom以降の日付であること
+        mileage:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 70600
+        remarks:
+          type: string
+          nullable: true
+          example: "次回はブレーキフルードも交換予定"
+        workItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/WorkItemRequest"
+
+    PartResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        partCondition:
+          allOf:
+            - $ref: "#/components/schemas/PartCondition"
+          nullable: true
+        partName:
+          type: string
+          example: "ブレーキパッド"
+        manufacturerName:
+          type: string
+          nullable: true
+          example: "プロジェクトミュー"
+        partModelNumber:
+          type: string
+          nullable: true
+          example: "F328"
+        quantity:
+          type: number
+          format: double
+          example: 4
+        unitPrice:
+          type: number
+          format: double
+          example: 6500
+
+    WorkItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        maintenanceCategory:
+          $ref: "#/components/schemas/MaintenanceCategory"
+        workContent:
+          type: string
+          example: "ブレーキパッド交換"
+        performedBy:
+          type: string
+          example: "ガレージ田中"
+        laborCost:
+          type: number
+          format: double
+          example: 8000
+        imageUrl:
+          type: string
+          nullable: true
+          description: 整備画像の公開URL（未設定の場合はnull）
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartResponse"
+
+    MaintenanceRecordResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleModelName:
+          type: string
+          example: "RX-7"
+        vehicleModelCode:
+          type: string
+          nullable: true
+          example: "FD3S"
+        title:
+          type: string
+          example: "車検対応"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 単日作業の場合はnull
+        mileage:
+          type: integer
+          example: 86200
+        remarks:
+          type: string
+          nullable: true
+        shopName:
+          type: string
+          nullable: true
+          description: DIYによる整備の場合はnull
+        workItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkItemResponse"
+        canEdit:
+          type: boolean
+          description: |
+            ログインユーザーがこの整備履歴を編集（更新・削除）できるかどうか。車両所有者/SHOP
+            権限ではなく、この整備履歴を登録したユーザー本人（`createdByUser`）の場合のみtrue。
+          example: true

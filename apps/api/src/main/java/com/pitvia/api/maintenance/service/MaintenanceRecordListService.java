@@ -25,9 +25,8 @@ import com.pitvia.api.maintenance.repository.MaintenanceRecordRepository;
 import com.pitvia.api.maintenance.repository.projection.MaintenanceRecordListProjection;
 import com.pitvia.api.vehicle.dto.response.VehicleOwnerSummary;
 import com.pitvia.api.vehicle.entity.Vehicle;
-import com.pitvia.api.vehicle.enums.LinkStatus;
-import com.pitvia.api.vehicle.repository.VehicleRepository;
 import com.pitvia.api.vehicle.repository.VehicleShopLinkRepository;
+import com.pitvia.api.vehicle.service.VehicleAccessGuard;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,8 +44,8 @@ public class MaintenanceRecordListService {
     /** 整備記録リポジトリ */
     private final MaintenanceRecordRepository maintenanceRecordRepository;
 
-    /** 車両リポジトリ */
-    private final VehicleRepository vehicleRepository;
+    /** 車両閲覧可否の共通判定クラス */
+    private final VehicleAccessGuard vehicleAccessGuard;
 
     /** 車両・ショップ連携リポジトリ */
     private final VehicleShopLinkRepository vehicleShopLinkRepository;
@@ -125,20 +124,9 @@ public class MaintenanceRecordListService {
     private MaintenanceRecordListResponse getByVehicle(
             JwtPrincipal principal, UUID vehicleId, Set<String> types, String keyword, Pageable pageable) {
 
-        // 対象車両を取得（存在しない場合はここで404）
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.VEHICLE_NOT_FOUND, HttpStatus.NOT_FOUND));
-
-        // 所有者本人か、SHOPがAPPROVED状態で連携している車両かを判定
-        boolean isOwner = vehicle.getUser().getId().equals(principal.userId());
-        boolean isLinkedShop = !isOwner && principal.role() == UserRole.SHOP
-                && vehicleShopLinkRepository.existsByShop_IdAndVehicle_IdAndStatus(
-                        principal.userId(), vehicleId, LinkStatus.APPROVED);
-
-        if (!isOwner && !isLinkedShop) {
-            // 存在しない場合と閲覧権限が無い場合を区別せず、存在有無を外部から推測できないようにする
-            throw new BusinessException(ErrorCode.VEHICLE_NOT_FOUND, HttpStatus.NOT_FOUND);
-        }
+        // 対象車両の存在確認と閲覧権限チェック（存在しない場合・権限が無い場合を区別せず404）
+        Vehicle vehicle = vehicleAccessGuard.resolveViewableVehicle(principal, vehicleId);
+        boolean isOwner = vehicleAccessGuard.isOwner(vehicle, principal);
 
         // 車両所有者のIDを基準に検索する（SHOPが閲覧する場合も、対象車両の所有者の履歴を取得する）
         Page<MaintenanceRecordListProjection> result = maintenanceRecordRepository

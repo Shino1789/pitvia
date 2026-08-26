@@ -2,6 +2,7 @@ package com.pitvia.api.maintenance.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,6 +31,31 @@ public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRe
      * @return 整備履歴総数
      */
     long countByVehicle_User_Id(UUID userId);
+
+    /**
+     * 整備履歴詳細を、単項（{@code @ManyToOne}）の関連エンティティを一括取得した状態で取得する
+     *
+     * <p>
+     * {@code vehicle}/{@code maintenanceType}/{@code createdByUser}/{@code shop}/{@code shop.user}は
+     * 詳細レスポンスの組み立てに必ず使用するため、JOIN FETCHでN+1を回避する。一方、
+     * {@code workItems}以下（作業項目→部品・画像の3階層）はコレクション同士のJOIN FETCHが
+     * {@code MultipleBagFetchException}を招くため対象外とし、エンティティ側の
+     * {@code @BatchSize}によるバッチ取得に委ねる（詳細画面は1レコード表示のため実害は小さい）。
+     * </p>
+     *
+     * @param id 整備記録ID
+     * @return 整備記録エンティティ（存在しない場合は空）
+     */
+    @Query("""
+            SELECT mr FROM MaintenanceRecord mr
+            JOIN FETCH mr.vehicle v
+            JOIN FETCH mr.maintenanceType mt
+            JOIN FETCH mr.createdByUser cbu
+            LEFT JOIN FETCH mr.shop s
+            LEFT JOIN FETCH s.user su
+            WHERE mr.id = :id
+            """)
+    Optional<MaintenanceRecord> findDetailById(@Param("id") UUID id);
 
     /**
      * OWNERユーザー向け：指定された基準日より過去の整備記録が存在するか判定する

@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   maintenanceRecordSchema,
   toCreateMaintenanceRecordRequest,
+  toUpdateMaintenanceRecordRequest,
   calculateTotalCost,
   EMPTY_WORK_ITEM_FORM_VALUES,
   EMPTY_PART_FORM_VALUES,
@@ -263,6 +264,103 @@ describe("toCreateMaintenanceRecordRequest", () => {
       ],
     });
     const request = toCreateMaintenanceRecordRequest(parsed);
+
+    expect(request.workDateTo).toBeNull();
+    expect(request.remarks).toBeNull();
+    expect(request.workItems[0].parts[0].partCondition).toBeNull();
+    expect(request.workItems[0].parts[0].manufacturerName).toBeNull();
+    expect(request.workItems[0].parts[0].partModelNumber).toBeNull();
+  });
+});
+
+/**
+ * toUpdateMaintenanceRecordRequest（フォーム入力値→更新APIリクエストへの変換）の単体テスト
+ */
+describe("toUpdateMaintenanceRecordRequest", () => {
+  test("フォーム入力値を整備履歴更新APIリクエストの形式へ変換する（vehicleIdは含まれない）", () => {
+    const parsed = maintenanceRecordSchema.parse({
+      ...VALID_INPUT,
+      workItems: [
+        {
+          ...VALID_WORK_ITEM,
+          workItemId: 10,
+          parts: [{ ...VALID_PART, partId: 20 }],
+        },
+      ],
+    });
+    const request = toUpdateMaintenanceRecordRequest(parsed, new Set());
+
+    expect(request).toEqual({
+      title: "車検対応",
+      maintenanceType: "VEHICLE_INSPECTION",
+      workDateFrom: "2026-04-10",
+      workDateTo: "2026-04-10",
+      mileage: 70600,
+      remarks: "次回はブレーキフルードも交換予定",
+      workItems: [
+        {
+          id: 10,
+          maintenanceCategory: "ENGINE",
+          workContent: "エンジンオイル交換",
+          performedBy: "ガレージ田中",
+          laborCost: 2000,
+          removeImage: false,
+          parts: [
+            {
+              id: 20,
+              partCondition: "NEW",
+              partName: "オイルフィルター",
+              manufacturerName: "カストロール",
+              partModelNumber: "C-111",
+              quantity: 1,
+              unitPrice: 1200,
+            },
+          ],
+        },
+      ],
+    });
+    expect(request).not.toHaveProperty("vehicleId");
+  });
+
+  test("workItemId/partId未指定（新規追加）の場合、idはundefinedになる", () => {
+    const parsed = maintenanceRecordSchema.parse(VALID_INPUT);
+    const request = toUpdateMaintenanceRecordRequest(parsed, new Set());
+
+    expect(request.workItems[0].id).toBeUndefined();
+    expect(request.workItems[0].parts[0].id).toBeUndefined();
+  });
+
+  test("removeImageIndexesで指定したインデックスの作業項目のみremoveImageがtrueになる", () => {
+    const parsed = maintenanceRecordSchema.parse({
+      ...VALID_INPUT,
+      workItems: [VALID_WORK_ITEM, VALID_WORK_ITEM],
+    });
+    const request = toUpdateMaintenanceRecordRequest(parsed, new Set([1]));
+
+    expect(request.workItems[0].removeImage).toBe(false);
+    expect(request.workItems[1].removeImage).toBe(true);
+  });
+
+  test("任意項目が空文字の場合はnullへ変換される", () => {
+    const parsed = maintenanceRecordSchema.parse({
+      ...VALID_INPUT,
+      workDateTo: "",
+      remarks: "",
+      workItems: [
+        {
+          ...VALID_WORK_ITEM,
+          parts: [
+            {
+              ...VALID_PART,
+              partCondition: "",
+              manufacturerName: "",
+              partModelNumber: "",
+            },
+          ],
+        },
+      ],
+    });
+    const request = toUpdateMaintenanceRecordRequest(parsed, new Set());
 
     expect(request.workDateTo).toBeNull();
     expect(request.remarks).toBeNull();

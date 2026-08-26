@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { ReadOnlyValue } from "@/shared/ui/read-only-value";
 import { WorkItemFields } from "./work-item-fields";
 import { MaintenanceRecordStickyFooter } from "./maintenance-record-sticky-footer";
 import {
@@ -351,28 +352,5 @@ export function MaintenanceRecordForm({
         />
       </form>
     </Form>
-  );
-}
-
-/**
- * 閲覧モード用の読み取り専用テキスト表示（vehicle-form.tsxと同一パターン）
- */
-function ReadOnlyValue({
-  value,
-  multiline = false,
-}: {
-  value: string | number | undefined | null;
-  multiline?: boolean;
-}) {
-  return (
-    <p
-      className={
-        multiline
-          ? "min-h-24 py-2 text-sm whitespace-pre-line text-foreground"
-          : "py-2 text-sm text-foreground"
-      }
-    >
-      {value || value === 0 ? value : "-"}
-    </p>
   );
 }

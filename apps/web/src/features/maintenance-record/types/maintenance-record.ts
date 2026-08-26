@@ -99,10 +99,16 @@ export const PART_CONDITION_LABELS: Record<PartCondition, string> = {
 };
 
 /**
- * 交換部品登録リクエスト
+ * 交換部品登録・更新リクエスト
  * Spring: PartRequest
  */
 export interface PartRequest {
+  /**
+   * 部品ID（更新時のみ使用）
+   *
+   * 既存の部品を更新する場合はそのID、新規追加する場合はundefined（登録時は常に未指定）。
+   */
+  id?: number;
   /** 部品の状態（任意項目） */
   partCondition: PartCondition | null;
   partName: string;
@@ -113,14 +119,27 @@ export interface PartRequest {
 }
 
 /**
- * 整備作業明細登録リクエスト
+ * 整備作業明細登録・更新リクエスト
  * Spring: WorkItemRequest
  */
 export interface WorkItemRequest {
+  /**
+   * 作業項目ID（更新時のみ使用）
+   *
+   * 既存の作業項目を更新する場合はそのID、新規追加する場合はundefined（登録時は常に未指定）。
+   */
+  id?: number;
   maintenanceCategory: MaintenanceCategory;
   workContent: string;
   performedBy: string;
   laborCost: number;
+  /**
+   * 既存の整備画像を削除するかどうか（更新時のみ使用。未指定時はfalse扱い）
+   *
+   * 新しい画像ファイル（`workItemImage_{index}`パート）が指定されている場合は、
+   * この値に関わらずファイルの差し替えが優先される。
+   */
+  removeImage?: boolean;
   /** 交換部品リスト（部品を伴わない作業項目の場合は空配列） */
   parts: PartRequest[];
 }
@@ -143,8 +162,26 @@ export interface CreateMaintenanceRecordRequest {
 }
 
 /**
+ * 整備履歴更新リクエスト
+ *
+ * 対象車両（`vehicleId`）は登録後に変更できないため、{@link CreateMaintenanceRecordRequest}とは
+ * 異なり含まない。
+ * Spring: UpdateMaintenanceRecordRequest
+ */
+export interface UpdateMaintenanceRecordRequest {
+  title: string;
+  maintenanceType: MaintenanceType;
+  workDateFrom: string;
+  workDateTo: string | null;
+  mileage: number;
+  remarks: string | null;
+  /** 紐づく作業項目リスト（1件以上必須）。id指定で更新、id省略で新規追加 */
+  workItems: WorkItemRequest[];
+}
+
+/**
  * 交換部品詳細情報（詳細・更新画面用）
- * Spring: PartResponse相当（詳細取得APIは今回未実装のため、将来の実装に備えた先行定義）
+ * Spring: PartResponse
  */
 export interface PartDetail extends PartRequest {
   id: number;
@@ -152,7 +189,7 @@ export interface PartDetail extends PartRequest {
 
 /**
  * 整備作業明細詳細情報（詳細・更新画面用）
- * Spring: WorkItemResponse相当（詳細取得APIは今回未実装のため、将来の実装に備えた先行定義）
+ * Spring: WorkItemResponse
  */
 export interface WorkItemDetail {
   id: number;
@@ -167,10 +204,7 @@ export interface WorkItemDetail {
 
 /**
  * 整備履歴詳細情報（詳細・更新画面用）
- *
- * 詳細取得API（`GET /maintenance-records/{id}`）は今回のスコープ外のため未実装。
- * 登録画面とのUI共通化（閲覧/編集モード切り替え）を先行実装するための型定義のみ用意する。
- * Spring: MaintenanceRecordResponse相当（未実装）
+ * Spring: MaintenanceRecordResponse
  */
 export interface MaintenanceRecordDetail {
   id: string;

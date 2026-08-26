@@ -7,11 +7,6 @@ import { USER_ROLE } from "@/shared/constants/role";
 /**
  * 整備履歴詳細・更新画面ページエントリーポイント
  *
- * <p>
- * 詳細取得APIは今回のスコープ外のため未実装。{@link MaintenanceRecordDetailContent}は
- * モックデータでUIを表示する（登録画面とのフォームUI共通化の確認用）。
- * </p>
- *
  * @component
  * @returns ガードされた整備履歴詳細ページのJSX要素
  */

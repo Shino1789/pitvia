@@ -1,0 +1,53 @@
+info:
+  name: 整備履歴更新（基本情報＋既存作業項目の更新）：正常系（OWNER）
+  type: http
+  seq: 23
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/maintenance-records/{{maintenanceRecordId}}
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "title": "Brunoテストで更新",
+            "maintenanceType": "REPAIR",
+            "workDateFrom": "2026-05-01",
+            "workDateTo": null,
+            "mileage": 90100,
+            "remarks": "Brunoから更新",
+            "workItems": [
+              {
+                "id": {{workItemId}},
+                "maintenanceCategory": "ENGINE",
+                "workContent": "Brunoテストで更新した作業内容",
+                "performedBy": "Bruno",
+                "laborCost": 3000,
+                "parts": []
+              }
+            ]
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  登録者本人（OWNER）が、自身の整備履歴の基本情報と既存作業項目（`workItemId`をID指定）を更新する。
+  200 OKが返り、対象車両（`vehicleId`）は変更対象外のまま維持されることを確認する。
+
+  ⚠️ 注意：このリクエストはモックデータの整備履歴を実際に書き換えます（既存の部品は削除されます）。
+  再実行するには、DBを再作成してモックデータを再投入してください（`./scripts/reset.sh` 等）。
+
+  ※実行前に `auth/login_success_owner.yml` → `list_success_owner.yml` → `detail_success_owner.yml`
+  の順で実行し、`maintenanceRecordId` / `workItemId` を保存しておく必要があります。

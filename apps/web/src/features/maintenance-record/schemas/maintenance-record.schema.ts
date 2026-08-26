@@ -6,6 +6,7 @@ import type { MaintenanceCategory } from "@/shared/constants/maintenance-categor
 import type {
   CreateMaintenanceRecordRequest,
   PartCondition,
+  UpdateMaintenanceRecordRequest,
 } from "../types/maintenance-record";
 
 /**
@@ -13,6 +14,16 @@ import type {
  * バックエンドの PartRequest と対応する制約を定義する。
  */
 const partSchema = z.object({
+  /**
+   * 部品ID（詳細・更新画面でのみ使用）
+   *
+   * 既存の部品を更新する場合はサーバーから取得したID、新規追加した部品の場合はundefined。
+   * ユーザーが編集する項目ではなく、更新APIへの差分反映のために内部で保持する
+   * （react-hook-formのuseFieldArrayが内部管理するキーとは別物。命名の衝突を避けるため
+   * `id`ではなく`partId`という名前にしている）。
+   */
+  partId: z.number().optional(),
+
   /** 部品の状態（任意項目、未選択時は空文字） */
   partCondition: z.string().optional().or(z.literal("")),
 
@@ -60,6 +71,14 @@ const partSchema = z.object({
  * バックエンドの WorkItemRequest と対応する制約を定義する。
  */
 const workItemSchema = z.object({
+  /**
+   * 作業項目ID（詳細・更新画面でのみ使用）
+   *
+   * 既存の作業項目を更新する場合はサーバーから取得したID、新規追加した作業項目の場合はundefined。
+   * {@link partSchema}の`partId`と同じ理由で`workItemId`という名前にしている。
+   */
+  workItemId: z.number().optional(),
+
   /** 作業カテゴリの必須チェック */
   maintenanceCategory: z
     .string()
@@ -209,6 +228,51 @@ export function toCreateMaintenanceRecordRequest(
       performedBy: item.performedBy,
       laborCost: Number(item.laborCost),
       parts: item.parts.map((part) => ({
+        partCondition: part.partCondition
+          ? (part.partCondition as PartCondition)
+          : null,
+        partName: part.partName,
+        manufacturerName: part.manufacturerName ? part.manufacturerName : null,
+        partModelNumber: part.partModelNumber ? part.partModelNumber : null,
+        quantity: Number(part.quantity),
+        unitPrice: Number(part.unitPrice),
+      })),
+    })),
+  };
+}
+
+/**
+ * バリデーション済みのフォーム入力値を、整備履歴更新APIリクエストへ変換する
+ *
+ * 登録用の{@link toCreateMaintenanceRecordRequest}と異なり、対象車両（vehicleId）は
+ * 更新対象外のため含めない。各作業項目・部品は`workItemId`/`partId`（サーバーから取得した
+ * 既存ID）の有無で、更新対象・新規追加対象のいずれかとしてAPI側に解釈される。
+ *
+ * @param data                バリデーション済みのフォーム入力値
+ * @param removeImageIndexes 既存の整備画像を削除する作業項目のインデックス集合
+ *                            （呼び出し元が画像の差し替え・削除状態から導出する）
+ * @returns 整備履歴更新APIリクエスト
+ */
+export function toUpdateMaintenanceRecordRequest(
+  data: MaintenanceRecordFormValues,
+  removeImageIndexes: Set<number>,
+): UpdateMaintenanceRecordRequest {
+  return {
+    title: data.title,
+    maintenanceType: data.maintenanceType as MaintenanceType,
+    workDateFrom: data.workDateFrom,
+    workDateTo: data.workDateTo ? data.workDateTo : null,
+    mileage: Number(data.mileage),
+    remarks: data.remarks ? data.remarks : null,
+    workItems: data.workItems.map((item, index) => ({
+      id: item.workItemId,
+      maintenanceCategory: item.maintenanceCategory as MaintenanceCategory,
+      workContent: item.workContent,
+      performedBy: item.performedBy,
+      laborCost: Number(item.laborCost),
+      removeImage: removeImageIndexes.has(index),
+      parts: item.parts.map((part) => ({
+        id: part.partId,
         partCondition: part.partCondition
           ? (part.partCondition as PartCondition)
           : null,

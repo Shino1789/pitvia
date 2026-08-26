@@ -6,6 +6,7 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { SegmentedToggle } from "@/shared/ui/segmented-toggle";
+import { ReadOnlyValue } from "@/shared/ui/read-only-value";
 import {
   Select,
   SelectContent,
@@ -404,25 +405,3 @@ function toLabel(
   return options.find((option) => option.value === value)?.label ?? value;
 }
 
-/**
- * 閲覧モード用の読み取り専用テキスト表示
- */
-function ReadOnlyValue({
-  value,
-  multiline = false,
-}: {
-  value: string | number | undefined | null;
-  multiline?: boolean;
-}) {
-  return (
-    <p
-      className={
-        multiline
-          ? "min-h-24 py-2 text-sm whitespace-pre-line text-foreground"
-          : "py-2 text-sm text-foreground"
-      }
-    >
-      {value || value === 0 ? value : "-"}
-    </p>
-  );
-}

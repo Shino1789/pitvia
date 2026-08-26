@@ -24,6 +24,10 @@ export const TOAST_MESSAGES = {
     MAINTENANCE_RECORD: {
       /** 整備履歴登録完了 */
       REGISTER: "整備履歴を登録しました。",
+      /** 整備履歴更新完了 */
+      UPDATE: "整備履歴を更新しました。",
+      /** 整備履歴削除完了 */
+      DELETE: "整備履歴を削除しました。",
     },
   },
 

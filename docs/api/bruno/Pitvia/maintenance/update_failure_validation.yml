@@ -1,0 +1,40 @@
+info:
+  name: 整備履歴更新：異常系（バリデーションエラー）
+  type: http
+  seq: 25
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/maintenance-records/{{maintenanceRecordId}}
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "title": "",
+            "maintenanceType": null,
+            "workDateFrom": null,
+            "mileage": -1,
+            "workItems": []
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  必須項目（タイトル・整備種別・作業開始日）が空、走行距離が負数、作業項目が0件の
+  リクエストを送信し、400 Bad Requestとバリデーションエラー詳細（`error.validationErrors`）が
+  返ることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` → `list_success_owner.yml` の順で実行し、
+  `maintenanceRecordId` を保存しておく必要があります。

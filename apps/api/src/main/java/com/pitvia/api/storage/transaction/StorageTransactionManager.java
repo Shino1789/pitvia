@@ -5,6 +5,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.pitvia.api.storage.constant.ImageType;
@@ -111,9 +113,42 @@ public class StorageTransactionManager {
             cleanupUploadedFile(newKey);
             throw ex;
         }
-        // 後続処理成功時のみ古いファイルを削除
-        cleanupUploadedFile(oldKey);
+        // 後続処理（DB側の紐付け）が成功した場合のみ、古いファイルの削除をコミット後まで予約する
+        scheduleCleanupAfterCommit(oldKey);
         return result;
+    }
+
+    /**
+     * ストレージキーの削除を、現在アクティブなDBトランザクションのコミット完了後まで遅延させる
+     *
+     * <p>
+     * トランザクションがロールバックされた場合は削除を一切実行しない（DBが参照するキーと
+     * ストレージの実体が常に整合した状態を保つ）。呼び出し元がDBトランザクションの外側から
+     * 呼ばれた場合（本来想定しない使い方）は、遅延させる先が無いため即座に削除する。
+     * </p>
+     *
+     * @param key 削除対象のストレージキー
+     */
+    private void scheduleCleanupAfterCommit(String key) {
+
+        if (key == null || key.isBlank()) {
+            return;
+        }
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            // トランザクション外からの呼び出しは遅延先が無いため、従来通り即座に削除する
+            log.warn("No active transaction found. Deleting file immediately instead of deferring to after-commit. key={}", key);
+            cleanupUploadedFile(key);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                // コミットが確定して初めて、DBから参照されなくなった古いファイルを削除する
+                cleanupUploadedFile(key);
+            }
+        });
     }
 
     /**
