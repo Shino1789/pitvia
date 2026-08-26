@@ -18,11 +18,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { ReadOnlyValue } from "@/shared/ui/read-only-value";
 import { MaintenanceImageDropzone } from "./maintenance-image-dropzone";
 import { PartFields } from "./part-fields";
 import { EMPTY_PART_FORM_VALUES } from "../schemas/maintenance-record.schema";
 import type { MaintenanceRecordFormValues } from "../schemas/maintenance-record.schema";
-import { MAINTENANCE_CATEGORY_OPTIONS } from "@/shared/constants/maintenance-category";
+import {
+  MAINTENANCE_CATEGORY_LABELS,
+  MAINTENANCE_CATEGORY_OPTIONS,
+} from "@/shared/constants/maintenance-category";
 
 /**
  * Props型定義
@@ -103,13 +107,16 @@ export function WorkItemFields({
               <FormLabel className="text-sm" required={showRequiredMark}>
                 作業内容
               </FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="例：エンジンオイル交換、フィルター交換"
-                  disabled={isReadOnly}
-                  {...field}
-                />
-              </FormControl>
+              {isReadOnly ? (
+                <ReadOnlyValue value={field.value} />
+              ) : (
+                <FormControl>
+                  <Input
+                    placeholder="例：エンジンオイル交換、フィルター交換"
+                    {...field}
+                  />
+                </FormControl>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -124,24 +131,30 @@ export function WorkItemFields({
               <FormLabel className="text-sm" required={showRequiredMark}>
                 作業カテゴリ
               </FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-                disabled={isReadOnly}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="選択してください" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {MAINTENANCE_CATEGORY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isReadOnly ? (
+                <ReadOnlyValue
+                  value={
+                    MAINTENANCE_CATEGORY_LABELS[
+                      field.value as keyof typeof MAINTENANCE_CATEGORY_LABELS
+                    ]
+                  }
+                />
+              ) : (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="選択してください" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {MAINTENANCE_CATEGORY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -156,13 +169,13 @@ export function WorkItemFields({
               <FormLabel className="text-sm" required={showRequiredMark}>
                 担当者名
               </FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="例：ガレージ田中、DIY"
-                  disabled={isReadOnly}
-                  {...field}
-                />
-              </FormControl>
+              {isReadOnly ? (
+                <ReadOnlyValue value={field.value} />
+              ) : (
+                <FormControl>
+                  <Input placeholder="例：ガレージ田中、DIY" {...field} />
+                </FormControl>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -177,14 +190,17 @@ export function WorkItemFields({
               <FormLabel className="text-sm" required={showRequiredMark}>
                 工賃（¥）
               </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  disabled={isReadOnly}
-                  {...field}
+              {isReadOnly ? (
+                <ReadOnlyValue
+                  value={
+                    field.value ? Number(field.value).toLocaleString() : ""
+                  }
                 />
-              </FormControl>
+              ) : (
+                <FormControl>
+                  <Input type="number" inputMode="decimal" {...field} />
+                </FormControl>
+              )}
               <FormMessage />
             </FormItem>
           )}
