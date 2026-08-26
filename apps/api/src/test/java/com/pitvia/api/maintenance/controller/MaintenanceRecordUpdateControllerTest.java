@@ -58,6 +58,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
  * 整備履歴更新APIの結合テスト
@@ -443,6 +445,87 @@ class MaintenanceRecordUpdateControllerTest extends AbstractIntegrationTest {
         // Assert
         MaintenanceRecord updated = maintenanceRecordRepository.findById(record.getId()).orElseThrow();
         assertThat(updated.getWorkItems().get(0).getImages()).isEmpty();
+    }
+
+    /**
+     * 複数作業項目の更新において、先行する作業項目の画像差し替えは成功したものの、
+     * 後続の作業項目で検証エラーが発生しDB全体がロールバックされた場合：異常系。
+     *
+     * <p>
+     * QAで発見された不具合（{@link com.pitvia.api.storage.transaction.StorageTransactionManager}
+     * の旧ファイル即時削除により、DBロールバック後もストレージ上の旧画像が失われてしまう）の
+     * 再発防止テストにあたる。1件目の作業項目で画像差し替え自体は正常に行われるが、
+     * 2件目に存在しない作業項目IDを指定することで、その時点で例外がスローされリクエスト全体が
+     * ロールバックされる状況を再現する。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("整備履歴更新：異常系（先行項目の画像差し替え成功後、後続項目の検証エラーでロールバック→旧画像は保持される）")
+    void update_laterWorkItemFailsAfterImageReplace_oldImageNotLost() throws Exception {
+
+        // Arrange：画像付きの作業項目1件目と、画像なしの作業項目2件目を持つ整備記録を用意する
+        LoginSession owner = testUserHelper.loginOwner(mockMvc);
+        User ownerUser = findUser(owner);
+        Vehicle vehicle = createVehicle(ownerUser, "RX-7");
+        MaintenanceRecord record = createRecordWithImageAndSecondWorkItem(vehicle, owner);
+        Long workItem1Id = record.getWorkItems().get(0).getId();
+        String oldImageKey = record.getWorkItems().get(0).getImages().get(0).getImageKey();
+
+        // Act：1件目は画像を差し替えつつ、2件目に存在しない作業項目IDを指定して更新を試みる
+        // （applyWorkItemsはインデックス順に処理されるため、1件目の画像差し替え処理を通過した後、
+        // 2件目でMAINTENANCE_WORK_ITEM_NOT_FOUNDがスローされ、リクエスト全体がロールバックされる）
+        String requestJson = """
+                {
+                    "title": "整備タイトル",
+                    "maintenanceType": "REPAIR",
+                    "workDateFrom": "2026-05-01",
+                    "mileage": 81000,
+                    "workItems": [
+                        {
+                            "id": %d,
+                            "maintenanceCategory": "ENGINE",
+                            "workContent": "エンジンオイル交換",
+                            "performedBy": "ガレージ田中",
+                            "laborCost": 2000,
+                            "parts": []
+                        },
+                        {
+                            "id": 999999,
+                            "maintenanceCategory": "ENGINE",
+                            "workContent": "存在しないID",
+                            "performedBy": "ガレージ田中",
+                            "laborCost": 1000,
+                            "parts": []
+                        }
+                    ]
+                }
+                """.formatted(workItem1Id);
+
+        mockMvc.perform(multipart(HttpMethod.PUT, ApiPaths.MAINTENANCE_RECORD + "/" + record.getId())
+                .file(new MockMultipartFile("request", "", "application/json", requestJson.getBytes()))
+                .file(new MockMultipartFile("workItemImage_0", "work_new.png", "image/png", createTestPngBytes()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("MAINTENANCE_WORK_ITEM_NOT_FOUND"));
+
+        // Assert：DBはロールバックされ、1件目の作業項目は旧画像キーを参照したままであること
+        // （本テストクラスはAbstractIntegrationTestによりテストメソッド全体が1つのトランザクションで
+        // 包まれており、update()呼び出しもその同一トランザクションに参加する。そのため、
+        // 1件目の作業項目の変更はメモリ上ではミュータブルなHibernate管理エンティティに残ったままとなり、
+        // 単純なfindById()では永続化コンテキストの1次キャッシュから同一インスタンスが返され、
+        // 実際にはDBへ書き込まれていない変更も含めて見えてしまう。ここではentityManager.clear()で
+        // 1次キャッシュを明示的に破棄し、DBへ実際に書き込まれた状態のみを反映した結果を取得する
+        entityManager.clear();
+        MaintenanceRecord unchanged = maintenanceRecordRepository.findById(record.getId()).orElseThrow();
+        assertThat(unchanged.getWorkItems().get(0).getImages()).hasSize(1);
+        assertThat(unchanged.getWorkItems().get(0).getImages().get(0).getImageKey()).isEqualTo(oldImageKey);
+
+        // Assert：旧画像の実体がストレージから削除されずに残っていること
+        // （AbstractIntegrationTestのテスト用トランザクションは常にロールバックされ、
+        // afterCommit()は一度も発火しないため、旧ファイル削除処理そのものが実行されないはず）
+        assertThat(objectExistsInStorage(oldImageKey)).isTrue();
     }
 
     /**
@@ -854,6 +937,121 @@ class MaintenanceRecordUpdateControllerTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk());
 
         return maintenanceRecordRepository.findById(saved.getId()).orElseThrow();
+    }
+
+    /**
+     * テスト用の整備記録を、画像付きの作業項目1件と、画像なしの作業項目1件（合計2件）を伴って作成・保存する
+     *
+     * <p>
+     * {@link #createRecordWithImage}と同様、画像は先にDBへ直接保存した後、
+     * 確定したIDを使って更新API自体を1回呼ぶことで紐づける。
+     * </p>
+     *
+     * @param vehicle 対象車両
+     * @param creator 登録者のログインセッション（画像シード用の更新APIリクエストに使用）
+     * @return 保存済みの整備記録エンティティ
+     * @throws Exception 画像の生成、またはシード用の更新APIリクエストに失敗した場合
+     */
+    private MaintenanceRecord createRecordWithImageAndSecondWorkItem(Vehicle vehicle, LoginSession creator)
+            throws Exception {
+
+        User createdByUser = findUser(creator);
+        MaintenanceRecord record = buildBaseRecord(vehicle, createdByUser, null, "整備タイトル");
+
+        MaintenanceWorkItem workItem1 = MaintenanceWorkItem.builder()
+                .maintenanceRecord(record)
+                .maintenanceCategory(findCategory("ENGINE"))
+                .workContent("エンジンオイル交換")
+                .performedBy("ガレージ田中")
+                .laborCost(BigDecimal.valueOf(2000))
+                .sortOrder(0)
+                .build();
+
+        MaintenanceWorkItem workItem2 = MaintenanceWorkItem.builder()
+                .maintenanceRecord(record)
+                .maintenanceCategory(findCategory("BRAKE"))
+                .workContent("ブレーキフルード点検")
+                .performedBy("ガレージ田中")
+                .laborCost(BigDecimal.valueOf(1000))
+                .sortOrder(1)
+                .build();
+
+        record.getWorkItems().add(workItem1);
+        record.getWorkItems().add(workItem2);
+        MaintenanceRecord saved = maintenanceRecordRepository.save(record);
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", "application/json", buildTwoWorkItemsUpdateJson(
+                        saved.getWorkItems().get(0).getId(), saved.getWorkItems().get(1).getId()).getBytes());
+        MockMultipartFile imagePart = new MockMultipartFile(
+                "workItemImage_0", "work.png", "image/png", createTestPngBytes());
+
+        mockMvc.perform(multipart(HttpMethod.PUT, ApiPaths.MAINTENANCE_RECORD + "/" + saved.getId())
+                .file(requestPart)
+                .file(imagePart)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + creator.accessToken()))
+                .andExpect(status().isOk());
+
+        return maintenanceRecordRepository.findById(saved.getId()).orElseThrow();
+    }
+
+    /**
+     * {@link #createRecordWithImageAndSecondWorkItem}で画像を事前アップロードするための、
+     * 作業項目2件分の最小限の更新リクエストJSONを組み立てる
+     *
+     * @param workItem1Id 1件目の作業項目ID
+     * @param workItem2Id 2件目の作業項目ID
+     * @return リクエストJSON文字列
+     */
+    private String buildTwoWorkItemsUpdateJson(Long workItem1Id, Long workItem2Id) {
+        return """
+                {
+                    "title": "整備タイトル",
+                    "maintenanceType": "REPAIR",
+                    "workDateFrom": "2026-05-01",
+                    "mileage": 80000,
+                    "workItems": [
+                        {
+                            "id": %d,
+                            "maintenanceCategory": "ENGINE",
+                            "workContent": "エンジンオイル交換",
+                            "performedBy": "ガレージ田中",
+                            "laborCost": 2000,
+                            "parts": []
+                        },
+                        {
+                            "id": %d,
+                            "maintenanceCategory": "BRAKE",
+                            "workContent": "ブレーキフルード点検",
+                            "performedBy": "ガレージ田中",
+                            "laborCost": 1000,
+                            "parts": []
+                        }
+                    ]
+                }
+                """.formatted(workItem1Id, workItem2Id);
+    }
+
+    /**
+     * 指定したストレージキーのオブジェクトが、MinIOコンテナ上に実在するかどうかを確認する
+     *
+     * @param key 確認対象のストレージキー
+     * @return オブジェクトが存在する場合は{@code true}
+     */
+    private boolean objectExistsInStorage(String key) {
+        try (S3Client client = S3Client.builder()
+                .region(Region.of("us-east-1"))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(STORAGE_ACCESS_KEY, STORAGE_SECRET_KEY)))
+                .endpointOverride(URI.create(minio.getS3URL()))
+                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+                .build()) {
+
+            client.headObject(HeadObjectRequest.builder().bucket(STORAGE_BUCKET).key(key).build());
+            return true;
+        } catch (NoSuchKeyException ex) {
+            return false;
+        }
     }
 
     /**
