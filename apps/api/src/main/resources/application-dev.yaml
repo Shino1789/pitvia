@@ -2,6 +2,11 @@
 # Spring Boot 開発環境設定
 # ==================================================
 spring:
+  # Flyway設定
+  flyway:
+    # 実スキーマおよび、開発検証用のモックデータのパス
+    locations: classpath:db/migration,classpath:db/mock
+
   jpa:
     hibernate:
       ddl-auto: validate
