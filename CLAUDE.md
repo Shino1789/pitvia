@@ -26,7 +26,7 @@ Pitvia（走るクルマのための整備記録・ショップ連携アプリ�
   - ER図（DBML）
 
 - `docs/api/openapi.yaml`
-  - OpenAPI仕様（最新化未対応）
+  - OpenAPI仕様
 
 - `docs/api/bruno/`
   - Bruno APIコレクション
@@ -462,7 +462,8 @@ Flyway を利用しています。
 配置場所
 
 ```
-src/main/resources/db/migration/
+src/main/resources/db/migration/  … 実スキーマ（本番にも適用）
+src/main/resources/db/mock/       … development/test専用のモック・テストデータ
 ```
 
 命名規則
@@ -491,6 +492,17 @@ V1000以上
 ```
 
 としてください。
+
+本番（production）にモック・テストデータを絶対に投入しないよう、`spring.flyway.locations` を
+Spring Profileごとに出し分けています。
+
+```
+application.yaml       … classpath:db/migration（共通・本番デフォルト）
+application-dev.yml    … classpath:db/migration,classpath:db/mock
+application-test.yml   … classpath:db/migration,classpath:db/mock
+```
+
+`db/mock/` 配下に新しいファイルを追加する場合も、上記のバージョン番号規則（V1000以上）に従ってください。
 
 ---
 
