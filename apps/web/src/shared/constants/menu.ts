@@ -49,21 +49,24 @@ export const MENU_ITEMS: MenuItem[] = [
     path: ROUTES.SHOPS,
     roles: ["OWNER"],
     icon: Store,
-    sidebar: true,
+    // TODO: ショップ連携機能（連携済みショップ一覧画面）実装後にtrueへ戻す
+    sidebar: false,
   },
   {
     label: "顧客管理",
     path: ROUTES.CUSTOMERS,
     roles: ["SHOP"],
     icon: Users,
-    sidebar: true,
+    // TODO: 顧客管理機能（顧客一覧画面）実装後にtrueへ戻す
+    sidebar: false,
   },
   {
     label: "アカウント設定",
     path: ROUTES.SETTINGS,
     roles: ["OWNER", "SHOP"],
     icon: Settings,
-    sidebar: true,
+    // TODO: アカウント設定画面実装後にtrueへ戻す
+    sidebar: false,
   },
 ];
 
