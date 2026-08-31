@@ -1,0 +1,27 @@
+info:
+  name: 車両登録フォーム選択肢取得：正常系（CAR）
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles/form-options?vehicleType=CAR
+  params:
+    - name: vehicleType
+      value: CAR
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  車両登録フォーム（CAR）の初期化に必要な選択肢一式（メーカー、トランスミッション形式、駆動方式）を取得する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

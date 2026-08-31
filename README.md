@@ -1,12 +1,12 @@
-# Pit Note
+# Pitvia
 
 **走るクルマのための整備記録・ショップ連携アプリ**
 
-Pit Note は、スポーツカー・旧車・カスタムカーオーナー向けに、
+Pitvia は、スポーツカー・旧車・カスタムカーオーナー向けに、
 整備履歴・ショップ連携を一元管理できる Web アプリケーションです。
 
 一般的な整備記録アプリが「日常メンテナンス管理」を主軸とする中、
-Pit Note は **走る楽しさ・維持する楽しさ・育てる楽しさ** にフォーカスしたサービスを目指します。
+Pitvia は **走る楽しさ・維持する楽しさ・育てる楽しさ** にフォーカスしたサービスを目指します。
 
 ---
 
@@ -28,7 +28,7 @@ Pit Note は **走る楽しさ・維持する楽しさ・育てる楽しさ** �
 
 といった独自ニーズがあります。
 
-Pit Note は、そうしたユーザー向けに設計されたサービスです。
+Pitvia は、そうしたユーザー向けに設計されたサービスです。
 
 ---
 
@@ -56,7 +56,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 - サーキット走行ユーザー
 - カスタムカーオーナー
 
-## ショップ（管理者）
+## ショップ（事業者・店舗）
 
 - 整備工場
 - チューニングショップ
@@ -68,19 +68,19 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 # 主な機能
 
-# 1. アカウント機能
+## 1. アカウント機能
 
 - 新規登録 / ログイン
 - ロール権限管理
 
 ### 権限種別
 
-- 一般ユーザー（オーナー）
-- 管理者（ショップ）
+- 一般ユーザー（OWNER）
+- 事業者・店舗（SHOP）
 
 ---
 
-# 2. 車両管理
+## 2. 車両管理
 
 - 複数台登録対応
 - メーカー
@@ -93,7 +93,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ---
 
-# 3. 整備・カスタム履歴管理
+## 3. 整備・カスタム履歴管理
 
 - 作業日
 - 走行距離
@@ -108,7 +108,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ---
 
-# 4. コスト管理
+## 4. コスト管理
 
 - 月別維持費
 - 年別維持費
@@ -117,14 +117,14 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ---
 
-# 5. ショップ連携
+## 5. ショップ連携
 
 車両単位でオーナーとショップを連携し、
 整備履歴を双方で共有できます。
 
 ---
 
-# 今後実装予定
+## 今後実装予定
 
 - LINE通知連携
 - 車検証OCR読み取り
@@ -135,7 +135,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ---
 
-# Pit Note の差別化ポイント
+# Pitvia の差別化ポイント
 
 一般的な整備管理アプリとの違いとして、以下を重視します。
 
@@ -145,7 +145,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 - 車検管理
 - 整備記録保存
 
-## Pit Note
+## Pitvia
 
 - スポーツカー特化
 - 旧車特化
@@ -158,8 +158,8 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ## Frontend
 
-- React
 - TypeScript
+- Next.js
 - Tailwind CSS
 
 ## Backend
@@ -167,7 +167,7 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 - Java
 - Spring Boot
 - Spring Security
-- Spring JPA
+- Spring Data JPA
 
 ## Database
 
@@ -175,72 +175,77 @@ Pit Note は、そうしたユーザー向けに設計されたサービスで�
 
 ## Infrastructure
 
-- AWS (またはRender/Vercel)
+- AWS
+- Vercel
 - Docker
 - Docker Compose
-- Nginx
 
 ## 開発ツール
 
 - Git / GitHub
 - VS Code
-- STS
 - DBeaver
 - draw.io (システム構成図)
 - dbdiagram.io (ER図)
-- Figma (画面遷移図、コンポーネント設計)
+- Figma (画面モックデザイン)
 - Swagger UI
+- Bruno
 
 ## 生成AI
 
 - ChatGPT (要件整理・設計レビュー)
-- Stitch (画面モック作成)
+- Stitch (画面モック生成)
 - V0 (UIプロトタイピング)
+- Claude Code (実装・バグ調査・セキュリティ調査)
 
 ---
 
 ## ディレクトリ構成
 
 ```text
-pit-note/
+pitvia/
     ├── .editorconfig
     ├── .gitattributes
     ├── .gitignore
     ├── .env.dev
     ├── .env.example
-    ├── .env.prod
     ├── docker-compose.dev.yml
-    ├── docker-compose.prod.yml
-    ├── docker-compose.yml
     ├── .github/
     │   ├── pull_request_template.md
     │   └── workflows/
     ├── apps/
-    │   ├── web/        # React フロント
+    │   ├── web/        # Next.js
     │   ├── api/        # Spring Boot API
-    │   └── mobile/     # 未実装 (今後の課題)
+    │   └── mobile/     # 将来対応予定
     ├── infra/
-    │   ├── docker/
-    │   │   ├── api/
-    │   │   │   └── Dockerfile
-    │   │   └── web/
-    │   │       └── Dockerfile
-    │   └── nginx/
-    │       └── nginx.conf
+    │   └── docker/
+    │       ├── api/
+    │       │   └── Dockerfile
+    │       └── web/
+    │           └── Dockerfile
+    ├── scripts/
+    │   ├── up.sh
+    │   ├── down.sh
+    │   ├── logs.sh
+    │   └── reset.sh
     ├── docs/
+    │   ├── architecture/
+    │   │   └── architecture.drawio       # draw.ioで作成したアプリ構成図
     │   ├── ui/
     │   │   └── figma-link.md
     │   ├── api/
-    │   │   ├── openapi.yml
-    │   │   └── swagger-link.md
+    │   │   ├── bruno/
+    │   │   └── openapi.yaml
     │   ├── db/
-    │   │   └── schema.dbml          # dbdiagram.ioで作成したdbml
+    │   │   └── schema.dbml               # dbdiagram.ioで作成したdbml
+    │   ├── deployment/
+    │   │   └── environment-variables.md  # β版本番環境の環境変数・Secrets管理方針
     │   └── images/
-    │       ├── architecture.png     # drow.ioで作成したアプリ構成図
-    │       ├── er.png
-    │       └── screen-flow.png
+    │       ├── architecture.png
+    │       └── er.png
     ├── LICENSE
+    ├── CLAUDE.md
     └── README.md
 ```
 
-※ 詳細な設計・構成については各READMEを参照
+※ 詳細設計については docs 配下を参照

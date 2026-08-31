@@ -1,0 +1,30 @@
+info:
+  name: 車両一覧（顧客車両）：異常系（オーナー不存在）
+  type: http
+  seq: 12
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/vehicles?ownerId=00000000-0000-0000-0000-000000000000
+  params:
+    - name: ownerId
+      value: 00000000-0000-0000-0000-000000000000
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  存在しないownerIdを指定した場合、`list_failure_shop_not_shared`（共有関係なし）と
+  全く同じ404（VEHICLE_OWNER_NOT_FOUND）が返ることを確認する。
+  ステータス・エラーコードが同一であることにより、対象ユーザーの存在有無を
+  外部から推測できないことを検証する。
+
+  ※実行前に `auth/login_success_shop.yml` でログインし、トークンが保持されている必要があります。

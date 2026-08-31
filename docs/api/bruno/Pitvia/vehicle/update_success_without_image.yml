@@ -1,0 +1,47 @@
+info:
+  name: 車両更新：正常系（画像変更なし）
+  type: http
+  seq: 19
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/vehicles/c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "RX-7",
+            "manufacturerId": 4,
+            "modelCode": "FD3S",
+            "engineCode": "13B-REW",
+            "modelYear": 2002,
+            "licensePlate": "品川 300 な 77-77",
+            "currentMileage": 86000,
+            "transmissionType": "MT",
+            "driveType": "FR",
+            "memo": "Brunoテストで更新（走行距離のみ変更）"
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  OWNERが自身の車両（RX-7）をfileパート無しで更新する。既存の画像（imageKey）は
+  変更されず、走行距離等のフィールドのみが更新されることを確認する。200 OKが返ることを確認する。
+
+  ※本リクエストはモックデータ（RX-7）のcurrentMileage/memoを実際に書き換えます。
+  リクエスト内容は固定値のため、何度実行しても同じ結果になります（冪等）。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

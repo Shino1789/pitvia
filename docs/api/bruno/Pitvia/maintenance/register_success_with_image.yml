@@ -1,0 +1,68 @@
+info:
+  name: 整備履歴登録：正常系（画像あり）
+  type: http
+  seq: 14
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/maintenance-records
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+            "title": "車検対応",
+            "maintenanceType": "VEHICLE_INSPECTION",
+            "workDateFrom": "2026-04-10",
+            "workDateTo": "2026-04-10",
+            "mileage": 86200,
+            "remarks": "Brunoテスト用（画像あり）",
+            "workItems": [
+              {
+                "maintenanceCategory": "ENGINE",
+                "workContent": "エンジンオイル交換",
+                "performedBy": "ガレージ田中",
+                "laborCost": 2000,
+                "parts": [
+                  {
+                    "partCondition": "NEW",
+                    "partName": "エンジンオイル 5W-30",
+                    "manufacturerName": "カストロール",
+                    "partModelNumber": null,
+                    "quantity": 4,
+                    "unitPrice": 1500
+                  }
+                ]
+              }
+            ]
+          }
+      - name: workItemImage_0
+        type: file
+        value:
+          - vehicle/assets/sample-icon.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  OWNERが自身の車両（RX-7）に、作業項目1件・交換部品1件・作業項目の整備画像1枚を添付して
+  整備履歴を登録し、201 Created が返ることを確認する。
+  作業項目ごとの画像は `workItemImage_{index}`（`index`はworkItems配列のインデックス）
+  という名前のパートで送信する。本ケースはworkItems[0]に画像を添付するため
+  `workItemImage_0`パートのみ送信する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
+  ※ファイルパスがBruno上で解決できない場合は、コレクション内の
+  `vehicle/assets/sample-icon.png` を選択し直してください。

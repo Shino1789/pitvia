@@ -1,0 +1,179 @@
+# ==================================================
+# Docker Compose - Development Environment
+# 開発環境用コンテナ定義
+# ==================================================
+
+services:
+  # ==================================================
+  # Next.js
+  # ==================================================
+  web:
+    image: node:22-alpine
+
+    container_name: pitvia-web
+
+    # コンテナ再起動設定
+    restart: "no"
+
+    # コンテナ内作業ディレクトリ
+    working_dir: /app
+
+    # 依存ライブラリをインストールしてNext.js起動
+    command: sh -c "npm install && npm run dev"
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env.dev
+
+    environment:
+      WATCHPACK_POLLING: true
+
+    volumes:
+      # ソースコード同期(hot reload)
+      - ./apps/web:/app
+      # node_modules 永続化
+      - node-modules:/app/node_modules
+      # 無限リロード防止
+      - /app/.next
+
+  # ==================================================
+  # Spring Boot API
+  # ==================================================
+  api:
+    image: gradle:8.14.0-jdk21
+
+    container_name: pitvia-api
+
+    restart: "no"
+
+    # コンテナ内作業ディレクトリ
+    working_dir: /app
+
+    # Spring Boot起動
+    command: ./gradlew bootRun --no-daemon
+
+    ports:
+      - "${SERVER_PORT}:8080"
+
+    env_file:
+      - .env.dev
+
+    volumes:
+      # ソースコード同期(hot reload)
+      - ./apps/api:/app
+      # Gradleキャッシュ永続化
+      - gradle-cache:/home/gradle/.gradle
+
+    depends_on:
+      db:
+        condition: service_healthy
+      # バケット生成コンテナが正常終了するまで起動を待機
+      create-bucket:
+        condition: service_completed_successfully
+
+  # ==================================================
+  # PostgreSQL
+  # ==================================================
+  db:
+    image: postgres:17-alpine
+    container_name: pitvia-db
+
+    # コンテナ再起動設定
+    restart: "no"
+
+    ports:
+      - "${DB_PORT}:5432"
+
+    env_file:
+      - .env.dev
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    volumes:
+      # DBデータ永続化
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================================================
+  # MinIO (Object Storage)
+  # ==================================================
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    container_name: pitvia-minio
+
+    restart: "no"
+
+    # APIポート(9000)とWeb管理コンソール(9001)を開放
+    ports:
+      - "${STORAGE_PORT}:9000"
+      - "${STORAGE_CONSOLE_PORT}:9001"
+
+    env_file:
+      - .env.dev
+
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+
+    # 永続化ストレージ指定とWebコンソールのバインド
+    command: server /data --console-address ":9001"
+
+    volumes:
+      - minio-data:/data
+
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ==================================================
+  # MinIO Bucket Auto Creator
+  # MinIO起動時に自動でバケットを作成＆公開権限を付与する初期化用ワンショットコンテナ
+  # ==================================================
+  create-bucket:
+    image: minio/mc:RELEASE.2024-11-05T11-29-45Z
+    container_name: pitvia-minio-init
+
+    restart: "no"
+
+    env_file:
+      - .env.dev
+
+    depends_on:
+      minio:
+        condition: service_healthy
+
+    entrypoint: ["/bin/sh", "-c"]
+
+    # 1. Alias設定 ➔ 2. バケット作成 ➔ 3. 誰でも画像読み込み(GET)できるように公開ポリシー設定
+    command: >
+      "
+      until mc alias set myminio http://minio:9000 $STORAGE_ACCESS_KEY $STORAGE_SECRET_KEY; do
+        echo 'Waiting for MinIO...';
+        sleep 1;
+      done;
+      mc mb myminio/$STORAGE_BUCKET --ignore-existing;
+      mc anonymous set download myminio/$STORAGE_BUCKET;
+      exit 0;
+      "
+
+# ==================================================
+# Volume定義
+# ==================================================
+volumes:
+  node-modules:
+  gradle-cache:
+  postgres-data:
+  minio-data:

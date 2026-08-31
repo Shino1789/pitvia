@@ -1,0 +1,33 @@
+info:
+  name: 整備履歴一覧：異常系（vehicleId・ownerId同時指定）
+  type: http
+  seq: 13
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records?vehicleId=c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33&ownerId=a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+  params:
+    - name: vehicleId
+      value: c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33
+      type: query
+    - name: ownerId
+      value: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  `vehicleId`と`ownerId`を同時に指定した場合、`vehicleId`が指定されていれば対象車両の
+  所有者は一意に決まり両方指定すること自体が不正なリクエストとなるため、
+  400 Bad Request（`VEHICLE_ID_OWNER_ID_CONFLICT`）が返ることを確認する。
+
+  ※実行前に、モックデータ用SHOPアカウント（shop@example.com / password123）で
+  `POST /auth/login` を実行し、そのアクセストークンを `accessToken` 環境変数へ設定してください。

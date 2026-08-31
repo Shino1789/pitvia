@@ -25,6 +25,10 @@ bin/
 *.jar
 *.war
 
+!gradlew
+!gradlew.bat
+!gradle/wrapper/gradle-wrapper.jar
+!apps/api/gradle/wrapper/gradle-wrapper.jar
 
 # ==================================================
 # Logs
@@ -36,10 +40,8 @@ logs/
 # ==================================================
 # Environment
 # ==================================================
-.env
-.env.dev
-.env.prod
-.env.local
+.env*
+!.env.example
 
 
 # ==================================================
@@ -63,6 +65,7 @@ Thumbs.db
 # Generated
 # ==================================================
 generated/
+*.tsbuildinfo
 
 
 # ==================================================

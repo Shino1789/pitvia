@@ -1,0 +1,67 @@
+<configuration>
+
+    <!-- ================================================== -->
+    <!-- ログディレクトリ -->
+    <!-- ================================================== -->
+    <property name="LOG_PATH" value="./logs" />
+
+    <!-- ================================================== -->
+    <!-- 共通ログフォーマット -->
+    <!-- ================================================== -->
+    <property
+        name="LOG_PATTERN"
+        value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [req=%X{requestId:-SYSTEM}] [user=%X{userId:-ANONYMOUS}] [role=%X{role:-ANONYMOUS}] [method=%X{method:-SYSTEM}] [path=%X{path:-SYSTEM}] %logger{36} - %msg%n" />
+
+    <!-- ================================================== -->
+    <!-- Console -->
+    <!-- ================================================== -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ================================================== -->
+    <!-- 開発環境 -->
+    <!-- ================================================== -->
+    <springProfile name="dev">
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/app.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>7</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+        </root>
+        <!-- Spring Frameworkログ -->
+        <logger name="org.springframework" level="INFO" />
+        <!-- アプリケーションログ -->
+        <logger name="com.pitvia" level="DEBUG" />
+        <!-- SQLログ -->
+        <logger name="org.hibernate.SQL" level="DEBUG" />
+        <!-- SQLバインド値 -->
+        <logger name="org.hibernate.orm.jdbc.bind" level="TRACE" />
+    </springProfile>
+
+    <!-- ================================================== -->
+    <!-- 本番環境 -->
+    <!-- ================================================== -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+        <!-- Spring Frameworkログ -->
+        <logger name="org.springframework" level="WARN" />
+        <!-- アプリケーションログ -->
+        <logger name="com.pitvia" level="INFO" />
+        <!-- SQLログ -->
+        <logger name="org.hibernate.SQL" level="WARN" />
+    </springProfile>
+
+</configuration>

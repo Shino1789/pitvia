@@ -1,0 +1,33 @@
+info:
+  name: 整備履歴一覧（ページング）：正常系
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records?page=2&size=5
+  params:
+    - name: page
+      value: "2"
+      type: query
+    - name: size
+      value: "5"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  `page=2&size=5`を指定し、2ページ目（6件目〜10件目）が返ることを確認する。
+  `data.records.page`が2、`data.records.size`が5、`data.records.content.length`が5、
+  `data.records.totalElements`・`data.records.totalPages`が全体件数と一致することを確認する
+  （モックデータではRX-7に約19〜20件の整備履歴が存在する）。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

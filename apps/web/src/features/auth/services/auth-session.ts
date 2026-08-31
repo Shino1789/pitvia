@@ -1,0 +1,123 @@
+import axios from "axios";
+import { authApi } from "../api/auth-api";
+import { useAuthStore } from "@/stores/auth-store";
+import { queryClient } from "@/providers/query-provider";
+import type { LoginRequest, RegisterRequest } from "../types/auth";
+
+/** 現在実行中のサイレントリフレッシュのPromiseを保持する変数 */
+let refreshPromise: Promise<string> | null = null;
+
+/**
+ * 認証セッションサービス
+ */
+export const authSession = {
+  /**
+   * アプリ起動（画面リロード）時の認証セッション復元処理
+   *
+   * @returns {Promise<void>}
+   */
+  restoreSession: async (): Promise<void> => {
+    // サイレントリフレッシュ処理を呼び出してセッションを復元
+    await authSession.refresh();
+  },
+
+  /**
+   * ログイン認証処理
+   *
+   * @param credentials ログインリクエストデータ（メールアドレス、パスワード）
+   * @returns {Promise<void>}
+   */
+  login: async (credentials: LoginRequest): Promise<void> => {
+    // Zustandのストアインスタンスを取得
+    const store = useAuthStore.getState();
+    // ログインAPIリクエスト実行
+    const response = await authApi.login(credentials);
+    // レスポンスからトークンとユーザー情報を取得
+    const data = response.data.data;
+
+    // 取得した最新のAccessTokenとUser情報をグローバルストアに反映し、認証済み状態に更新
+    store.setAuth(data.accessToken, data.user);
+  },
+
+  /**
+   * 新規アカウント登録処理
+   *
+   * @param data 新規アカウント登録リクエストデータ
+   * @returns {Promise<void>}
+   */
+  register: async (data: RegisterRequest): Promise<void> => {
+    // 新規アカウント登録APIリクエスト実行
+    await authApi.register(data);
+  },
+
+  /**
+   * ログアウト処理
+   *
+   * @returns {Promise<void>}
+   */
+  logout: async (): Promise<void> => {
+    // Zustandのストアインスタンスを取得
+    const store = useAuthStore.getState();
+    try {
+      // ログアウトAPIリクエスト実行
+      await authApi.logout();
+    } finally {
+      // ログアウト時にキャッシュを完全にクリアして別ユーザーへの混入を防ぐ
+      queryClient.clear();
+      // API通信が成功したか失敗したかに関わらず、認証ストアの情報をクリアして未ログイン状態にする
+      store.clearAuth();
+    }
+  },
+
+  /**
+   * サイレントリフレッシュ処理（非同期排他制御）
+   *
+   * @returns {Promise<string>} 再発行された新しいアクセストークン
+   * @throws {Error} レスポンスデータが不正な場合
+   * @throws {AxiosError} リフレッシュAPI通信でエラーが発生した場合
+   */
+  refresh: async (): Promise<string> => {
+    // すでにリフレッシュ通信が実行中の場合は、その通信のPromiseを返却して多重リクエストを防止
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+
+    // 新規にリフレッシュ通信を実行し、Promiseを制御用変数に格納
+    refreshPromise = (async () => {
+      // Zustandのストアインスタンスを取得
+      const store = useAuthStore.getState();
+      try {
+        // リフレッシュAPIリクエスト
+        const response = await authApi.refresh();
+        const data = response.data?.data;
+
+        // 取得したデータの中にアクセストークン、またはユーザー情報が欠落している場合
+        if (!data?.accessToken || !data.user) {
+          // 不正なデータとして明示的にエラーをスローし、catchブロックへ飛ばす
+          throw new Error("Refresh response is invalid.");
+        }
+
+        // 新しいトークンとユーザー情報をストアに再セット
+        store.setAuth(data.accessToken, data.user);
+        // インターセプター側が再試行リクエストで使えるように、新トークンを返す
+        return data.accessToken;
+      } catch (error) {
+        // 400または401エラー、またはデータ不正による明示的エラーの場合
+        if (
+          !axios.isAxiosError(error) ||
+          error.response?.status === 401 ||
+          error.response?.status === 400
+        ) {
+          // ストア情報をクリアして未ログイン状態にする
+          store.clearAuth();
+        }
+        throw error;
+      }
+    })().finally(() => {
+      // 通信の成否に関わらず、完了後に制御用変数を初期化
+      refreshPromise = null;
+    });
+
+    return refreshPromise;
+  },
+};

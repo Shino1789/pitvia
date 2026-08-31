@@ -1,0 +1,28 @@
+info:
+  name: 整備履歴一覧（並び替え・古い順）：正常系
+  type: http
+  seq: 7
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records?sort=WORK_DATE_ASC
+  params:
+    - name: sort
+      value: WORK_DATE_ASC
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  `sort=WORK_DATE_ASC`を指定し、作業開始日が古い順に並び替えられることを確認する
+  （デフォルトの`WORK_DATE_DESC`と逆順になっていることを確認）。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

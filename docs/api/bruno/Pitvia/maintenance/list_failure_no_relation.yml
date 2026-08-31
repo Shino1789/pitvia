@@ -1,0 +1,34 @@
+info:
+  name: 整備履歴一覧：異常系（無関係な車両）
+  type: http
+  seq: 11
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records?vehicleId=d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44
+  params:
+    - name: vehicleId
+      value: d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  OWNER（オーナーテスト）が、自身が所有せず車両共有関係も無い車両
+  （SHOPのデモカー GT-R）の整備履歴を取得しようとするケース。
+  404 Not Found（`VEHICLE_NOT_FOUND`）が返ることを確認する。
+
+  ※モックデータには「車両は実在するがSHOPと未共有」という組み合わせが無いため、
+  「SHOPが未共有車両を指定するケース」も本テストと全く同じ認可分岐
+  （所有者でもなく、SHOPとしての承認済み連携も無い→404）を通ることを確認する目的で
+  代替しています。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

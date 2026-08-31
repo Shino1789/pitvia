@@ -1,0 +1,37 @@
+info:
+  name: ダッシュボードグラフデータ取得
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/dashboard/chart?period=MONTH&endPeriod=2026-07&size=6
+  params:
+    - name: period
+      value: MONTH
+      type: query
+    - name: endPeriod
+      value: 2026-07
+      type: query
+    - name: size
+      value: "6"
+      type: query
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【ダッシュボードグラフデータ取得API】
+  ログイン中のユーザー権限（OWNER/SHOP）に応じたグラフ表示用の集計データを単体で取得する。
+  フロントエンドでの「月次・年次切り替え」や「遡りボタン」が押された際の非同期更新で使用される。
+
+  ■ バリデーション検証パターン
+  1. 正常系（月次）: period=MONTH, endPeriod=2026-07, size=6
+
+  ※実行前に `auth/login_success_owner.yml` もしくは `auth/login_success_shop.yml` でログインし、トークンが保持されている必要があります。

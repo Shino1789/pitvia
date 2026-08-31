@@ -1,0 +1,51 @@
+info:
+  name: 車両更新：正常系（画像削除）
+  type: http
+  seq: 26
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/vehicles/c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleType": "CAR",
+            "modelName": "RX-7",
+            "manufacturerId": 4,
+            "modelCode": "FD3S",
+            "engineCode": "13B-REW",
+            "modelYear": 2002,
+            "licensePlate": "品川 300 な 77-77",
+            "currentMileage": 86000,
+            "transmissionType": "MT",
+            "driveType": "FR",
+            "memo": "Brunoテストで画像を削除",
+            "removeImage": true
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  `file`パートを付けず`removeImage: true`のみを指定し、既存の車両画像（RX-7）を削除する。
+  200 OKが返り、以降`GET /vehicles/{vehicleId}`の`data.imageUrl`がnullになることを確認する。
+
+  ストレージ上の実ファイルはこのリクエストの時点では削除されず、DB上の画像参照
+  （imageKey）が外れるのみ。実ファイルは孤児ファイルクリーンアップの定期処理により、
+  猶予期間経過後に自動的に回収される。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
+  ※本リクエストはモックデータ（RX-7）の画像設定を実際に書き換えます。事前に
+  `update_success_with_image.yml`を実行して画像を設定した状態で試すと挙動が分かりやすいです。

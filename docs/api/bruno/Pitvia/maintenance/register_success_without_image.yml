@@ -1,0 +1,66 @@
+info:
+  name: 整備履歴登録：正常系（画像なし・複数作業項目）
+  type: http
+  seq: 15
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/maintenance-records
+  body:
+    type: multipart-form
+    data:
+      - name: request
+        type: text
+        contentType: application/json
+        value: |-
+          {
+            "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+            "title": "定期メンテナンス",
+            "maintenanceType": "PERIODIC_MAINTENANCE",
+            "workDateFrom": "2026-05-01",
+            "workDateTo": null,
+            "mileage": 85500,
+            "remarks": null,
+            "workItems": [
+              {
+                "maintenanceCategory": "ENGINE",
+                "workContent": "エンジンオイル＆フィルター交換",
+                "performedBy": "オーナー本人（DIY）",
+                "laborCost": 0,
+                "parts": [
+                  {
+                    "partCondition": "NEW",
+                    "partName": "オイルフィルター",
+                    "manufacturerName": null,
+                    "partModelNumber": "C-111",
+                    "quantity": 1,
+                    "unitPrice": 1200
+                  }
+                ]
+              },
+              {
+                "maintenanceCategory": "BRAKE",
+                "workContent": "ブレーキフルード点検",
+                "performedBy": "オーナー本人（DIY）",
+                "laborCost": 0,
+                "parts": []
+              }
+            ]
+          }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  OWNERが自身の車両（RX-7）に、画像を添付せず複数の作業項目（部品ありの項目・
+  部品なしの項目を1件ずつ）を登録し、201 Created が返ることを確認する。
+  部品を伴わない作業項目（2件目）は`parts`に空配列を送信できることを確認する。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。

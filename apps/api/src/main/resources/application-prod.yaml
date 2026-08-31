@@ -1,0 +1,14 @@
+# ==================================================
+# Spring Boot 本番環境設定
+# ==================================================
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+app:
+  # ストレージ設定(AWS S3)
+  storage:
+    # パススタイルアクセスを使用するか
+    path-style-access: false

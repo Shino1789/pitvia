@@ -1,0 +1,144 @@
+/*
+ * ==================================================
+ * アプリ全体 共通スタイル・デザインシステム定義 (Tailwind CSS v4)
+ * ==================================================
+ */
+
+/* Tailwind CSSの標準機能を読み込む */
+@import "tailwindcss";
+/* @import "tw-animate-css"; */ /* アニメーション用ライブラリ（未インストールのため一時無効化） */
+
+/* ダークモード用のクラス判定ルールを定義（HTML要素に .dark があれば適用） */
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * カラーパレットの基本定義
+ * Pitviaの標準テーマである「シックなダークテーマ」の配色を設定
+ */
+:root {
+  /* ブラウザ標準UI（カレンダー展開ボタン等のネイティブフォームコントロール、スクロールバー等）を
+     ダークテーマに合わせて描画させる。 */
+  color-scheme: dark;
+
+  /* 画面全体の背景色と文字色 */
+  --background: oklch(0.12 0.005 260);
+  --foreground: oklch(0.98 0 0);
+
+  /* カード型UIの背景色と文字色 */
+  --card: oklch(0.16 0.005 260);
+  --card-foreground: oklch(0.98 0 0);
+
+  /* ポップアップやドロップダウンメニューの背景色と文字色 */
+  --popover: oklch(0.16 0.005 260);
+  --popover-foreground: oklch(0.98 0 0);
+
+  /* アプリのブランドカラー（主要なボタンやアクセント） */
+  --primary: oklch(0.75 0.15 190);
+  --primary-foreground: oklch(0.12 0.005 260);
+
+  /* 控えめなボタンなどのセカンダリカラー */
+  --secondary: oklch(0.22 0.005 260);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  /* 補足テキストや無効化された要素の色 */
+  --muted: oklch(0.25 0.005 260);
+  --muted-foreground: oklch(0.65 0 0);
+
+  /* ホバー時などの強調色 */
+  --accent: oklch(0.75 0.15 190);
+  --accent-foreground: oklch(0.12 0.005 260);
+
+  /* 削除ボタンやエラー警告の色 */
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  /* 枠線（ボーダー）と入力フォーム（インプット）の境界線色 */
+  --border: oklch(0.28 0.005 260);
+  --input: oklch(0.22 0.005 260);
+
+  /* フォーカスが当たった時のリング（外枠）の色 */
+  --ring: oklch(0.75 0.15 190);
+
+  /* ダッシュボードのグラフなどで使うカラー */
+  --chart-1: oklch(0.75 0.15 190);
+  --chart-2: oklch(0.65 0.12 190);
+  --chart-3: oklch(0.55 0.1 190);
+  --chart-4: oklch(0.45 0.08 190);
+  --chart-5: oklch(0.35 0.06 190);
+
+  /* UIパーツの角の丸み */
+  --radius: 0.625rem;
+
+  /* サイドバーメニュー専用のカラーシステム */
+  --sidebar: oklch(0.14 0.005 260);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.75 0.15 190);
+  --sidebar-primary-foreground: oklch(0.12 0.005 260);
+  --sidebar-accent: oklch(0.22 0.005 260);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.28 0.005 260);
+  --sidebar-ring: oklch(0.75 0.15 190);
+}
+
+/*
+ * Tailwind CSSへのテーマ登録
+ * 上記で定義したCSS変数を、Tailwindのクラス名（例: `bg-primary` や `text-muted`）として使えるようにマッピング
+ */
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* 角の丸みを計算式で段階的に定義 (`rounded-sm`, `rounded-lg` 等に対応) */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* サイドバー用のクラス名定義 */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+ * HTMLタグの基本スタイル上書き（リセット・基本色の適用）
+ */
+@layer base {
+  /* すべての要素 (*) にデフォルトの枠線色とフォーカス時の外枠をセット */
+  * {
+    @apply border-border outline-ring/50;
+  }
+  /* 画面全体のデフォルト背景色と文字色を設定 */
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -1,0 +1,46 @@
+info:
+  name: 整備履歴一覧（自分）：正常系（OWNER）
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/maintenance-records
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        // 詳細・更新・削除API（detail_*/update_*/delete_*）の動作確認用に、
+        // 一覧の先頭（OWNER自身が登録した整備履歴）のIDを環境変数へ保持しておく
+        const record = body.data?.records?.content?.[0];
+        if (res.status === 200 && record?.id) {
+          bru.setEnvVar("maintenanceRecordId", record.id);
+          console.log("maintenanceRecordId saved: " + record.id);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  ログインユーザー（OWNER）が自身の車両（RX-7）の整備履歴一覧を取得する。
+  `data.owner`はnull、`data.records.content`にRX-7の整備履歴のみが含まれることを確認する。
+  デフォルトの並び替え（作業日が新しい順）・ページング（1ページ目・20件）で返る。
+
+  ※実行前に `auth/login_success_owner.yml` でログインし、トークンが保持されている必要があります。
+  ※このシナリオは開発環境の初期モックデータ（V1000__mock_data.sql）に依存します。
+  ※このリクエストの実行後、一覧先頭の整備履歴IDが環境変数 `maintenanceRecordId` に保存されます。
+  同フォルダの `detail_*` / `update_*` / `delete_*` シナリオは、このIDを前提に動作します。

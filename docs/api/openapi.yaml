@@ -1,0 +1,2227 @@
+# VsCodeで「Shift + Command + P」→「OpenAPI: show preview using Swagger UI」でGUIで確認
+openapi: 3.0.3
+
+info:
+  title: Pitvia API
+  version: 0.2.0
+  description: |
+    Pitvia ベータ版API仕様書
+
+    このAPIは、
+    Next.js フロントエンド と Spring Boot バックエンド間の
+    REST API 通信で使用する。
+
+    ⚠️ `Users` タグ配下のエンドポイントは、現時点ではController未実装のため疎通しない
+    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得・登録・
+    詳細取得・更新・削除まで実装済み。
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: ローカル開発環境
+
+tags:
+  - name: Auth
+    description: 認証API（ログイン・アカウント登録・トークン再発行・ログアウト）
+  - name: Dashboard
+    description: ダッシュボードAPI
+  - name: Health
+    description: ヘルスチェックAPI
+  - name: Vehicles
+    description: 車両API
+  - name: Users
+    description: |
+      ユーザーAPI
+
+      ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+  - name: MaintenanceRecords
+    description: |
+      整備記録API
+
+      一覧取得・登録・詳細取得・更新・削除まで実装済み。
+
+paths:
+  # ==========================================================================
+  # Auth
+  # ==========================================================================
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: アカウント登録
+      description: |
+        オーナー または ショップアカウントを作成する。
+
+        認証不要（公開エンドポイント）。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: アカウント作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、またはメールアドレスが既に登録されている場合
+            （`USER_ALREADY_EXISTS`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: ログイン
+      description: |
+        メールアドレスとパスワードでログインする。
+
+        認証不要（公開エンドポイント）。
+
+        アクセストークンはレスポンスボディで返却する（フロントエンドはメモリ上のみで保持し、永続化しない）。
+        リフレッシュトークンはレスポンスボディには含まれず、`Set-Cookie`ヘッダーでHttpOnly Cookie
+        （`refresh_token`）として払い出される。
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: ログイン成功
+          headers:
+            Set-Cookie:
+              description: |
+                リフレッシュトークンを含むHttpOnly Cookie（`refresh_token`、有効期限7日）
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、またはメールアドレス・パスワードの不一致
+            （`INVALID_CREDENTIALS`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: アクセストークン再発行
+      description: |
+        Cookieに保存されたリフレッシュトークンを用いて、新しいアクセストークンを再発行する。
+
+        認証不要（公開エンドポイント）。リフレッシュトークンはCookie（`refresh_token`）から
+        自動的に読み取られ、リクエストボディは不要。再発行のたびにリフレッシュトークン自体も
+        ローテーションされ、新しい`Set-Cookie`が返却される。
+      security: []
+      parameters:
+        - name: refresh_token
+          in: cookie
+          required: false
+          description: HttpOnly Cookieに保存されたリフレッシュトークン
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 再発行成功
+          headers:
+            Set-Cookie:
+              description: ローテーションされた新しいリフレッシュトークンを含むHttpOnly Cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshApiResponse"
+        "401":
+          description: |
+            リフレッシュトークンが存在しない（`NO_REFRESH_TOKEN`）、または無効・期限切れ
+            （`INVALID_REFRESH_TOKEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: ログアウト
+      description: |
+        リフレッシュトークンをサーバー側で失効させ、Cookieを削除する。
+
+        認証不要（公開エンドポイント）。リフレッシュトークンが既に存在しない場合もエラーにはならない
+        （冪等）。
+      security: []
+      parameters:
+        - name: refresh_token
+          in: cookie
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ログアウト成功
+          headers:
+            Set-Cookie:
+              description: リフレッシュトークンCookieを即時失効させる削除用Cookie（Max-Age=0）
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+
+  # ==========================================================================
+  # Dashboard
+  # ==========================================================================
+  /dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: ダッシュボード情報取得
+      description: |
+        ログインユーザーのロール（OWNER / SHOP）に応じたダッシュボード情報を取得する。
+
+        レスポンスの形状はロールによって異なる
+        （OWNER: `OwnerDashboardResponse` / SHOP: `ShopDashboardResponse`）。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/chart:
+    get:
+      tags:
+        - Dashboard
+      summary: ダッシュボードグラフデータ取得
+      description: |
+        期間（月次/年次）を指定して、グラフ表示用の集計データを取得する。
+
+        `endPeriod`省略時は現在の年月/年を基準に、`size`省略時は直近6件分を取得する。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: true
+          description: 集計単位
+          schema:
+            $ref: "#/components/schemas/PeriodType"
+        - name: endPeriod
+          in: query
+          required: false
+          description: |
+            集計の終了基準期間（`period=MONTH`なら"yyyy-MM"、`period=YEAR`なら"yyyy"形式）。
+            省略時は現在の年月/年。
+          schema:
+            type: string
+          example: "2026-06"
+        - name: size
+          in: query
+          required: false
+          description: endPeriodを基準に、過去方向へ取得する期間数（1以上）
+          schema:
+            type: integer
+            minimum: 1
+          example: 6
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardChartApiResponse"
+        "400":
+          description: |
+            入力値不正（`period`未指定、`size`が1未満、`endPeriod`が`period`に対応しない
+            日付フォーマット等）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # Health
+  # ==========================================================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: サーバー生存確認
+      description: |
+        認証不要（公開エンドポイント）。
+
+        他のAPIと異なり、レスポンスは`ApiResponse`でラップされないプレーンテキストを返す。
+      security: []
+      responses:
+        "200":
+          description: 正常
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Pitvia API OK"
+
+  /health/db:
+    get:
+      tags:
+        - Health
+      summary: DB疎通確認
+      description: |
+        認証不要（公開エンドポイント）。
+
+        レスポンスは`ApiResponse`でラップされないプレーンテキストを返す。
+      security: []
+      responses:
+        "200":
+          description: 正常
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  # ==========================================================================
+  # Vehicles
+  # ==========================================================================
+  /vehicles/form-options:
+    get:
+      tags:
+        - Vehicles
+      summary: 車両登録フォームの選択肢取得
+      description: |
+        車両登録・変更フォームの初期化に必要な選択肢一式
+        （メーカー一覧・トランスミッション形式・駆動方式）を取得する。
+
+        現時点では`vehicleType=CAR`のみ対応。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleType
+          in: query
+          required: true
+          description: 対象の車両種別
+          schema:
+            $ref: "#/components/schemas/VehicleType"
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleFormOptionsApiResponse"
+        "400":
+          description: 現在対応していない車両種別が指定された場合（`UNSUPPORTED_VEHICLE_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /vehicles:
+    get:
+      tags:
+        - Vehicles
+      summary: 車両一覧取得
+      description: |
+        ログインユーザーの車両一覧を取得する。
+
+        `ownerId`未指定の場合、ログインユーザー自身が所有する車両一覧を取得する
+        （レスポンスの`owner`は`null`）。
+
+        `ownerId`指定はSHOPロール専用で、連携（承認済み）しているオーナーの車両一覧を取得する。
+        OWNERロールが`ownerId`を指定した場合は`400`（`OWNER_ID_NOT_ALLOWED`）を返す。
+
+        `ownerId`に指定したユーザーが存在しない場合、または存在してもログインユーザー（SHOP）と
+        車両共有関係（承認済み連携）が無い場合は、いずれも`404`（`VEHICLE_OWNER_NOT_FOUND`）を
+        返す。対象ユーザーの存在有無を外部から推測できないよう、両者を区別しない。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ownerId
+          in: query
+          required: false
+          description: |
+            対象オーナーのユーザーID（SHOPが連携先オーナーの車両一覧を取得する場合のみ指定）。
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 車両一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleListApiResponse"
+        "400":
+          description: OWNERロールが`ownerId`を指定した場合（`OWNER_ID_NOT_ALLOWED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された`ownerId`のユーザーが存在しない、またはログインユーザーと車両共有関係にない
+            （`VEHICLE_OWNER_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - Vehicles
+      summary: 車両登録
+      description: |
+        車両を新規登録する。車両画像を同時にアップロードできる（任意）。
+
+        `multipart/form-data`形式で送信し、`request`パートに車両情報（JSON）、
+        `file`パートに画像ファイル（任意、jpg/jpeg/png/webp、2MB以内）を格納する。
+
+        所有者IDはリクエストボディからではなく、認証済みユーザー情報（アクセストークン）から
+        取得する。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/CreateVehicleRequest"
+                file:
+                  type: string
+                  format: binary
+                  description: 車両画像ファイル（任意）
+            encoding:
+              request:
+                contentType: application/json
+              file:
+                contentType: image/jpeg, image/png, image/webp
+      responses:
+        "201":
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、指定されたメーカーが存在しない
+            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式／解像度超過
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE` /
+            `IMAGE_RESOLUTION_EXCEEDED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /vehicles/{vehicleId}:
+    get:
+      tags:
+        - Vehicles
+      summary: 車両詳細取得
+      description: |
+        車両所有者本人、またはSHOPが対象車両にAPPROVED状態で連携している場合に、
+        車両の詳細情報を取得する。
+
+        レスポンスの`canEdit`は、ログインユーザーが対象車両の所有者本人（更新・削除可能）
+        かどうかを表す。SHOPが連携済み顧客の車両を閲覧する場合は`false`になる。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 車両詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された車両が存在しない、またはログインユーザーから閲覧できない
+            （`VEHICLE_NOT_FOUND`）。両者を区別せず、存在有無を外部から推測できないようにする。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - Vehicles
+      summary: 車両更新
+      description: |
+        車両情報を更新する。車両登録（`POST /vehicles`）と同様に`multipart/form-data`形式で
+        送信し、`request`パートに車両情報（JSON）、`file`パートに新しい画像ファイル（任意）を
+        格納する。
+
+        画像の扱いは`file`パートと`request.removeImage`の組み合わせで決まる。
+
+        - `file`あり：`removeImage`の値に関わらず、新しい画像へ差し替える
+        - `file`なし・`removeImage=true`：既存の画像を削除する
+        - `file`なし・`removeImage=false`（未指定時のデフォルト）：既存の画像を維持する
+
+        車両所有者本人のみ実行できる。SHOPが連携済み顧客の車両を更新しようとした場合は403。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/UpdateVehicleRequest"
+                file:
+                  type: string
+                  format: binary
+                  description: 車両画像ファイル（未変更の場合は省略）
+            encoding:
+              request:
+                contentType: application/json
+              file:
+                contentType: image/jpeg, image/png, image/webp
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、指定されたメーカーが存在しない
+            （`MANUFACTURER_NOT_FOUND`）、画像が空／サイズ超過／未対応形式／解像度超過
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE` /
+            `IMAGE_RESOLUTION_EXCEEDED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            車両は閲覧できるが、所有者本人ではないため編集できない（`VEHICLE_EDIT_NOT_ALLOWED`）。
+            SHOPが連携済み顧客の車両を更新しようとした場合に発生する。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された車両が存在しない、またはログインユーザーから閲覧できない
+            （`VEHICLE_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - Vehicles
+      summary: 車両削除
+      description: |
+        車両を削除する（論理削除）。車両所有者本人のみ実行できる。
+        SHOPが連携済み顧客の車両を削除しようとした場合は403。
+
+        削除後、ストレージ上の車両画像は即時には削除されず、孤児ファイルクリーンアップの
+        定期処理により猶予期間経過後に自動的に回収される。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: 削除成功
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            車両は閲覧できるが、所有者本人ではないため削除できない（`VEHICLE_EDIT_NOT_ALLOWED`）。
+            SHOPが連携済み顧客の車両を削除しようとした場合に発生する。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された車両が存在しない、またはログインユーザーから閲覧できない
+            （`VEHICLE_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # MaintenanceRecords
+  # ==========================================================================
+  /maintenance-records:
+    get:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴一覧取得
+      description: |
+        整備履歴一覧を取得する。
+
+        - `vehicleId`・`ownerId`ともに未指定：ログインユーザー自身の全車両分の整備履歴
+        - `vehicleId`指定：その車両の整備履歴に限定（自分の車両、またはSHOPがAPPROVED状態で
+          連携している車両のみ）
+        - `ownerId`指定（SHOP専用）：SHOPが連携済み顧客（オーナー）の共有車両群の整備履歴
+
+        `vehicleId`と`ownerId`は同時に指定できない（`vehicleId`が指定されていれば対象車両の
+        所有者は一意に決まるため）。
+
+        レスポンスの`owner`は、ログインユーザー自身の整備履歴を取得した場合はnull。
+        SHOPが自分以外のオーナーの車両（`ownerId`指定時、または`vehicleId`指定時で対象車両が
+        自分の所有でない場合）の整備履歴を取得した場合のみ設定される。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          required: false
+          description: 対象車両ID
+          schema:
+            type: string
+            format: uuid
+        - name: ownerId
+          in: query
+          required: false
+          description: 対象オーナーのユーザーID（SHOP専用）
+          schema:
+            type: string
+            format: uuid
+        - name: maintenanceType
+          in: query
+          required: false
+          description: 整備種別による絞り込み（複数指定可、未指定時は絞り込みなし）
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/MaintenanceType"
+        - name: keyword
+          in: query
+          required: false
+          description: 整備タイトルの部分一致キーワード
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: 並び替え条件（未指定時は`WORK_DATE_DESC`）
+          schema:
+            $ref: "#/components/schemas/MaintenanceRecordSort"
+        - name: page
+          in: query
+          required: false
+          description: ページ番号（1始まり、未指定時は1）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          required: false
+          description: 1ページあたりの件数（未指定時は20）
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+      responses:
+        "200":
+          description: 整備履歴一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceRecordListApiResponse"
+        "400":
+          description: |
+            OWNERが`ownerId`を指定した場合（`OWNER_ID_NOT_ALLOWED`）、または`vehicleId`と
+            `ownerId`が同時に指定された場合（`VEHICLE_ID_OWNER_ID_CONFLICT`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された`vehicleId`の車両が存在しない・閲覧できない場合（`VEHICLE_NOT_FOUND`）、
+            または指定された`ownerId`のユーザーが存在しない・共有関係が無い場合
+            （`VEHICLE_OWNER_NOT_FOUND`）。いずれも存在有無を外部から推測できないよう区別しない。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴登録
+      description: |
+        整備履歴を新規登録する。作業項目・交換部品・作業項目ごとの整備画像を同時に登録できる。
+
+        車両所有者本人、またはSHOPが対象車両にAPPROVED状態で連携している場合に登録できる
+        （車両閲覧の可否と同じ条件。詳しくは`GET /maintenance-records`の説明を参照）。
+
+        `multipart/form-data`形式で送信し、`request`パートに整備履歴情報（JSON）を格納する。
+        作業項目ごとの整備画像は任意で、`workItemImage_{index}`（`index`は
+        `request.workItems`のリスト内インデックス、0始まり）という名前のパートとして追加する。
+        例えば1件目の作業項目にのみ画像を添付する場合は`workItemImage_0`パートのみを送信する。
+
+        登録者（`createdByUser`）は、認証済みユーザー情報（アクセストークン）から取得する。
+        SHOPが登録した場合のみ実施ショップとして紐づけられる（OWNERの登録はDIY扱い）。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/CreateMaintenanceRecordRequest"
+              additionalProperties:
+                type: string
+                format: binary
+              description: |
+                `workItemImage_{index}`パート（任意、jpg/jpeg/png/webp、10MB以内）は
+                `additionalProperties`として動的に受け付ける。
+            encoding:
+              request:
+                contentType: application/json
+      responses:
+        "201":
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、指定された整備種別・整備カテゴリが存在しない
+            （`MAINTENANCE_TYPE_NOT_FOUND` / `MAINTENANCE_CATEGORY_NOT_FOUND`）、画像が空／
+            サイズ超過／未対応形式／解像度超過（`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` /
+            `UNSUPPORTED_IMAGE_TYPE` / `IMAGE_RESOLUTION_EXCEEDED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された`vehicleId`の車両が存在しない、またはログインユーザーに登録権限がない
+            （`VEHICLE_NOT_FOUND`）。両者を区別せず、存在有無を外部から推測できないようにする。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /maintenance-records/{maintenanceRecordId}:
+    get:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴詳細取得
+      description: |
+        整備履歴の詳細を取得する。対象車両の所有者本人、またはSHOPが対象車両にAPPROVED状態で
+        連携している場合に閲覧できる（車両閲覧の可否と同じ条件。`GET /maintenance-records`と同様）。
+
+        レスポンスの`canEdit`は、ログインユーザーがこの整備履歴を編集（更新・削除）できるか
+        どうかを表す。車両所有者かどうかではなく、この整備履歴を実際に登録したユーザー本人
+        （`createdByUser`）かどうかで判定される点に注意（車両所有者と整備履歴登録者は別概念）。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: maintenanceRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 整備履歴詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceRecordApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された整備履歴が存在しない、またはログインユーザーから閲覧できない
+            （`MAINTENANCE_RECORD_NOT_FOUND`）。両者を区別せず、存在有無を外部から
+            推測できないようにする。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴更新
+      description: |
+        整備履歴を更新する。**この整備履歴を実際に登録したユーザー本人のみ**実行できる
+        （車両所有者であっても、登録者本人でなければ403）。対象車両（`vehicleId`）は
+        登録後に変更できないため、リクエストには含まない。
+
+        `multipart/form-data`形式で送信し、`request`パートに整備履歴情報（JSON）を格納する。
+        作業項目ごとの整備画像は登録APIと同じく`workItemImage_{index}`
+        （`index`は`request.workItems`のリスト内インデックス、0始まり）という名前の
+        パートとして追加する。
+
+        作業項目・部品は`id`の有無で反映方法が変わる（全件送信の全体更新）。
+
+        - `id`あり：既存の作業項目/部品を更新（このID自身が対象の整備記録に存在しない
+          場合は`400`）
+        - `id`なし（省略）：新規追加
+        - リクエストに含まれなかった既存の作業項目/部品：削除（紐づく部品・画像も連動して削除）
+
+        作業項目ごとの整備画像は`removeImage`と`workItemImage_{index}`パートの組み合わせで
+        決まる（車両更新の`removeImage`と同じ設計）。
+
+        - `workItemImage_{index}`パートあり：`removeImage`の値に関わらず、新しい画像へ差し替える
+        - パートなし・`removeImage=true`：既存の画像を削除する
+        - パートなし・`removeImage=false`（未指定時のデフォルト）：既存の画像を維持する
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: maintenanceRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  $ref: "#/components/schemas/UpdateMaintenanceRecordRequest"
+              additionalProperties:
+                type: string
+                format: binary
+              description: |
+                `workItemImage_{index}`パート（任意、jpg/jpeg/png/webp、10MB以内）は
+                `additionalProperties`として動的に受け付ける。
+            encoding:
+              request:
+                contentType: application/json
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: |
+            入力値不正（バリデーションエラー）、指定された整備種別・整備カテゴリが存在しない
+            （`MAINTENANCE_TYPE_NOT_FOUND` / `MAINTENANCE_CATEGORY_NOT_FOUND`）、リクエストの
+            作業項目/部品IDが対象の整備記録に存在しない（`MAINTENANCE_WORK_ITEM_NOT_FOUND` /
+            `MAINTENANCE_PART_NOT_FOUND`）、画像が空／サイズ超過／未対応形式／解像度超過
+            （`FILE_EMPTY` / `FILE_SIZE_EXCEEDED` / `UNSUPPORTED_IMAGE_TYPE` /
+            `IMAGE_RESOLUTION_EXCEEDED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            整備履歴は閲覧できるが、登録者本人ではないため編集できない
+            （`MAINTENANCE_RECORD_EDIT_NOT_ALLOWED`）。車両所有者やAPPROVED連携済みSHOPで
+            あっても、登録者本人でなければ発生する。
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された整備履歴が存在しない、またはログインユーザーから閲覧できない
+            （`MAINTENANCE_RECORD_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: |
+            Content-Typeが`multipart/form-data`以外で送信された場合（`UNSUPPORTED_MEDIA_TYPE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - MaintenanceRecords
+      summary: 整備履歴削除
+      description: |
+        整備履歴を削除する（論理削除）。**この整備履歴を実際に登録したユーザー本人のみ**
+        実行できる（車両所有者であっても、登録者本人でなければ403）。
+
+        紐づく作業項目・部品・画像は連動して削除される。ストレージ上の整備画像は即時には
+        削除されず、孤児ファイルクリーンアップの定期処理により猶予期間経過後に自動的に
+        回収される。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: maintenanceRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: 削除成功
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            整備履歴は閲覧できるが、登録者本人ではないため削除できない
+            （`MAINTENANCE_RECORD_EDIT_NOT_ALLOWED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された整備履歴が存在しない、またはログインユーザーから閲覧できない
+            （`MAINTENANCE_RECORD_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # Users（未実装 / 将来対応予定）
+  # ==========================================================================
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: 自分のユーザー情報取得
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - Users
+      summary: 自分のユーザー情報更新
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyApiResponse"
+        "400":
+          description: 入力値不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        `Authorization: Bearer <accessToken>`ヘッダーで送信する。
+        アクセストークンの有効期限は15分。期限切れ時は`POST /auth/refresh`で再発行する。
+
+  schemas:
+    # --- 共通メタ / レスポンスラッパー定義 ---
+    Meta:
+      type: object
+      required:
+        - requestId
+        - timestamp
+      properties:
+        requestId:
+          type: string
+          example: "de491de047cb"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-06-19T18:00:00Z"
+
+    ValidationError:
+      type: object
+      required:
+        - field
+        - reason
+      properties:
+        field:
+          type: string
+          example: "email"
+        reason:
+          type: string
+          example: "メールアドレス形式ではありません"
+
+    ErrorBody:
+      type: object
+      required:
+        - path
+        - code
+        - message
+      properties:
+        path:
+          type: string
+          example: "/api/v1/auth/login"
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+          example: "入力値に誤りがあります"
+        validationErrors:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/ValidationError"
+
+    # 業務エラーコード一覧（ErrorCode.java と一致させる）
+    ErrorCode:
+      type: string
+      enum:
+        - VALIDATION_ERROR
+        - MALFORMED_JSON
+        - UNSUPPORTED_MEDIA_TYPE
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - RESOURCE_NOT_FOUND
+        - INTERNAL_SERVER_ERROR
+        - INVALID_ROLE
+        - USER_NOT_FOUND
+        - USER_ALREADY_EXISTS
+        - INVALID_CREDENTIALS
+        - NO_REFRESH_TOKEN
+        - INVALID_REFRESH_TOKEN
+        - FILE_UPLOAD_FAILED
+        - FILE_DELETE_FAILED
+        - FILE_EMPTY
+        - UNSUPPORTED_IMAGE_TYPE
+        - IMAGE_RESOLUTION_EXCEEDED
+        - FILE_SIZE_EXCEEDED
+        - FILE_LIST_FAILED
+        - MANUFACTURER_NOT_FOUND
+        - UNSUPPORTED_VEHICLE_TYPE
+        - OWNER_ID_NOT_ALLOWED
+        - VEHICLE_OWNER_NOT_FOUND
+        - VEHICLE_NOT_FOUND
+        - VEHICLE_EDIT_NOT_ALLOWED
+        - VEHICLE_ID_OWNER_ID_CONFLICT
+      example: "VALIDATION_ERROR"
+
+    # 異常系レスポンスのルート
+    ErrorResponse:
+      type: object
+      required:
+        - meta
+        - error
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+
+    # 正常系：中身のデータが空（Void）の場合の共通型
+    EmptyApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          type: object
+          nullable: true
+          example: null
+
+    # --- 各正常系APIラップ型定義 ---
+    LoginApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/LoginResponse"
+
+    RefreshApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/RefreshTokenResponse"
+
+    UserApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/UserResponse"
+
+    DashboardApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/OwnerDashboardResponse"
+            - $ref: "#/components/schemas/ShopDashboardResponse"
+          description: ログインユーザーのロールによって形状が変わる（OWNER / SHOP）
+
+    DashboardChartApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/DashboardChartResponse"
+
+    VehicleFormOptionsApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/VehicleFormOptionsResponse"
+
+    VehicleApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/VehicleResponse"
+
+    VehicleListApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/VehicleListResponse"
+
+    MaintenanceRecordListApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/MaintenanceRecordListResponse"
+
+    MaintenanceRecordApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/MaintenanceRecordResponse"
+
+    # --- Auth ---
+    RegisterRequest:
+      type: object
+      required:
+        - role
+        - userName
+        - email
+        - password
+        - confirmPassword
+      properties:
+        role:
+          type: string
+          enum:
+            - OWNER
+            - SHOP
+          description: ADMIN権限はアカウント登録では選択不可（内部利用のみ）
+        userName:
+          type: string
+          maxLength: 100
+          example: "田中 圭太"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: "tanaka@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          description: 英字・数字をそれぞれ最低1文字含む必要がある
+          example: "password123"
+        confirmPassword:
+          type: string
+          format: password
+          description: passwordと一致する必要がある
+          example: "password123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "tanaka@example.com"
+        password:
+          type: string
+          format: password
+          example: "password123"
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserResponse"
+        accessToken:
+          type: string
+          description: 有効期限15分のJWT
+          example: "eyJhbGciOiJIUzI1NiIsIn..."
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: 再発行された有効期限15分のJWT
+          example: "eyJhbGciOiJIUzI1NiIsIn..."
+        user:
+          $ref: "#/components/schemas/UserResponse"
+
+    # --- Users ---
+    UserResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - OWNER
+            - SHOP
+            - ADMIN
+        userName:
+          type: string
+          example: "田中 圭太"
+        email:
+          type: string
+          example: "tanaka@example.com"
+        iconKey:
+          type: string
+          nullable: true
+          description: アイコン画像のストレージキー（未設定の場合はnull）
+
+    UpdateUserRequest:
+      type: object
+      description: ⚠️ 未実装（将来対応予定）のAPI設計案
+      properties:
+        userName:
+          type: string
+          maxLength: 100
+          example: "田中 敬太"
+
+    # --- Dashboard ---
+    PeriodType:
+      type: string
+      enum:
+        - MONTH
+        - YEAR
+
+    DashboardChartType:
+      type: string
+      enum:
+        - MAINTENANCE_COST_TREND
+        - MAINTENANCE_COUNT_TREND
+
+    MaintenanceType:
+      type: string
+      enum:
+        - PERIODIC_MAINTENANCE
+        - VEHICLE_INSPECTION
+        - INSPECTION
+        - REPAIR
+        - CUSTOM
+        - TUNING
+        - SETTING
+        - OTHER
+
+    OwnerDashboardResponse:
+      type: object
+      properties:
+        vehicleCount:
+          type: integer
+          format: int64
+          example: 2
+        maintenanceCount:
+          type: integer
+          format: int64
+          example: 20
+        linkedShopCount:
+          type: integer
+          format: int64
+          example: 1
+        maintenanceCostChart:
+          $ref: "#/components/schemas/DashboardChartResponse"
+        recentMaintenances:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentMaintenance"
+
+    ShopDashboardResponse:
+      type: object
+      properties:
+        managedVehicles:
+          $ref: "#/components/schemas/ManagedVehicle"
+        monthlySales:
+          type: integer
+          format: int64
+          example: 350000
+        linkedCustomerCount:
+          type: integer
+          format: int64
+          example: 5
+        maintenanceCountChart:
+          $ref: "#/components/schemas/DashboardChartResponse"
+        recentMaintenances:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentMaintenance"
+
+    ManagedVehicle:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+          example: 8
+        own:
+          type: integer
+          format: int64
+          example: 1
+        customer:
+          type: integer
+          format: int64
+          example: 7
+
+    RecentMaintenance:
+      type: object
+      properties:
+        maintenanceId:
+          type: string
+          format: uuid
+        vehicleName:
+          type: string
+          example: "RX-7"
+        ownerName:
+          type: string
+          example: "田中 圭太"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        title:
+          type: string
+          example: "オイル交換"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 単日作業の場合はnull
+        totalCost:
+          type: integer
+          format: int64
+          example: 8000
+        shopName:
+          type: string
+          nullable: true
+          description: DIYによる整備の場合はnull
+
+    DashboardChartResponse:
+      type: object
+      properties:
+        chartType:
+          $ref: "#/components/schemas/DashboardChartType"
+        periodType:
+          $ref: "#/components/schemas/PeriodType"
+        startPeriod:
+          type: string
+          example: "2026-01"
+        endPeriod:
+          type: string
+          example: "2026-06"
+        canMoveForward:
+          type: boolean
+        canMoveBackward:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartPoint"
+
+    ChartPoint:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2026-06"
+        totalValue:
+          type: integer
+          format: int64
+          example: 45000
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartValue"
+
+    ChartValue:
+      type: object
+      properties:
+        category:
+          $ref: "#/components/schemas/MaintenanceType"
+        value:
+          type: integer
+          format: int64
+          example: 20000
+
+    # --- Vehicles ---
+    VehicleType:
+      type: string
+      enum:
+        - CAR
+        - MOTORCYCLE
+        - KART
+        - OTHER
+      description: 現時点でAPIが対応しているのはCARのみ
+
+    TransmissionType:
+      type: string
+      enum:
+        - MT
+        - AT
+        - CVT
+        - DCT
+
+    DriveType:
+      type: string
+      enum:
+        - FR
+        - FF
+        - AWD
+        - MR
+        - RR
+
+    ManufacturerOption:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "トヨタ"
+
+    VehicleSelectOption:
+      type: object
+      properties:
+        value:
+          type: string
+          example: "MT"
+        label:
+          type: string
+          example: "MT"
+
+    VehicleFormOptionsResponse:
+      type: object
+      properties:
+        manufacturers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManufacturerOption"
+        transmissionTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleSelectOption"
+        driveTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleSelectOption"
+
+    CreateVehicleRequest:
+      type: object
+      required:
+        - vehicleType
+        - modelName
+        - manufacturerId
+        - modelYear
+        - currentMileage
+        - transmissionType
+        - driveType
+      properties:
+        vehicleType:
+          $ref: "#/components/schemas/VehicleType"
+        modelName:
+          type: string
+          maxLength: 255
+          example: "RX-7"
+        manufacturerId:
+          type: integer
+          format: int64
+          example: 4
+        modelCode:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "FD3S"
+        engineCode:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "13B-REW"
+        modelYear:
+          type: integer
+          format: int32
+          minimum: 1900
+          description: 西暦。未来方向は「現在の年+1年」まで許容
+          example: 2002
+        licensePlate:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "品川 300 な 77-77"
+        currentMileage:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 85000
+        transmissionType:
+          $ref: "#/components/schemas/TransmissionType"
+        driveType:
+          $ref: "#/components/schemas/DriveType"
+        memo:
+          type: string
+          nullable: true
+          example: "オーナーのメイン車両"
+        removeImage:
+          type: boolean
+          default: false
+          description: |
+            既存の車両画像を削除するかどうか（車両更新 `PUT /vehicles/{vehicleId}` でのみ使用。
+            車両登録 `POST /vehicles` では無視される）。
+
+            - `false` / 未指定：既存画像を維持
+            - `true`：既存画像を削除（未設定の状態に戻す）
+            - `multipart/form-data`の`file`パートが指定されている場合は、この値に関わらず
+              `file`による画像差し替えを優先する
+          example: false
+
+    UpdateVehicleRequest:
+      description: CreateVehicleRequestと同一の構造（全項目を送信する全体更新）
+      allOf:
+        - $ref: "#/components/schemas/CreateVehicleRequest"
+
+    VehicleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleType:
+          $ref: "#/components/schemas/VehicleType"
+        modelName:
+          type: string
+          example: "RX-7"
+        manufacturerName:
+          type: string
+          example: "マツダ"
+        modelCode:
+          type: string
+          nullable: true
+          example: "FD3S"
+        engineCode:
+          type: string
+          nullable: true
+          example: "13B-REW"
+        modelYear:
+          type: integer
+          example: 2002
+        licensePlate:
+          type: string
+          nullable: true
+          example: "品川 300 な 77-77"
+        imageUrl:
+          type: string
+          nullable: true
+          description: 車両画像の公開URL（未設定の場合はnull）
+        currentMileage:
+          type: integer
+          example: 85000
+        transmissionType:
+          $ref: "#/components/schemas/TransmissionType"
+        driveType:
+          $ref: "#/components/schemas/DriveType"
+        memo:
+          type: string
+          nullable: true
+          example: "オーナーのメイン車両"
+        canEdit:
+          type: boolean
+          description: |
+            ログインユーザーがこの車両を編集（更新・削除）できるかどうか。車両所有者本人の場合のみ
+            true。車両一覧（`GET /vehicles`）のレスポンスでは、現時点でUI側が参照しないため
+            常にfalse固定で返却される。
+          example: true
+
+    VehicleOwnerSummary:
+      type: object
+      description: |
+        車両一覧の対象オーナー情報（SHOPが`ownerId`を指定して取得した場合のみ、
+        `VehicleListResponse.owner`に設定される）
+      properties:
+        id:
+          type: string
+          format: uuid
+        userName:
+          type: string
+          example: "田中 圭太"
+
+    VehicleListResponse:
+      type: object
+      properties:
+        owner:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/VehicleOwnerSummary"
+          nullable: true
+          description: |
+            `ownerId`未指定（ログインユーザー自身の一覧）の場合は`null`
+        vehicles:
+          type: array
+          items:
+            $ref: "#/components/schemas/VehicleResponse"
+
+    # --- MaintenanceRecords ---
+    MaintenanceRecordSort:
+      type: string
+      enum:
+        - WORK_DATE_DESC
+        - WORK_DATE_ASC
+      description: |
+        整備履歴一覧の並び替え条件。ベータ版では作業日による並び替えのみ対応
+        （費用順・走行距離順は未対応）。
+
+    MaintenanceRecordSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleModelName:
+          type: string
+          example: "GT-R"
+        vehicleModelCode:
+          type: string
+          nullable: true
+          example: "R32"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        title:
+          type: string
+          example: "エンジンオイル＆フィルター交換"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 単日作業の場合はnull
+        mileage:
+          type: integer
+          example: 89500
+        totalCost:
+          type: integer
+          format: int64
+          example: 18500
+        shopName:
+          type: string
+          nullable: true
+          description: DIYによる整備の場合はnull
+
+    MaintenanceRecordPage:
+      type: object
+      description: |
+        整備履歴一覧（ページング付き）。Backendの共通ページングレスポンス型
+        （`PageResponse<T>`）に対応する。
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/MaintenanceRecordSummary"
+        page:
+          type: integer
+          description: 現在のページ番号（1始まり）
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: 全件数
+          example: 178
+        totalPages:
+          type: integer
+          description: 総ページ数
+          example: 9
+
+    MaintenanceRecordListResponse:
+      type: object
+      properties:
+        owner:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/VehicleOwnerSummary"
+          nullable: true
+          description: |
+            ログインユーザー自身の整備履歴を取得した場合は`null`。SHOPが自分以外のオーナーの
+            車両（`ownerId`指定時、または`vehicleId`指定時で対象車両が自分の所有でない場合）の
+            整備履歴を取得した場合のみ設定される。
+        records:
+          $ref: "#/components/schemas/MaintenanceRecordPage"
+
+    MaintenanceCategory:
+      type: string
+      enum:
+        - ENGINE
+        - INTAKE_EXHAUST
+        - COOLING
+        - DRIVETRAIN
+        - SUSPENSION
+        - BRAKE
+        - ELECTRICAL
+        - BODY
+        - INTERIOR
+        - AIR_CONDITIONER
+        - BODY_REPAIR
+        - CLEANING
+        - OTHER
+
+    PartCondition:
+      type: string
+      enum:
+        - NEW
+        - USED
+        - REBUILT
+
+    PartRequest:
+      type: object
+      required:
+        - partName
+        - quantity
+        - unitPrice
+      properties:
+        id:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            部品ID（整備履歴更新 `PUT /maintenance-records/{maintenanceRecordId}` でのみ使用）。
+
+            - 既存の部品を更新する場合はそのID
+            - 新規追加する場合はnull（省略可）
+
+            整備履歴登録（`POST /maintenance-records`）では常にnull扱い（送信しても無視される）。
+          example: null
+        partCondition:
+          allOf:
+            - $ref: "#/components/schemas/PartCondition"
+          nullable: true
+        partName:
+          type: string
+          maxLength: 255
+          example: "ブレーキパッド"
+        manufacturerName:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: "プロジェクトミュー"
+        partModelNumber:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "F328"
+        quantity:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          example: 4
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 6500
+
+    WorkItemRequest:
+      type: object
+      required:
+        - maintenanceCategory
+        - workContent
+        - performedBy
+        - laborCost
+      properties:
+        id:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            作業項目ID（整備履歴更新 `PUT /maintenance-records/{maintenanceRecordId}` でのみ使用）。
+
+            - 既存の作業項目を更新する場合はそのID
+            - 新規追加する場合はnull（省略可）
+
+            整備履歴登録（`POST /maintenance-records`）では常にnull扱い（送信しても無視される）。
+          example: null
+        maintenanceCategory:
+          $ref: "#/components/schemas/MaintenanceCategory"
+        workContent:
+          type: string
+          maxLength: 255
+          example: "ブレーキパッド交換"
+        performedBy:
+          type: string
+          maxLength: 255
+          example: "ガレージ田中"
+        laborCost:
+          type: number
+          format: double
+          minimum: 0
+          example: 8000
+        removeImage:
+          type: boolean
+          default: false
+          description: |
+            既存の整備画像を削除するかどうか（整備履歴更新でのみ使用。登録では無視される）。
+            `workItemImage_{index}`パートが指定されている場合は、この値に関わらず
+            ファイルによる画像差し替えを優先する（`CreateVehicleRequest.removeImage`と同じ設計）。
+          example: false
+        parts:
+          type: array
+          description: 交換部品リスト（部品を伴わない作業項目の場合は空配列）
+          items:
+            $ref: "#/components/schemas/PartRequest"
+
+    CreateMaintenanceRecordRequest:
+      type: object
+      required:
+        - vehicleId
+        - title
+        - maintenanceType
+        - workDateFrom
+        - mileage
+        - workItems
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 255
+          example: "車検対応"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 任意項目。指定する場合はworkDateFrom以降の日付であること
+        mileage:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 70600
+        remarks:
+          type: string
+          nullable: true
+          example: "次回はブレーキフルードも交換予定"
+        workItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/WorkItemRequest"
+
+    UpdateMaintenanceRecordRequest:
+      type: object
+      description: |
+        整備履歴更新リクエスト。対象車両（`vehicleId`）は登録後に変更できないため、
+        `CreateMaintenanceRecordRequest`とは異なり本DTOには含めない。
+
+        `workItems`は全件送信の全体更新で、各要素の`id`の有無で反映方法が変わる
+        （詳しくは`PUT /maintenance-records/{maintenanceRecordId}`の説明を参照）。
+      required:
+        - title
+        - maintenanceType
+        - workDateFrom
+        - mileage
+        - workItems
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          example: "車検対応"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 任意項目。指定する場合はworkDateFrom以降の日付であること
+        mileage:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 70600
+        remarks:
+          type: string
+          nullable: true
+          example: "次回はブレーキフルードも交換予定"
+        workItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/WorkItemRequest"
+
+    PartResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        partCondition:
+          allOf:
+            - $ref: "#/components/schemas/PartCondition"
+          nullable: true
+        partName:
+          type: string
+          example: "ブレーキパッド"
+        manufacturerName:
+          type: string
+          nullable: true
+          example: "プロジェクトミュー"
+        partModelNumber:
+          type: string
+          nullable: true
+          example: "F328"
+        quantity:
+          type: number
+          format: double
+          example: 4
+        unitPrice:
+          type: number
+          format: double
+          example: 6500
+
+    WorkItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        maintenanceCategory:
+          $ref: "#/components/schemas/MaintenanceCategory"
+        workContent:
+          type: string
+          example: "ブレーキパッド交換"
+        performedBy:
+          type: string
+          example: "ガレージ田中"
+        laborCost:
+          type: number
+          format: double
+          example: 8000
+        imageUrl:
+          type: string
+          nullable: true
+          description: 整備画像の公開URL（未設定の場合はnull）
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartResponse"
+
+    MaintenanceRecordResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleModelName:
+          type: string
+          example: "RX-7"
+        vehicleModelCode:
+          type: string
+          nullable: true
+          example: "FD3S"
+        title:
+          type: string
+          example: "車検対応"
+        maintenanceType:
+          $ref: "#/components/schemas/MaintenanceType"
+        workDateFrom:
+          type: string
+          format: date
+        workDateTo:
+          type: string
+          format: date
+          nullable: true
+          description: 単日作業の場合はnull
+        mileage:
+          type: integer
+          example: 86200
+        remarks:
+          type: string
+          nullable: true
+        shopName:
+          type: string
+          nullable: true
+          description: DIYによる整備の場合はnull
+        workItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkItemResponse"
+        canEdit:
+          type: boolean
+          description: |
+            ログインユーザーがこの整備履歴を編集（更新・削除）できるかどうか。車両所有者/SHOP
+            権限ではなく、この整備履歴を登録したユーザー本人（`createdByUser`）の場合のみtrue。
+          example: true
