@@ -32,13 +32,16 @@ public class RefreshTokenCookieFactory {
      * @return ResponseCookieオブジェクト
      */
     public ResponseCookie create(String token) {
-        return ResponseCookie.from(CookieConstants.REFRESH_TOKEN, token)
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(CookieConstants.REFRESH_TOKEN, token)
                 .httpOnly(true)
                 .secure(securityProperties.cookie().secure())
                 .sameSite(securityProperties.cookie().sameSite())
                 .path("/")
-                .maxAge(jwtProperties.refreshExpiration())
-                .build();
+                .maxAge(jwtProperties.refreshExpiration());
+
+        applyDomainIfPresent(builder);
+
+        return builder.build();
     }
 
     /**
@@ -47,13 +50,32 @@ public class RefreshTokenCookieFactory {
      * @return Max-Ageが0に設定されたResponseCookieオブジェクト
      */
     public ResponseCookie delete() {
-        return ResponseCookie.from(CookieConstants.REFRESH_TOKEN, "") // 値を空にする
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(CookieConstants.REFRESH_TOKEN, "") // 値を空にする
                 .httpOnly(true)
                 .secure(securityProperties.cookie().secure())
                 .sameSite(securityProperties.cookie().sameSite())
                 .path("/")
-                .maxAge(0) // 有効期限を0秒にすることでブラウザに即時削除させる
-                .build();
+                .maxAge(0); // 有効期限を0秒にすることでブラウザに即時削除させる
+
+        // 発行時と異なるDomainを指定すると別のCookieとして扱われ削除されないため、発行時と同条件で付与する
+        applyDomainIfPresent(builder);
+
+        return builder.build();
+    }
+
+    /**
+     * Domainが設定されている場合のみ、CookieビルダーにDomain属性を適用する。
+     *
+     * 未設定（null・空文字）の場合は何もせず、host-only Cookie（Domain属性なし）のまま発行する。
+     * ローカル開発（localhost）ではこの分岐によりDomain属性が付与されない従来通りの挙動を維持する。
+     *
+     * @param builder 対象のCookieビルダー
+     */
+    private void applyDomainIfPresent(ResponseCookie.ResponseCookieBuilder builder) {
+        String domain = securityProperties.cookie().domain();
+        if (domain != null && !domain.isBlank()) {
+            builder.domain(domain);
+        }
     }
 
 }

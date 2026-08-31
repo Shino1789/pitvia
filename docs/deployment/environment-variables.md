@@ -31,6 +31,7 @@ ECS Serviceは`pitvia-api:2`で`runningCount: 1 / desiredCount: 1`・`rolloutSta
 | `JWT_SECRET_KEY`          | **機密**                     | 開発用サンプル値               | 本番専用に新規生成した値                                                                            | **Secrets Manager**（`pitvia/prod/jwt-secret-key`）                               |
 | `JWT_EXPIRES`             | 非機密                       | `15m`                          | `15m`                                                                                               | ECS Task Definition `environment`                                                 |
 | `JWT_REFRESH_EXPIRES`     | 非機密                       | `7d`                           | `7d`                                                                                                | ECS Task Definition `environment`                                                 |
+| `COOKIE_DOMAIN`           | 非機密（環境依存）           | 未設定（空）                   | `.pitviaapp.com`                                                                                    | ECS Task Definition `environment`                                                 |
 | `DB_HOST`                 | 非機密（内部エンドポイント） | `db`（コンテナ名）             | `pitvia-db.czaagyikoeey.ap-northeast-1.rds.amazonaws.com`                                           | ECS Task Definition `environment`                                                 |
 | `DB_PORT`                 | 非機密                       | `5432`                         | `5432`                                                                                              | ECS Task Definition `environment`                                                 |
 | `DB_NAME`                 | 非機密                       | `pitvia`                       | `pitvia`                                                                                            | ECS Task Definition `environment`                                                 |
@@ -45,7 +46,10 @@ ECS Serviceは`pitvia-api:2`で`runningCount: 1 / desiredCount: 1`・`rolloutSta
 | `STORAGE_REGION`          | 非機密                       | `us-east-1`                    | `ap-northeast-1`                                                                                    | ECS Task Definition `environment`                                                 |
 | `DEBUG`                   | 非機密                       | `false`                        | 未使用（コード上での参照箇所なし。`.env.example`のみに存在する項目のため、そのままでも実害はない）  | ―                                                                                 |
 
-上記のうち機密性「非機密」の12変数・機密性「機密」の2変数、計14変数すべてを `aws ecs describe-task-definition --task-definition pitvia-api` で実際に取得し、1件ずつ突合済み（値の一致を確認、Secretは`valueFrom`のARN一致のみ確認し値は取得していない）。
+上記のうち`COOKIE_DOMAIN`を除く、機密性「非機密」の12変数・機密性「機密」の2変数、計14変数は `aws ecs describe-task-definition --task-definition pitvia-api` で実際に取得し、1件ずつ突合済み（値の一致を確認、Secretは`valueFrom`のARN一致のみ確認し値は取得していない）。`COOKIE_DOMAIN`は本ドキュメント更新時点でコード実装のみ完了しており、ECS Task Definitionへの反映・実機突合は未実施（デプロイ後に反映が必要。詳細は下記「refresh_token CookieのDomain属性について」を参照）。
+
+**注意（重要・refresh_token CookieのDomain属性について）**: `pitviaapp.com`（Frontend/Vercel）と`api.pitviaapp.com`（Backend/ALB）という別ホスト構成のため、Backendが発行する`refresh_token` CookieにDomain属性（`.pitviaapp.com`）を明示しないと、ブラウザはこのCookieを`api.pitviaapp.com`専用のhost-only Cookieとして扱う。その結果、`pitviaapp.com`（Next.js Middleware）側からはこのCookieを一切参照できず、ログインAPI成功後も未ログイン判定でログイン画面へ差し戻されてしまう不具合が実機で確認された。
+対応として、`app.security.cookie.domain`（環境変数`COOKIE_DOMAIN`）を新設し、値が設定されている場合のみ`RefreshTokenCookieFactory`がCookieにDomain属性を付与する実装に変更した（未設定時は従来通りhost-only Cookieとして発行され、ローカル開発環境の挙動に影響しない）。**本番運用には、ECS Task Definitionの`environment`に`COOKIE_DOMAIN=.pitviaapp.com`を追加した新しいリビジョンへの更新が別途必要**（本ドキュメント更新時点では未反映）。
 
 **S3移行のポイント**: `STORAGE_PROVIDER=s3` に切り替えると、`S3ClientConfig`（`storage/config/S3ClientConfig.java`）は
 `DefaultCredentialsProvider` を使うため、`STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` は本番では発行不要。
