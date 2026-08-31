@@ -56,7 +56,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 - サーキット走行ユーザー
 - カスタムカーオーナー
 
-## ショップ（管理者）
+## ショップ（事業者・店舗）
 
 - 整備工場
 - チューニングショップ
@@ -75,8 +75,8 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ### 権限種別
 
-- 一般ユーザー（オーナー）
-- 管理者（ショップ）
+- 一般ユーザー（OWNER）
+- 事業者・店舗（SHOP）
 
 ---
 
@@ -158,8 +158,8 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ## Frontend
 
-- Next.js
 - TypeScript
+- Next.js
 - Tailwind CSS
 
 ## Backend
@@ -167,7 +167,7 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 - Java
 - Spring Boot
 - Spring Security
-- Spring JPA
+- Spring Data JPA
 
 ## Database
 
@@ -175,7 +175,8 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ## Infrastructure
 
-- AWS (またはRender/Vercel)
+- AWS
+- Vercel
 - Docker
 - Docker Compose
 
@@ -183,19 +184,19 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 - Git / GitHub
 - VS Code
-- STS
 - DBeaver
 - draw.io (システム構成図)
 - dbdiagram.io (ER図)
-- Figma (画面遷移図、コンポーネント設計)
+- Figma (画面モックデザイン)
 - Swagger UI
 - Bruno
 
 ## 生成AI
 
 - ChatGPT (要件整理・設計レビュー)
-- Stitch (画面モック作成)
+- Stitch (画面モック生成)
 - V0 (UIプロトタイピング)
+- Claude Code (実装・バグ調査・セキュリティ調査)
 
 ---
 
@@ -208,10 +209,7 @@ pitvia/
     ├── .gitignore
     ├── .env.dev
     ├── .env.example
-    ├── .env.prod
     ├── docker-compose.dev.yml
-    ├── docker-compose.prod.yml
-    ├── docker-compose.yml
     ├── .github/
     │   ├── pull_request_template.md
     │   └── workflows/
@@ -232,19 +230,21 @@ pitvia/
     │   └── reset.sh
     ├── docs/
     │   ├── architecture/
-    │   │   └── architecture.drawio  # draw.ioで作成したアプリ構成図
+    │   │   └── architecture.drawio       # draw.ioで作成したアプリ構成図
     │   ├── ui/
     │   │   └── figma-link.md
     │   ├── api/
     │   │   ├── bruno/
-    │   │   ├── openapi.yaml
-    │   │   └── swagger-link.md
+    │   │   └── openapi.yaml
     │   ├── db/
-    │   │   └── schema.dbml          # dbdiagram.ioで作成したdbml
+    │   │   └── schema.dbml               # dbdiagram.ioで作成したdbml
+    │   ├── deployment/
+    │   │   └── environment-variables.md  # β版本番環境の環境変数・Secrets管理方針
     │   └── images/
     │       ├── architecture.png
     │       └── er.png
     ├── LICENSE
+    ├── CLAUDE.md
     └── README.md
 ```
 
