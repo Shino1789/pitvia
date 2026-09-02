@@ -1,0 +1,233 @@
+# ==================================================
+# CD(本番デプロイ)
+# ==================================================
+
+name: deploy
+
+# ==================================================
+# 実行タイミング
+# ・GitHub画面からの手動実行時
+# ・main へのpush時（PRマージ時）
+# ==================================================
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+# ==================================================
+# AWS OIDC認証に必要な権限
+# ==================================================
+permissions:
+  id-token: write
+  contents: read
+
+# ==================================================
+# AWS/ECSリソース共通設定
+# ==================================================
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REPOSITORY: pitvia-api
+  ECS_CLUSTER: pitvia-cluster
+  ECS_SERVICE: pitvia-api-service
+  ECS_TASK_DEFINITION_FAMILY: pitvia-api
+  CONTAINER_NAME: pitvia-api
+  TARGET_GROUP_ARN: arn:aws:elasticloadbalancing:ap-northeast-1:956118719101:targetgroup/pitvia-api-tg/c4e2de922dac5934
+
+jobs:
+  # ==================================================
+  # バックエンドテスト (Spring Boot + JUnit)
+  # ==================================================
+  test:
+    # 実行環境（GitHub提供 of Ubuntu）
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのソースコードを取得
+      - uses: actions/checkout@v4
+
+      # Java環境のセットアップ（Spring Boot用）
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      # Linux環境での Gradle Wrapper 実行権限の付与
+      - name: Grant execute permission for gradlew
+        working-directory: apps/api
+        run: chmod +x gradlew
+
+      # テスト実行（Spring Boot + JUnit）
+      - name: Run backend tests
+        working-directory: apps/api
+        run: ./gradlew test
+
+  # ==================================================
+  # 本番デプロイ (AWS ECS/Fargate)
+  # ・testジョブが成功した場合のみ実行される
+  # ==================================================
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # リポジトリのソースコードを取得
+      - uses: actions/checkout@v4
+
+      # ==================================================
+      # AWS認証 (OIDC)
+      # ==================================================
+      # GitHub OIDC token経由でAWS IAM Roleを引き受ける（Access Key不使用）
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::956118719101:role/pitvia-github-actions-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ==================================================
+      # ECRログイン
+      # ==================================================
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ==================================================
+      # Dockerイメージビルド
+      # ・build contextはリポジトリルート（DockerfileがCOPY apps/apiを参照するため）
+      # ・タグはcommit SHA短縮12桁 + latest
+      # ==================================================
+      - name: Resolve image tag
+        id: image
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          docker build \
+            -f infra/docker/api/Dockerfile \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            .
+
+      # ==================================================
+      # ECRへPush
+      # ==================================================
+      - name: Push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+      # ==================================================
+      # ECS Task Definition更新
+      # ・既存Task Definitionを取得し、imageフィールドのみ書き換える
+      # ・environment/secrets/role/cpu/memory等は既存設定をそのまま維持する
+      # ==================================================
+      - name: Render new task definition
+        id: render-task-def
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          NEW_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+          # familyの最新revisionではなく、ECS Serviceが実際に使用中のrevisionをベースにする
+          CURRENT_TASK_DEF=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query "services[0].taskDefinition" \
+            --output text)
+
+          aws ecs describe-task-definition \
+            --task-definition "$CURRENT_TASK_DEF" \
+            --query taskDefinition \
+            --output json > current-task-def.json
+
+          jq --arg IMAGE "$NEW_IMAGE" --arg NAME "$CONTAINER_NAME" '
+            .containerDefinitions |= map(
+              if .name == $NAME then .image = $IMAGE else . end
+            )
+            | del(
+                .taskDefinitionArn,
+                .revision,
+                .status,
+                .requiresAttributes,
+                .compatibilities,
+                .registeredAt,
+                .registeredBy
+              )
+          ' current-task-def.json > new-task-def.json
+
+          NEW_REVISION_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query taskDefinition.taskDefinitionArn \
+            --output text)
+
+          echo "task_definition_arn=$NEW_REVISION_ARN" >> "$GITHUB_OUTPUT"
+
+      # ==================================================
+      # ECSデプロイ
+      # ==================================================
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "${{ steps.render-task-def.outputs.task_definition_arn }}" \
+            > /dev/null
+
+      # ECS標準のDeployment Circuit Breaker/rollbackを利用するため、
+      # ここでは安定化を待つのみで、失敗時の自動リトライは行わない
+      - name: Wait for service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
+
+      # aws ecs wait services-stable はrunningCount==desiredCountのみで判定するため、
+      # Circuit Breakerによって旧revisionへrollbackされた場合も「安定」と判定されてしまう。
+      # そのため、実際に新revisionが稼働しているかをここで明示的に検証する
+      - name: Verify deployed task definition
+        run: |
+          ACTUAL_TASK_DEF=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query "services[0].taskDefinition" \
+            --output text)
+
+          if [ "$ACTUAL_TASK_DEF" != "${{ steps.render-task-def.outputs.task_definition_arn }}" ]; then
+            echo "::error::稼働中のTask Definitionが新revisionと一致しません（Circuit Breakerによるrollbackの可能性）。実際: $ACTUAL_TASK_DEF"
+            exit 1
+          fi
+
+      # ==================================================
+      # デプロイ結果確認
+      # ==================================================
+      # 失敗時のみ、deployment状況をSummaryへ出力する（Secretは含まれない）
+      - name: Report deployment failure
+        if: failure()
+        run: |
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query "services[0].deployments[*].{status:status,taskDefinition:taskDefinition,rolloutState:rolloutState,rolloutStateReason:rolloutStateReason}" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+      # ALB Target GroupでECS新タスクがhealthyになっていることを確認
+      - name: Check ALB target health
+        run: |
+          aws elbv2 describe-target-health \
+            --target-group-arn "$TARGET_GROUP_ARN" \
+            --query "TargetHealthDescriptions[*].TargetHealth.State"
+
+      # 外部疎通確認（参考情報。一時的なネットワーク障害でCD全体を失敗させないためcontinue-on-error）
+      - name: Check production health endpoint
+        continue-on-error: true
+        run: |
+          curl -fsS https://api.pitviaapp.com/api/v1/health
