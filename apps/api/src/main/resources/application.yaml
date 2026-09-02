@@ -63,6 +63,9 @@ app:
     cookie:
       secure: true
       same-site: None
+      # Frontend/BackendがサブドメインでURLが分かれる本番環境で、Cookieを両ホスト間で共有するためのDomain属性
+      # （例: .pitviaapp.com）。未設定時はhost-only Cookieとして発行される
+      domain: ${COOKIE_DOMAIN:}
 
   # スケジューラ設定
   scheduler:
