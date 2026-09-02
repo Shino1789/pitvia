@@ -7,12 +7,16 @@ name: deploy
 # ==================================================
 # 実行タイミング
 # ・GitHub画面からの手動実行時
-# ・main へのpush時（PRマージ時）
+# ・main へのpush時（PRマージ時）で、Backendに関係する変更を含む場合のみ
 # ==================================================
 on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - "apps/api/**"
+      - "infra/docker/api/**"
+      - ".github/workflows/deploy.yml"
 
 # ==================================================
 # AWS OIDC認証に必要な権限
