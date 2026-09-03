@@ -43,9 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // アクセストークンを再取得してセッションを復元
         await authSession.restoreSession();
-
-        // 復元成功の場合初期化を完了状態にする
-        setIsInitialized(true);
       } catch (error) {
         // APIエラーの場合
         if (axios.isAxiosError(error)) {
@@ -69,7 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Unexpected error during auth initialization.", error);
         // TODO: ログイン画面にメッセージ付きで飛ばすのではなく、エラー画面に飛ばす方がいいかも(エラーページの実装が完了次第要検討)
         router.replace(`${ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASON.NETWORK}`);
-        return;
+      } finally {
+        // 成功・失敗に関わらず、初期化処理を完了状態にする
+        // （リダイレクト処理の成否に関わらずLoadingScreenが表示され続けることを防ぐ）
+        setIsInitialized(true);
       }
     };
 
