@@ -32,8 +32,14 @@ export function RoleGuard({ allow, children }: Props) {
   const isAllowed = user ? allow.includes(user.role) : false;
 
   useEffect(() => {
-    // 画面描画後に権限がない場合は403画面に飛ばす
-    if (user && !isAllowed) {
+    // 未ログイン（認証復元に失敗した等）の場合はログイン画面へ飛ばす
+    if (!user) {
+      router.replace(ROUTES.LOGIN);
+      return;
+    }
+
+    // ログイン済みだが権限がない場合は403画面に飛ばす
+    if (!isAllowed) {
       router.replace(ROUTES.FORBIDDEN);
     }
   }, [user, isAllowed, router]);

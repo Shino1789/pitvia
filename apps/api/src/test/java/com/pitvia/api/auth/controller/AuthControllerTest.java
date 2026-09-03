@@ -20,6 +20,8 @@ import com.pitvia.api.support.AbstractIntegrationTest;
 import com.pitvia.api.support.TestUserHelper;
 import com.pitvia.api.support.TestUserHelper.LoginSession;
 
+import jakarta.servlet.http.Cookie;
+
 /**
  * 認証・認可APIの結合テスト
  *
@@ -120,6 +122,59 @@ class AuthControllerTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists(CookieConstants.REFRESH_TOKEN))
                 .andExpect(jsonPath("$.data.accessToken").exists());
+    }
+
+    /**
+     * トークンリフレッシュ（/auth/refresh）の異常系テスト（無効なリフレッシュトークン）。
+     *
+     * <p>
+     * 署名が不正なトークンでリフレッシュを要求した場合、401 INVALID_REFRESH_TOKENとなり、
+     * ブラウザに残った古いrefresh_token Cookieを削除するSet-Cookie
+     * （{@link com.pitvia.api.auth.factory.RefreshTokenCookieFactory#delete()}相当）が
+     * 返却されることを検証する。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("リフレッシュ：異常系（無効なリフレッシュトークン）")
+    void refresh_failure_invalidToken() throws Exception {
+
+        // Arrange
+        LoginSession session = testUserHelper.loginOwner(mockMvc);
+        // 正常なトークンの値を改ざんし、署名検証に失敗するトークンを作成する
+        Cookie tamperedCookie = new Cookie(CookieConstants.REFRESH_TOKEN, session.cookie().getValue() + "tampered");
+
+        // Act & Assert
+        mockMvc.perform(post(ApiPaths.AUTH + "/refresh")
+                .cookie(tamperedCookie))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REFRESH_TOKEN"))
+                // 削除用Cookie（Max-Age=0）がSet-Cookieとして返却されること
+                .andExpect(cookie().exists(CookieConstants.REFRESH_TOKEN))
+                .andExpect(cookie().maxAge(CookieConstants.REFRESH_TOKEN, 0))
+                .andExpect(cookie().httpOnly(CookieConstants.REFRESH_TOKEN, true));
+    }
+
+    /**
+     * トークンリフレッシュ（/auth/refresh）の異常系テスト（リフレッシュトークンが存在しない）。
+     *
+     * <p>
+     * refresh_token Cookie自体が存在しない場合は401 NO_REFRESH_TOKENとなるが、
+     * 元々Cookieが存在しないため、削除用のSet-Cookieは付与されないことを検証する。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("リフレッシュ：異常系（リフレッシュトークンが存在しない）")
+    void refresh_failure_noToken() throws Exception {
+
+        // Act & Assert
+        mockMvc.perform(post(ApiPaths.AUTH + "/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("NO_REFRESH_TOKEN"))
+                .andExpect(cookie().doesNotExist(CookieConstants.REFRESH_TOKEN));
     }
 
     /**

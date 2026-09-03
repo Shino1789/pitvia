@@ -25,9 +25,12 @@ import com.pitvia.api.auth.service.RefreshService;
 import com.pitvia.api.auth.service.RegisterService;
 import com.pitvia.api.common.constant.ApiPaths;
 import com.pitvia.api.common.dto.response.ApiResponse;
+import com.pitvia.api.common.exception.BusinessException;
+import com.pitvia.api.common.exception.ErrorCode;
 import com.pitvia.api.common.factory.ResponseFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -116,15 +119,27 @@ public class AuthController {
      *
      * @param refreshToken クッキーから自動抽出した古いリフレッシュトークン
      * @param httpRequest  HTTPリクエスト
+     * @param httpResponse HTTPレスポンス
      * @return 200 OK ステータス、新しいSet-Cookieヘッダー、および新しいアクセストークンを含むレスポンス
+     * @throws BusinessException リフレッシュトークンが無効・期限切れ、または存在しない場合
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(
             @CookieValue(name = CookieConstants.REFRESH_TOKEN, required = false) String refreshToken,
-            HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
 
-        // リフレッシュ処理の実行
-        RefreshResult result = refreshService.refresh(refreshToken, httpRequest);
+        RefreshResult result;
+        try {
+            // リフレッシュ処理の実行
+            result = refreshService.refresh(refreshToken, httpRequest);
+        } catch (BusinessException ex) {
+            // リフレッシュトークンが無効と判定された場合、ブラウザに残った古いCookieを削除する。
+            if (ex.getErrorCode() == ErrorCode.INVALID_REFRESH_TOKEN) {
+                httpResponse.addHeader(HttpHeaders.SET_COOKIE, cookieFactory.delete().toString());
+            }
+            throw ex;
+        }
 
         // 新しいリフレッシュトークンを載せたCookieを生成
         ResponseCookie cookie = cookieFactory.create(result.refreshToken());
