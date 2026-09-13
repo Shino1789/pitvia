@@ -12,8 +12,7 @@ info:
     REST API 通信で使用する。
 
     ⚠️ `Users` タグ配下のエンドポイントは、現時点ではController未実装のため疎通しない
-    （将来実装予定のAPI設計案として記載）。`MaintenanceRecords`タグは一覧取得・登録・
-    詳細取得・更新・削除まで実装済み。
+    （将来実装予定のAPI設計案として記載）。
 
 servers:
   - url: http://localhost:8080/api/v1
@@ -34,10 +33,19 @@ tags:
 
       ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない。
   - name: MaintenanceRecords
+    description: 整備記録API
+  - name: Customers
     description: |
-      整備記録API
+      顧客管理API（SHOP向け）
 
-      一覧取得・登録・詳細取得・更新・削除まで実装済み。
+      ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
+      （issue #48で実装予定）。
+  - name: Shops
+    description: |
+      ショップ招待コードAPI（SHOP向け）
+
+      ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
+      （issue #48で実装予定）。OWNER向けの連携済みショップ一覧・招待コード入力APIは別issueで対応する。
 
 paths:
   # ==========================================================================
@@ -1040,6 +1048,154 @@ paths:
   # ==========================================================================
   # Users（未実装 / 将来対応予定）
   # ==========================================================================
+  # ==========================================================================
+  # Customers（SHOP向け顧客管理）
+  # ==========================================================================
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: 顧客一覧取得
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
+        （issue #48で実装予定）。
+
+        SHOPロール専用。ログインショップとAPPROVED状態で連携している車両を、所有者（顧客）単位で
+        グルーピングして一覧取得する。OWNERロールが呼び出した場合は403（`FORBIDDEN`）を返す。
+
+        `keyword`は顧客名（ユーザー名）の部分一致検索、`page`/`size`はページング条件
+        （`MaintenanceRecords`一覧APIと共通の仕様）。
+
+        `lastMaintenanceDate`の意味は`CustomerSummary`スキーマの説明を参照。**ログインショップ
+        自身が実施した整備履歴の最終作業日**であり、単純な「顧客車両に登録された最新整備日」
+        （他ショップ・OWNER自身によるDIY整備履歴を含む値）ではない点に注意。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: 顧客名（ユーザー名）の部分一致検索
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: ページ番号（1始まり、デフォルト1）
+          schema:
+            type: integer
+            minimum: 1
+        - name: size
+          in: query
+          required: false
+          description: 1ページあたりの件数（デフォルト20、最大100）
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: 顧客一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerListApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: OWNERロールが呼び出した場合（`FORBIDDEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==========================================================================
+  # Shops（SHOP向け招待コード）
+  # ==========================================================================
+  /shops/invite-code:
+    get:
+      tags:
+        - Shops
+      summary: 現在の招待コード取得
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
+        （issue #48で実装予定）。
+
+        SHOPロール専用。ログインショップが現在発行している、失効していない招待コードを取得する。
+        招待コード発行モーダルを再度開いた際に、現在有効なコードを再表示するために使用する。
+
+        有効なコードが存在しない場合は`data`が`null`になる（404ではない）。
+        OWNERロールが呼び出した場合は403（`FORBIDDEN`）を返す。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 取得成功（有効なコードが無い場合は`data`が`null`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopInviteCodeApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: OWNERロールが呼び出した場合（`FORBIDDEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - Shops
+      summary: 招待コード発行（再発行）
+      description: |
+        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
+        （issue #48で実装予定）。
+
+        SHOPロール専用。ショップ単位の招待コードを新規発行する。リクエストボディは不要。
+
+        呼び出し時点で失効していない既存コード（`revoked_at IS NULL`のレコード）が存在する場合、
+        有効期限切れかどうかに関わらずそのコードを即時失効させたうえで、新しいコードを発行する
+        （ショップごとに「失効していないコード」は常に1件のみになるよう、DBの部分一意インデックス
+        でも担保する）。
+
+        招待コードは認証情報・パスワードではなく、有効期限付き（発行から24時間）のショップ連携用
+        コードとして扱う。ただし第三者に知られた場合はそのコードでショップ連携が可能になるため
+        「完全に無害な情報」としては扱わず、アプリケーションログ・APIログには出力しない。
+
+        発行された招待コードは、OWNER側で対象車両を1台選択したうえで入力することでショップ連携が
+        成立する（OWNER側の入力APIは別issueで対応）。有効期限内であれば同一コードを複数のOWNER・
+        複数の車両で繰り返し利用でき、1回の利用で消費されるものではない。
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: 発行成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopInviteCodeApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: OWNERロールが呼び出した場合（`FORBIDDEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /users/me:
     get:
       tags:
@@ -1329,6 +1485,34 @@ components:
           $ref: "#/components/schemas/Meta"
         data:
           $ref: "#/components/schemas/MaintenanceRecordResponse"
+
+    CustomerListApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/CustomerPage"
+
+    ShopInviteCodeApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/ShopInviteCodeResponse"
+          nullable: true
+          description: |
+            現在有効な招待コードが存在しない場合は`null`（`GET /shops/invite-code`のみ該当。
+            `POST /shops/invite-code`のレスポンスは常に非null）。
 
     # --- Auth ---
     RegisterRequest:
@@ -2225,3 +2409,100 @@ components:
             ログインユーザーがこの整備履歴を編集（更新・削除）できるかどうか。車両所有者/SHOP
             権限ではなく、この整備履歴を登録したユーザー本人（`createdByUser`）の場合のみtrue。
           example: true
+
+    # --- Customers ---
+    CustomerVehicleSummary:
+      type: object
+      description: |
+        顧客一覧における連携車両のサマリー情報（`VehicleResponse`の全項目は含まない簡易表現）。
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleName:
+          type: string
+          description: 車両アイコンのツールチップ表示等に使う車種名（`modelName`）
+          example: "RX-7 (FD3S)"
+        imageUrl:
+          type: string
+          nullable: true
+          description: 車両画像の公開URL（未設定の場合はnull）
+
+    CustomerSummary:
+      type: object
+      properties:
+        ownerId:
+          type: string
+          format: uuid
+        ownerName:
+          type: string
+          example: "田中 健太"
+        ownerIconUrl:
+          type: string
+          nullable: true
+          description: 顧客（オーナー）のユーザーアイコン公開URL（未設定の場合はnull）
+        lastMaintenanceDate:
+          type: string
+          format: date
+          nullable: true
+          description: |
+            **ログインショップ自身が実施した**整備履歴のうち、最も新しい作業開始日
+            （`workDateFrom`）。顧客の車両に登録された整備履歴全体（他ショップ・OWNER自身に
+            よるDIY整備を含む）の最新日ではない点に注意。該当する整備履歴が1件も無い場合は`null`。
+        linkedVehicles:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/CustomerVehicleSummary"
+          description: このショップと連携（APPROVED）している顧客の車両のうち最大3件
+        linkedVehicleCount:
+          type: integer
+          format: int64
+          description: |
+            連携車両の総数。`linkedVehicles`は先頭3件のみを含むため、
+            残数（`linkedVehicleCount - linkedVehicles.length`）の表示に利用する。
+          example: 4
+
+    CustomerPage:
+      type: object
+      description: |
+        顧客一覧（ページング付き）。Backendの共通ページングレスポンス型（`PageResponse<T>`）に
+        対応する。
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerSummary"
+        page:
+          type: integer
+          description: 現在のページ番号（1始まり）
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: 全件数
+          example: 46
+        totalPages:
+          type: integer
+          description: 総ページ数
+          example: 3
+
+    # --- Shops（招待コード） ---
+    ShopInviteCodeResponse:
+      type: object
+      description: |
+        ショップ単位の招待コード。認証情報・パスワードとは異なり、有効期限付き（発行から24時間）の
+        「ショップ連携用招待コード」として扱う（β版ではDBに平文保存する設計判断について
+        `POST /shops/invite-code`のdescriptionを参照）。
+      properties:
+        code:
+          type: string
+          example: "A7X9-K2LM"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2026-06-20T18:00:00Z"
