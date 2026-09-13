@@ -33,6 +33,12 @@ public final class ApiPaths {
     /** 整備履歴関連エンドポイントのプレフィックス */
     public static final String MAINTENANCE_RECORD = V1 + "/maintenance-records";
 
+    /** 顧客関連エンドポイントのプレフィックス */
+    public static final String CUSTOMER = V1 + "/customers";
+
+    /** ショップ関連エンドポイントのプレフィックス */
+    public static final String SHOP = V1 + "/shops";
+
     /** Swagger UI 画面パス */
     public static final String SWAGGER = "/swagger-ui";
 
