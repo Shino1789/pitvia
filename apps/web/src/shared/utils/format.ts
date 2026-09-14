@@ -140,3 +140,41 @@ export function formatWorkPeriod(
   }
   return `${from} 〜 ${toSlash(workDateTo)}`;
 }
+
+/**
+ * ISO-8601形式の日時文字列を「YYYY/MM/DD HH:mm」形式に整形
+ * (例: "2026-06-20T18:00:00Z" → "2026/06/20 18:00"、ローカルタイムゾーンで表示)
+ *
+ * @param isoDateTime ISO-8601形式の日時文字列
+ * @returns 整形後の日時文字列
+ */
+export function formatDateTime(isoDateTime: string): string {
+  const date = new Date(isoDateTime);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/**
+ * 招待コード等の有効期限までの残り時間を「残り23時間」「残り5分」形式に整形
+ * (例: 期限まで23時間15分 → "残り23時間"、期限切れ → "期限切れ")
+ *
+ * 固定値の逆算ではなく、常にAPIから受け取った`expiresAt`を基準に算出する。
+ *
+ * @param expiresAt 有効期限のISO-8601形式日時文字列
+ * @returns 残り時間の表示文字列
+ */
+export function formatRemainingTime(expiresAt: string): string {
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+
+  if (diffMs <= 0) {
+    return "期限切れ";
+  }
+
+  const hours = Math.floor(diffMs / (60 * 60 * 1000));
+  if (hours >= 1) {
+    return `残り${hours}時間`;
+  }
+
+  const minutes = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+  return `残り${minutes}分`;
+}

@@ -46,4 +46,14 @@ export const ENDPOINTS = {
     byId: (maintenanceRecordId: string) =>
       `/maintenance-records/${maintenanceRecordId}`,
   },
+
+  customer: {
+    /** 顧客一覧取得API（SHOP専用） */
+    list: "/customers",
+  },
+
+  shop: {
+    /** 招待コード取得・発行API（GET: 現在の有効なコード取得、POST: 新規発行・再発行） */
+    inviteCode: "/shops/invite-code",
+  },
 } as const;
