@@ -39,7 +39,10 @@ export const TOAST_MESSAGES = {
   },
 
   ERROR: {
-    // 必要に応じてエラー系のトースト文言追加
+    SHOP: {
+      /** 招待コードコピー失敗 */
+      INVITE_CODE_COPY: "招待コードのコピーに失敗しました。",
+    },
   },
 
   WARNING: {

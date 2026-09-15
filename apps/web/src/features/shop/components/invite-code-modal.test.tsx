@@ -140,6 +140,37 @@ describe("InviteCodeModal", () => {
   });
 
   /**
+   * @test コピーボタン押下時にnavigator.clipboard.writeTextが失敗した場合、
+   * 例外が未処理のまま伝播せず、エラートーストが表示されることを確認
+   */
+  test("コピー失敗時はエラートーストが表示される", async () => {
+    const user = userEvent.setup();
+    // userEvent.setup()はnavigator.clipboardへ実装を自動で用意するため、
+    // それをspyOnしてreject（コピー失敗）させる
+    const writeTextSpy = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockRejectedValue(new Error("clipboard error"));
+    const { shopApi } = await import("../api/shop-api");
+    const { appToast } = await import("@/lib/toast");
+    vi.mocked(shopApi.getInviteCode).mockResolvedValue(CURRENT_CODE);
+
+    renderModal();
+
+    await screen.findByText("A7X9-K2LM");
+    await user.click(screen.getByRole("button", { name: /コピー/ }));
+
+    expect(writeTextSpy).toHaveBeenCalledWith("A7X9-K2LM");
+    await waitFor(() => {
+      expect(appToast.error).toHaveBeenCalledWith(
+        "招待コードのコピーに失敗しました。",
+      );
+    });
+    expect(appToast.success).not.toHaveBeenCalled();
+    // 失敗してもモーダルの表示中のコードには影響しないこと
+    expect(screen.getByText("A7X9-K2LM")).toBeInTheDocument();
+  });
+
+  /**
    * @test 「再発行」押下でPOSTが実行され、新しいコードが表示されることを確認
    */
   test("再発行すると新しいコードが表示される", async () => {

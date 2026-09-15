@@ -55,8 +55,12 @@ export function InviteCodeModal({ open, onOpenChange }: InviteCodeModalProps) {
   const { issueInviteCode, isLoading: isIssuing } = useIssueInviteCode();
 
   const handleCopy = async (code: string) => {
-    await navigator.clipboard.writeText(code);
-    appToast.success(TOAST_MESSAGES.SUCCESS.SHOP.INVITE_CODE_COPY);
+    try {
+      await navigator.clipboard.writeText(code);
+      appToast.success(TOAST_MESSAGES.SUCCESS.SHOP.INVITE_CODE_COPY);
+    } catch {
+      appToast.error(TOAST_MESSAGES.ERROR.SHOP.INVITE_CODE_COPY);
+    }
   };
 
   return (
