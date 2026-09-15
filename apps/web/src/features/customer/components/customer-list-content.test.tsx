@@ -4,6 +4,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { CustomerListContent } from "./customer-list-content";
 import { HeaderProvider } from "@/shared/providers/header-provider";
 import { AppHeader } from "@/shared/components/layout/app-header";
+import { TooltipProvider } from "@/shared/ui/tooltip";
 import type { PageResponse } from "@/shared/types/response";
 import type { CustomerSummary } from "../types/customer";
 
@@ -96,10 +97,14 @@ function buildResponse(
  */
 function renderWithHeader() {
   return render(
-    <HeaderProvider>
-      <AppHeader onMenuClick={vi.fn()} />
-      <CustomerListContent />
-    </HeaderProvider>,
+    // TooltipProviderは本番ではapp/layout.tsxが1つだけ提供する前提のため、
+    // CustomerCard配下のTooltip（連携車両アイコン）が動作するようここで明示的にラップする
+    <TooltipProvider>
+      <HeaderProvider>
+        <AppHeader onMenuClick={vi.fn()} />
+        <CustomerListContent />
+      </HeaderProvider>
+    </TooltipProvider>,
   );
 }
 
