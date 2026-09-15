@@ -6,3 +6,5 @@ variables:
     value: ""
   - name: workItemId
     value: ""
+  - name: inviteCode
+    value: ""

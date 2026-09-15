@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { QueryProvider } from "@/providers/query-provider";
+import { TooltipProvider } from "@/shared/ui/tooltip";
 import { Toaster } from "@/shared/ui/sonner";
 import "./globals.css";
 
@@ -28,11 +29,13 @@ export default function RootLayout({
       <body>
         {/* React Query の Context をアプリ全体に提供 */}
         <QueryProvider>
-          {/* メインコンテンツ */}
-          {children}
-
-          {/* アプリ共通トースト表示 */}
-          <Toaster richColors position="top-right" closeButton />
+          {/* Radix Tooltipの共有コンテキストをアプリ全体に提供 */}
+          <TooltipProvider>
+            {/* メインコンテンツ */}
+            {children}
+            {/* アプリ共通トースト表示 */}
+            <Toaster richColors position="top-right" closeButton />
+          </TooltipProvider>
         </QueryProvider>
       </body>
     </html>

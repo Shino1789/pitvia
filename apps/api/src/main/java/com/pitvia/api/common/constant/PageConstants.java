@@ -15,4 +15,7 @@ public final class PageConstants {
     /** ダッシュボード最近の整備履歴 */
     public static final int DASHBOARD_RECENT_MAINTENANCE_SIZE = 3;
 
+    /** 顧客一覧における連携車両の表示件数上限 */
+    public static final int CUSTOMER_LINKED_VEHICLE_DISPLAY_SIZE = 3;
+
 }

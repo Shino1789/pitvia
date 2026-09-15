@@ -57,8 +57,7 @@ export const MENU_ITEMS: MenuItem[] = [
     path: ROUTES.CUSTOMERS,
     roles: ["SHOP"],
     icon: Users,
-    // TODO: 顧客管理機能（顧客一覧画面）実装後にtrueへ戻す
-    sidebar: false,
+    sidebar: true,
   },
   {
     label: "アカウント設定",

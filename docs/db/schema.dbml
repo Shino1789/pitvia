@@ -138,6 +138,44 @@ Table shops {
 
 }
 
+Table shop_invite_codes {
+  Note: '招待コード管理テーブル'
+
+  id bigint [
+    pk,
+    increment
+  ]
+  shop_id uuid [
+    not null,
+    ref: > shops.id,
+    note: '発行元ショップID'
+  ]
+  code varchar [
+    not null,
+    unique,
+    note: '招待コード（平文保存）'
+  ]
+  expires_at timestamp [
+    not null,
+    note: '有効期限'
+  ]
+  revoked_at timestamp [
+    note: '無効化日時'
+  ]
+  created_at timestamp [
+    not null,
+    default: `now()`
+  ]
+  updated_at timestamp [
+    not null,
+    default: `now()`
+  ]
+
+  indexes {
+    (shop_id)
+  }
+}
+
 Table manufacturers {
     Note: 'メーカーマスタ'
 

@@ -1,0 +1,34 @@
+info:
+  name: 顧客一覧取得：正常系（SHOP）
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/customers
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  SHOPが、APPROVED状態で連携中の顧客（オーナー）一覧を取得する。
+
+  以下を確認する。
+  1. ステータスコードが 200 OK であること。
+  2. `data.content`に連携中の顧客（オーナーテスト）が1件含まれること。
+  3. `data.content[0].linkedVehicles`に連携車両（RX-7）が含まれること。
+  4. `data.content[0].lastMaintenanceDate`が`2027-01-10`（モックデータ上、ショップテスト自身が
+     実施した整備履歴のうち最も新しい作業開始日）であること。
+     ※他ショップ・OWNER自身によるDIY整備履歴の日付ではなく、あくまで
+     ログインショップ自身が実施した分のみが対象になっている点を確認する。
+
+  ※このシナリオは開発環境の初期モックデータ（V1000__mock_data.sql）に依存します。
+  実行前に、`shop@example.com` / `password123`（モックデータ用SHOPアカウント）で
+  `POST /auth/login` を実行し、そのアクセストークンを `accessToken` 環境変数へ設定してください。

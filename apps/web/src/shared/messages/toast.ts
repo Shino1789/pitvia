@@ -29,10 +29,20 @@ export const TOAST_MESSAGES = {
       /** 整備履歴削除完了 */
       DELETE: "整備履歴を削除しました。",
     },
+
+    SHOP: {
+      /** 招待コード発行・再発行完了 */
+      INVITE_CODE_ISSUE: "招待コードを発行しました。",
+      /** 招待コードコピー完了 */
+      INVITE_CODE_COPY: "招待コードをコピーしました。",
+    },
   },
 
   ERROR: {
-    // 必要に応じてエラー系のトースト文言追加
+    SHOP: {
+      /** 招待コードコピー失敗 */
+      INVITE_CODE_COPY: "招待コードのコピーに失敗しました。",
+    },
   },
 
   WARNING: {

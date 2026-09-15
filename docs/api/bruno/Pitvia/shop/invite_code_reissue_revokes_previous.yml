@@ -1,0 +1,47 @@
+info:
+  name: 招待コード再発行：旧コードが失効すること
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/invite-code
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        if (res.status === 201 && body.data?.code) {
+          console.log("previous code:", bru.getEnvVar("inviteCode"));
+          console.log("new code:", body.data.code);
+          bru.setEnvVar("inviteCode", body.data.code);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  同じSHOPアカウントで再度発行（再発行）を実行する。
+
+  以下を確認する。
+  1. ステータスコードが 201 Created であり、`data.code`がコンソールログに出力される
+     直前の`inviteCode`（`invite_code_issue_success.yml`で発行したコード）とは
+     異なる値であること。
+  2. 続けて`invite_code_get_success.yml`を実行すると、`data.code`が今回の新しいコードに
+     なっており、旧コードはもう取得できない（＝失効している）こと。
+
+  ※実行前に `invite_code_issue_success.yml` を実行し、招待コードを発行しておく必要があります
+  （同一のSHOPアカウントでログイン済みであること）。
