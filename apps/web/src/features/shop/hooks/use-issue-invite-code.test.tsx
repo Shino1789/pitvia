@@ -1,7 +1,9 @@
 import { renderHook, act } from "@testing-library/react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { useIssueInviteCode } from "./use-issue-invite-code";
 import { shopKeys } from "../constants/shop-keys";
+import { queryClient } from "@/providers/query-provider";
 import type { ShopInviteCode } from "../types/shop";
 
 // API通信を担当するレイヤーをモック化
@@ -20,11 +22,22 @@ const NEW_CODE: ShopInviteCode = {
 };
 
 /**
+ * useMutationはQueryClientProviderのContextを必要とするため、アプリ実体と同じ
+ * 共有QueryClientシングルトンでラップする（setQueryDataの反映確認にも同じインスタンスを使う）。
+ */
+function wrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+
+/**
  * useIssueInviteCode カスタムフックの単体テスト
  */
 describe("useIssueInviteCode", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
   });
 
   /**
@@ -33,11 +46,10 @@ describe("useIssueInviteCode", () => {
   test("発行成功時にキャッシュを更新し、成功トーストを表示する", async () => {
     const { shopApi } = await import("../api/shop-api");
     const { appToast } = await import("@/lib/toast");
-    const { queryClient } = await import("@/providers/query-provider");
     vi.mocked(shopApi.issueInviteCode).mockResolvedValue(NEW_CODE);
     const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
 
-    const { result } = renderHook(() => useIssueInviteCode());
+    const { result } = renderHook(() => useIssueInviteCode(), { wrapper });
 
     let response: ShopInviteCode | null = null;
     await act(async () => {
@@ -65,7 +77,7 @@ describe("useIssueInviteCode", () => {
       new Error("発行に失敗しました"),
     );
 
-    const { result } = renderHook(() => useIssueInviteCode());
+    const { result } = renderHook(() => useIssueInviteCode(), { wrapper });
 
     let response: ShopInviteCode | null = null;
     await act(async () => {
