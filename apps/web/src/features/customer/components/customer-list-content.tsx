@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { PlusIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
 import { Pagination } from "@/shared/ui/pagination";
 import { ErrorState } from "@/shared/components/state/error-state";
+import { SearchBar } from "@/shared/components/search-bar";
 import { CustomerListSkeleton } from "./customer-list-skeleton";
 import { CustomerCard } from "./customer-card";
 import { InviteCodeModal } from "@/features/shop/components/invite-code-modal";
 import { useCustomerList } from "../hooks/use-customer-list";
 import { useHeader } from "@/shared/hooks/use-header";
+import { useQueryParams } from "@/shared/hooks/use-query-params";
 
 /** 1ページあたりの表示件数（現状は固定。件数選択UIは今回のスコープ外） */
 const DEFAULT_PAGE_SIZE = 20;
@@ -25,66 +25,35 @@ const DEFAULT_PAGE_SIZE = 20;
  * @returns 顧客一覧コンテンツのJSX要素
  */
 export function CustomerListContent() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { searchParams, updateParams } = useQueryParams();
 
-  // 検索キーワード（URL上の確定値）
+  // 検索キーワードをURLクエリパラメータから取得
   const keywordParam = searchParams.get("keyword") ?? "";
-  // 現在のページ番号
+  // 現在のページ番号をURLクエリパラメータから取得
   const page = Number(searchParams.get("page") ?? "1") || 1;
 
+  // APIから顧客一覧データを取得
   const { data, isPending, isError, refetch } = useCustomerList({
     keyword: keywordParam || undefined,
     page,
     size: DEFAULT_PAGE_SIZE,
   });
 
-  // 検索バーの開閉状態（URLに既にkeywordが設定されている場合は開いた状態から始める）
-  const [isSearchOpen, setIsSearchOpen] = useState(() => !!keywordParam);
   // 検索欄への入力途中の値（デバウンスでURLへコミットする前の値）
   const [keywordInput, setKeywordInput] = useState(keywordParam);
   // 招待コード発行モーダルの表示状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  /**
-   * 現在のURLクエリパラメータを起点に、指定キーのみを更新したURLへ遷移する
-   *
-   * @param updates   更新するクエリパラメータ（値がnullの場合はキー自体を削除）
-   * @param resetPage trueの場合、pageパラメータをリセットする
-   */
-  const updateParams = useCallback(
-    (updates: Record<string, string | null>, resetPage: boolean) => {
-      const next = new URLSearchParams(searchParams.toString());
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null) {
-          next.delete(key);
-        } else {
-          next.set(key, value);
-        }
-      });
-
-      if (resetPage) {
-        next.delete("page");
-      }
-
-      const query = next.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [router, pathname, searchParams],
-  );
-
   // キーワード入力のデバウンス。入力が一定時間止まったらURLへ反映し、pageを1へリセットする
   useEffect(() => {
     const trimmed = keywordInput.trim();
 
+    // 入力値がURLパラメータと同じ場合は何もしない
     if (trimmed === keywordParam) {
       return;
     }
 
+    // 400ms後にURLパラメータを更新するタイマーをセット
     const timer = setTimeout(() => {
       updateParams({ keyword: trimmed || null }, true);
     }, 400);
@@ -114,41 +83,16 @@ export function CustomerListContent() {
 
     return (
       <div className="flex items-center gap-2">
-        {isSearchOpen ? (
-          <div className="flex items-center gap-1">
-            <Input
-              autoFocus
-              defaultValue={keywordParam}
-              placeholder="顧客名で検索"
-              onChange={(e) => setKeywordInput(e.target.value)}
-              className="h-8 w-36 sm:w-56"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              aria-label="検索を閉じる"
-              onClick={() => {
-                setIsSearchOpen(false);
-                setKeywordInput("");
-                updateParams({ keyword: null }, true);
-              }}
-            >
-              <XIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="顧客名で検索"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <SearchIcon className="h-4 w-4" />
-          </Button>
-        )}
+        <SearchBar
+          defaultOpen={!!keywordParam}
+          defaultValue={keywordParam}
+          placeholder="顧客名で検索"
+          onChange={setKeywordInput}
+          onClear={() => {
+            setKeywordInput("");
+            updateParams({ keyword: null }, true);
+          }}
+        />
 
         <Button
           type="button"
@@ -161,7 +105,7 @@ export function CustomerListContent() {
         </Button>
       </div>
     );
-  }, [showActions, isSearchOpen, keywordParam, updateParams]);
+  }, [showActions, keywordParam, updateParams]);
 
   useHeader({ title: "顧客一覧", actions });
 
