@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { useIssueInviteCode } from "./use-issue-invite-code";
@@ -85,7 +85,15 @@ describe("useIssueInviteCode", () => {
     });
 
     expect(response).toBeNull();
-    expect(result.current.error).toBe("発行に失敗しました");
+    // useMutationの状態変化は、TanStack Query内部でnotifyManager.batchCallsにより
+    // setTimeout(0)でReactへの通知がバッチ化されるため、issueInviteCode()のPromiseが
+    // 解決した時点（act()直後）では、まだresult.current（Reactの再レンダリング結果）に
+    // 反映されているとは限らない（mutation自体の内部状態はこの時点で既に更新済みだが、
+    // Reactコンポーネントへの通知が非同期にスケジュールされているため）。そのため、
+    // 実際に再レンダリングされ反映されるまでwaitForで待つ。
+    await waitFor(() => {
+      expect(result.current.error).toBe("発行に失敗しました");
+    });
     expect(result.current.isLoading).toBe(false);
     expect(appToast.error).toHaveBeenCalledWith("発行に失敗しました");
     expect(appToast.success).not.toHaveBeenCalled();
