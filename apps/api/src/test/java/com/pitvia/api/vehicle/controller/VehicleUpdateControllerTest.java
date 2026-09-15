@@ -24,6 +24,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import com.pitvia.api.common.constant.ApiPaths;
 import com.pitvia.api.master.entity.Manufacturer;
@@ -72,7 +73,9 @@ class VehicleUpdateControllerTest extends AbstractIntegrationTest {
 
     /** 車両アイコン画像アップロード検証用のMinIOコンテナ */
     @Container
-    static MinIOContainer minio = new MinIOContainer("minio/minio:RELEASE.2024-11-07T00-52-20Z")
+    static MinIOContainer minio = new MinIOContainer(
+            DockerImageName.parse("quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z")
+                    .asCompatibleSubstituteFor("minio/minio"))
             .withUserName(STORAGE_ACCESS_KEY)
             .withPassword(STORAGE_SECRET_KEY);
 
