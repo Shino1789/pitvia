@@ -111,11 +111,6 @@ public interface VehicleShopLinkRepository extends JpaRepository<VehicleShopLink
      * 別途取得する（N+1を避けるため、対象ページのオーナーIDをまとめて1回で引く）。
      * </p>
      *
-     * <p>
-     * 並び替えはJPQL側の{@code ORDER BY}で固定しており（最終整備日 降順、ユーザー名を
-     * 第二ソート条件とした安定順）、{@code pageable}にはソート指定を含めないこと。
-     * </p>
-     *
      * @param shopId   ショップユーザーID
      * @param keyword  顧客名（ユーザー名）の部分一致キーワード（任意。未指定時は絞り込みなし）
      * @param pageable ページング情報（ソートは無視される）
@@ -137,7 +132,7 @@ public interface VehicleShopLinkRepository extends JpaRepository<VehicleShopLink
               AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
               AND (:keyword IS NULL OR LOWER(owner.userName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
             GROUP BY owner.id, owner.userName, owner.iconKey
-            ORDER BY MAX(mr.workDateFrom) DESC NULLS LAST, owner.userName ASC
+            ORDER BY MAX(mr.workDateFrom) DESC NULLS LAST, owner.userName ASC, owner.id ASC
             """, countQuery = """
             SELECT COUNT(DISTINCT owner.id)
             FROM VehicleShopLink vsl

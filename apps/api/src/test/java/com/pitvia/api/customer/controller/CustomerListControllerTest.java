@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 
+import com.jayway.jsonpath.JsonPath;
 import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.common.constant.ApiPaths;
 import com.pitvia.api.maintenance.entity.MaintenanceRecord;
@@ -174,6 +175,60 @@ class CustomerListControllerTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content.length()").value(1))
                 .andExpect(jsonPath("$.data.content[0].ownerName").value("顧客C"));
+    }
+
+    /**
+     * 顧客一覧取得：同姓同名かつlastMaintenanceDateも同一（null同士）の場合の並び順安定性：正常系。
+     *
+     * <p>
+     * ORDER BYの第三条件（owner.id）により、最終整備日・ユーザー名が完全に一致する顧客が
+     * 複数存在してもページ境界で重複・欠落せず、同一条件での再取得時も同じ順序になることを
+     * 検証する（Postgres側のUUID比較結果をJava側で予測せず、ページングの一貫性そのものを見る）。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("顧客一覧取得（同姓同名・同一lastMaintenanceDateの並び順安定性）：正常系")
+    void list_tieBreakByOwnerId_stable() throws Exception {
+
+        // Arrange：同じユーザー名・整備履歴なし（lastMaintenanceDate=null同士）のオーナーを2人作成
+        LoginSession shop = testUserHelper.loginShop(mockMvc);
+        Shop shopEntity = findShop(shop);
+
+        User first = registerLinkedOwner("同姓同名テスト", shopEntity, "RX-7");
+        User second = registerLinkedOwner("同姓同名テスト", shopEntity, "GT-R");
+
+        // Act：size=1でページを分け、1件ずつ取得する
+        var page1 = mockMvc.perform(get(ApiPaths.CUSTOMER)
+                .param("page", "1")
+                .param("size", "1")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + shop.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.totalPages").value(2))
+                .andReturn();
+        String page1OwnerId = JsonPath.read(page1.getResponse().getContentAsString(), "$.data.content[0].ownerId");
+
+        var page2 = mockMvc.perform(get(ApiPaths.CUSTOMER)
+                .param("page", "2")
+                .param("size", "1")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + shop.accessToken()))
+                .andExpect(status().isOk())
+                .andReturn();
+        String page2OwnerId = JsonPath.read(page2.getResponse().getContentAsString(), "$.data.content[0].ownerId");
+
+        // Assert：2ページ分を合わせるとちょうど2人のオーナーを重複・欠落なく網羅する
+        org.assertj.core.api.Assertions.assertThat(java.util.Set.of(page1OwnerId, page2OwnerId))
+                .containsExactlyInAnyOrder(first.getId().toString(), second.getId().toString());
+
+        // Assert：同一条件で再取得しても1ページ目の内容が変わらない（順序の再現性）
+        mockMvc.perform(get(ApiPaths.CUSTOMER)
+                .param("page", "1")
+                .param("size", "1")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + shop.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].ownerId").value(page1OwnerId));
     }
 
     /**
