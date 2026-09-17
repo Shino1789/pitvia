@@ -35,17 +35,10 @@ tags:
   - name: MaintenanceRecords
     description: 整備記録API
   - name: Customers
-    description: |
-      顧客管理API（SHOP向け）
-
-      ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
-      （issue #48で実装予定）。
+    description: 顧客管理API（SHOP向け）
   - name: Shops
     description: |
-      ショップ招待コードAPI（SHOP向け）
-
-      ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
-      （issue #48で実装予定）。OWNER向けの連携済みショップ一覧・招待コード入力APIは別issueで対応する。
+      ショップAPI（招待コード発行はSHOP向け、ショップ一覧・ショップ連携はOWNER向け）
 
 paths:
   # ==========================================================================
@@ -1057,9 +1050,6 @@ paths:
         - Customers
       summary: 顧客一覧取得
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
-        （issue #48で実装予定）。
-
         SHOPロール専用。ログインショップとAPPROVED状態で連携している車両を、所有者（顧客）単位で
         グルーピングして一覧取得する。OWNERロールが呼び出した場合は403（`FORBIDDEN`）を返す。
 
@@ -1114,17 +1104,145 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   # ==========================================================================
-  # Shops（SHOP向け招待コード）
+  # Shops（SHOP向け招待コード、OWNER向けショップ一覧・ショップ連携）
   # ==========================================================================
+  /shops:
+    get:
+      tags:
+        - Shops
+      summary: 連携済みショップ一覧取得
+      description: |
+        OWNERロール専用。ログインOWNERの所有車両とAPPROVED状態で連携しているショップを、
+        ショップ単位でグルーピングして一覧取得する。SHOP・ADMINロールが呼び出した場合は
+        403（`FORBIDDEN`）を返す。
+
+        `keyword`はショップ名（ユーザー名）の部分一致検索、`page`/`size`はページング条件
+        （`Customers`一覧APIと共通の仕様）。
+
+        並び順は、OWNERとの最終連携日時（承認日時の最大値）降順 → ショップ名昇順 →
+        ショップID昇順で安定させる（`Customers`一覧APIと同じ考え方）。
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: ショップ名（ユーザー名）の部分一致検索
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: ページ番号（1始まり、デフォルト1）
+          schema:
+            type: integer
+            minimum: 1
+        - name: size
+          in: query
+          required: false
+          description: 1ページあたりの件数（デフォルト20、最大100）
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: ショップ一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopListApiResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: SHOP・ADMINロールが呼び出した場合（`FORBIDDEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shops/link:
+    post:
+      tags:
+        - Shops
+      summary: 招待コード入力によるショップ連携
+      description: |
+        OWNERロール専用。SHOPが発行した招待コード（`POST /shops/invite-code`参照）と、連携対象の
+        車両ID（OWNER本人が所有する車両）を指定し、車両とショップの連携を作成する。
+
+        招待コードの有効性は`revoked_at IS NULL AND expires_at > now()`で判定する。存在しない・
+        期限切れ・失効済みのいずれであっても区別せず、統一した`INVALID_INVITE_CODE`エラー（400）
+        として扱う。招待コードは消費されないため、有効期限内であれば同一コードを複数のOWNER・
+        複数車両で繰り返し利用できる。
+
+        指定した`vehicleId`がOWNER本人の所有車両でない場合は、車両が存在しない場合と区別せず
+        404（`VEHICLE_NOT_FOUND`）を返す（対象の存在有無を外部から推測できないようにする、既存の
+        車両アクセス制御と同じ設計方針）。
+
+        対象車両と連携先ショップの組み合わせが、論理削除されていない状態で既に存在する場合は
+        409（`SHOP_ALREADY_LINKED`）を返す。
+
+        ベータ版ではSHOP側の承認フローが無いため、連携は作成時点で即座に`APPROVED`状態となり、
+        `approvedAt`にも作成時刻が設定される。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopLinkRequest"
+      responses:
+        "201":
+          description: 連携成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopLinkApiResponse"
+        "400":
+          description: |
+            リクエストのバリデーションエラー、または招待コードが無効（存在しない・期限切れ・
+            失効済みのいずれか）な場合（`INVALID_INVITE_CODE`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: SHOP・ADMINロールが呼び出した場合（`FORBIDDEN`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: |
+            指定された車両が存在しない、またはOWNER本人の所有車両でない場合（`VEHICLE_NOT_FOUND`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: 対象車両と連携先ショップが既に連携済みの場合（`SHOP_ALREADY_LINKED`）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /shops/invite-code:
     get:
       tags:
         - Shops
       summary: 現在の招待コード取得
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
-        （issue #48で実装予定）。
-
         SHOPロール専用。ログインショップが現在発行している、失効していない招待コードを取得する。
         招待コード発行モーダルを再度開いた際に、現在有効なコードを再表示するために使用する。
 
@@ -1157,9 +1275,6 @@ paths:
         - Shops
       summary: 招待コード発行（再発行）
       description: |
-        ⚠️ 未実装（将来対応予定）。対応するControllerが存在しないため、現時点ではこのエンドポイントは疎通しない
-        （issue #48で実装予定）。
-
         SHOPロール専用。ショップ単位の招待コードを新規発行する。リクエストボディは不要。
 
         呼び出し時点で失効していない既存コード（`revoked_at IS NULL`のレコード）が存在する場合、
@@ -1171,9 +1286,9 @@ paths:
         コードとして扱う。ただし第三者に知られた場合はそのコードでショップ連携が可能になるため
         「完全に無害な情報」としては扱わず、アプリケーションログ・APIログには出力しない。
 
-        発行された招待コードは、OWNER側で対象車両を1台選択したうえで入力することでショップ連携が
-        成立する（OWNER側の入力APIは別issueで対応）。有効期限内であれば同一コードを複数のOWNER・
-        複数の車両で繰り返し利用でき、1回の利用で消費されるものではない。
+        発行された招待コードは、OWNER側で対象車両を1台選択したうえで`POST /shops/link`へ入力する
+        ことでショップ連携が成立する。有効期限内であれば同一コードを複数のOWNER・複数の車両で
+        繰り返し利用でき、1回の利用で消費されるものではない。
       security:
         - bearerAuth: []
       responses:
@@ -1513,6 +1628,28 @@ components:
           description: |
             現在有効な招待コードが存在しない場合は`null`（`GET /shops/invite-code`のみ該当。
             `POST /shops/invite-code`のレスポンスは常に非null）。
+
+    ShopListApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/ShopPage"
+
+    ShopLinkApiResponse:
+      type: object
+      required:
+        - meta
+        - data
+      properties:
+        meta:
+          $ref: "#/components/schemas/Meta"
+        data:
+          $ref: "#/components/schemas/ShopLinkResponse"
 
     # --- Auth ---
     RegisterRequest:
@@ -2490,6 +2627,125 @@ components:
           type: integer
           description: 総ページ数
           example: 3
+
+    # --- Shops（OWNER向けショップ一覧・ショップ連携） ---
+    ShopLinkedVehicleSummary:
+      type: object
+      description: |
+        ショップ一覧における連携車両のサマリー情報（`VehicleResponse`の全項目は含まない簡易表現）。
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleName:
+          type: string
+          description: 車両アイコンのツールチップ表示等に使う車種名（`modelName`）
+          example: "RX-7 (FD3S)"
+        imageUrl:
+          type: string
+          nullable: true
+          description: 車両画像の公開URL（未設定の場合はnull）
+
+    ShopSummary:
+      type: object
+      properties:
+        shopId:
+          type: string
+          format: uuid
+        shopName:
+          type: string
+          example: "Advance Service Yokohama"
+        shopIconUrl:
+          type: string
+          nullable: true
+          description: ショップのユーザーアイコン公開URL（未設定の場合はnull）
+        address:
+          type: string
+          nullable: true
+          example: "神奈川県横浜市都筑区中川中央1-2-3"
+        phoneNumber:
+          type: string
+          nullable: true
+          example: "045-123-4567"
+        linkedVehicles:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/ShopLinkedVehicleSummary"
+          description: OWNERとこのショップが連携（APPROVED）している車両のうち最大3件
+        linkedVehicleCount:
+          type: integer
+          format: int64
+          description: |
+            連携車両の総数。`linkedVehicles`は先頭3件のみを含むため、
+            残数（`linkedVehicleCount - linkedVehicles.length`）の表示に利用する。
+          example: 2
+
+    ShopPage:
+      type: object
+      description: |
+        連携済みショップ一覧（ページング付き）。Backendの共通ページングレスポンス型
+        （`PageResponse<T>`）に対応する。
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopSummary"
+        page:
+          type: integer
+          description: 現在のページ番号（1始まり）
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: 全件数
+          example: 4
+        totalPages:
+          type: integer
+          description: 総ページ数
+          example: 1
+
+    ShopLinkRequest:
+      type: object
+      required:
+        - vehicleId
+        - inviteCode
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+          description: 連携対象の車両ID（OWNER本人が所有する車両である必要がある）
+        inviteCode:
+          type: string
+          description: SHOPが発行した招待コード
+          example: "A7X9-K2LM"
+
+    ShopLinkResponse:
+      type: object
+      description: ショップ連携（招待コード入力）成功時のレスポンス
+      properties:
+        shopId:
+          type: string
+          format: uuid
+        shopName:
+          type: string
+          example: "Advance Service Yokohama"
+        vehicleId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+          description: 連携ステータス（ベータ版では常に`APPROVED`）
+          example: "APPROVED"
+        approvedAt:
+          type: string
+          format: date-time
+          example: "2026-06-20T18:00:00Z"
 
     # --- Shops（招待コード） ---
     ShopInviteCodeResponse:
