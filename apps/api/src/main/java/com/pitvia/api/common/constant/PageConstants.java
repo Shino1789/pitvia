@@ -18,4 +18,7 @@ public final class PageConstants {
     /** 顧客一覧における連携車両の表示件数上限 */
     public static final int CUSTOMER_LINKED_VEHICLE_DISPLAY_SIZE = 3;
 
+    /** ショップ一覧における連携車両の表示件数上限 */
+    public static final int SHOP_LINKED_VEHICLE_DISPLAY_SIZE = 3;
+
 }
