@@ -1,0 +1,44 @@
+info:
+  name: ショップ連携：異常系（招待コードが無効）
+  type: http
+  seq: 31
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/link
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+        "inviteCode": "ZZZZ-0000"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  存在しない招待コードを指定すると、400 Bad Request（`INVALID_INVITE_CODE`）が返ることを確認する。
+
+  以下を確認する。
+  1. ステータスコードが 400 Bad Request であること。
+  2. `error.code`が`"INVALID_INVITE_CODE"`であること。
+
+  ※本APIでは「存在しない」「期限切れ」「失効済み」のいずれの招待コードも区別せず、同一の
+  `INVALID_INVITE_CODE`エラーとして扱う（第三者によるコード推測を助けないための設計）。
+  期限切れ・失効済みコードのケースは、DBへ直接レコードを投入する必要がありHTTP経由の
+  Brunoシナリオでは再現しづらいため、Backend側の結合テスト（`ShopLinkControllerTest`）で
+  個別に検証している。
+
+  ※実行前に、`owner@example.com` / `password123` でログインし、トークンが保持されている
+  必要があります。

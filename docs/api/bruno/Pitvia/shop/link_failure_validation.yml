@@ -1,0 +1,40 @@
+info:
+  name: ショップ連携：異常系（バリデーションエラー）
+  type: http
+  seq: 36
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/link
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "vehicleId": null,
+        "inviteCode": ""
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト：Bean Validation】
+  `vehicleId`未指定・`inviteCode`空文字で送信した際、Spring BootのBean Validationが
+  正常に作動し、400 Bad Request と共に `validationErrors` 配列に各フィールドのエラーが
+  返ることを確認する。
+
+  【テスト項目】
+  1. vehicleId: null（@NotNull違反）
+  2. inviteCode: 空文字（@NotBlank違反）
+
+  ※実行前に、OWNERアカウント（`auth/login_success_owner.yml`等）でログインし、
+  トークンが保持されている必要があります。
