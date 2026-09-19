@@ -31,4 +31,7 @@ export const FIELD = {
   PART_NAME: "部品名",
   QUANTITY: "数量",
   UNIT_PRICE: "単価",
+
+  // ショップ連携モーダル用（対象車両はVEHICLEを共用）
+  INVITE_CODE: "招待コード",
 } as const;
