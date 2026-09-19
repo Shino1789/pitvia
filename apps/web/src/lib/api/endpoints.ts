@@ -53,6 +53,12 @@ export const ENDPOINTS = {
   },
 
   shop: {
+    /** 連携済みショップ一覧取得API（OWNER専用） */
+    list: "/shops",
+
+    /** 招待コード入力によるショップ連携API（OWNER専用） */
+    link: "/shops/link",
+
     /** 招待コード取得・発行API（GET: 現在の有効なコード取得、POST: 新規発行・再発行） */
     inviteCode: "/shops/invite-code",
   },
