@@ -17,6 +17,78 @@ describe("shopApi", () => {
     vi.clearAllMocks();
   });
 
+  describe("getList", () => {
+    /**
+     * @test /shopsへ、keyword/page/sizeをクエリパラメータとしてGETリクエストし、dataを返すことを確認
+     */
+    test("keyword/page/sizeをクエリパラメータとして送信し、dataを返す", async () => {
+      const { apiClient } = await import("@/lib/api/axios");
+      const page = {
+        content: [],
+        page: 1,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+      };
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { data: page } });
+
+      const result = await shopApi.getList({
+        keyword: "横浜",
+        page: 2,
+        size: 20,
+      });
+
+      expect(apiClient.get).toHaveBeenCalledWith("/shops", {
+        params: { keyword: "横浜", page: 2, size: 20 },
+      });
+      expect(result).toEqual(page);
+    });
+
+    /**
+     * @test パラメータ未指定の場合も/shopsへリクエストできることを確認
+     */
+    test("パラメータ未指定でもリクエストできる", async () => {
+      const { apiClient } = await import("@/lib/api/axios");
+      vi.mocked(apiClient.get).mockResolvedValue({
+        data: {
+          data: { content: [], page: 1, size: 20, totalElements: 0, totalPages: 0 },
+        },
+      });
+
+      await shopApi.getList({});
+
+      expect(apiClient.get).toHaveBeenCalledWith("/shops", { params: {} });
+    });
+  });
+
+  describe("link", () => {
+    /**
+     * @test /shops/linkへvehicleId/inviteCodeをPOSTし、レスポンスのdataをそのまま返すことを確認
+     */
+    test("POSTリクエストを行い、連携結果を返す", async () => {
+      const { apiClient } = await import("@/lib/api/axios");
+      const linked = {
+        shopId: "shop-1",
+        shopName: "Advance Service Yokohama",
+        vehicleId: "vehicle-1",
+        status: "APPROVED",
+        approvedAt: "2026-06-20T18:00:00Z",
+      };
+      vi.mocked(apiClient.post).mockResolvedValue({ data: { data: linked } });
+
+      const result = await shopApi.link({
+        vehicleId: "vehicle-1",
+        inviteCode: "A7X9-K2LM",
+      });
+
+      expect(apiClient.post).toHaveBeenCalledWith("/shops/link", {
+        vehicleId: "vehicle-1",
+        inviteCode: "A7X9-K2LM",
+      });
+      expect(result).toEqual(linked);
+    });
+  });
+
   describe("getInviteCode", () => {
     /**
      * @test /shops/invite-codeへGETリクエストし、レスポンスのdataをそのまま返すことを確認
