@@ -1,5 +1,7 @@
 package com.pitvia.api.shop.dto.param;
 
+import com.pitvia.api.common.dto.param.PageableListParam;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
@@ -24,7 +26,7 @@ public record ShopListParam(
         /**
          * 1ページあたりの件数（未指定時は{@link #getSize()}でデフォルト値を返す）
          */
-        @Min(1) @Max(100) Integer size) {
+        @Min(1) @Max(100) Integer size) implements PageableListParam {
 
     /**
      * ページ番号のデフォルト値
@@ -42,6 +44,7 @@ public record ShopListParam(
      *
      * @return ページ番号（1始まり）
      */
+    @Override
     public int getPage() {
         return page == null ? DEFAULT_PAGE : page;
     }
@@ -52,6 +55,7 @@ public record ShopListParam(
      *
      * @return 1ページあたりの件数
      */
+    @Override
     public int getSize() {
         return size == null ? DEFAULT_SIZE : size;
     }
