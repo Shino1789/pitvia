@@ -33,6 +33,7 @@ import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { useVehicleList } from "@/features/vehicle/hooks/use-vehicle-list";
 import { useLinkShop } from "../hooks/use-link-shop";
+import { formatInviteCode } from "../utils/invite-code";
 import {
   shopLinkSchema,
   EMPTY_SHOP_LINK_FORM_VALUES,
@@ -172,10 +173,18 @@ function ShopLinkForm({ isSubmitting, apiError, onSubmit }: ShopLinkFormProps) {
                 招待コードを入力
               </FormLabel>
               <FormControl>
+                {/* 入力・ペーストのたびにXXXX-XXXX形式へ整形する（大文字化・ハイフン自動付与・
+                    8文字での打ち切り）。maxLength属性はブラウザがペースト時に先頭から
+                    切り詰めて整形前の文字を失うため使用せず、文字数制限は整形関数側で行う */}
                 <Input
-                  placeholder="例：ABCD1234"
+                  placeholder="例：ABCD-1234"
                   autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
                   {...field}
+                  onChange={(e) =>
+                    field.onChange(formatInviteCode(e.target.value, field.value))
+                  }
                 />
               </FormControl>
               <FormDescription className="text-xs">

@@ -102,7 +102,7 @@ async function fillForm(
 ) {
   await user.click(screen.getByRole("combobox"));
   await user.click(screen.getByRole("option", { name: vehicleLabel }));
-  await user.type(screen.getByPlaceholderText("例：ABCD1234"), code);
+  await user.type(screen.getByPlaceholderText("例：ABCD-1234"), code);
 }
 
 /**
@@ -134,7 +134,7 @@ describe("ShopLinkModal", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("対象車両を選択")).toBeInTheDocument();
     expect(screen.getByText("招待コードを入力")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("例：ABCD1234")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("例：ABCD-1234")).toBeInTheDocument();
     expect(
       screen.getByText("ショップから受け取った招待コードを入力してください"),
     ).toBeInTheDocument();
@@ -163,6 +163,112 @@ describe("ShopLinkModal", () => {
     ).toBeInTheDocument();
     // 型式が無い車両は車名のみ
     expect(screen.getByRole("option", { name: "RX-7" })).toBeInTheDocument();
+  });
+
+  /**
+   * @test 小文字で入力しても大文字へ変換され、5文字目の入力でハイフンが付与されることを確認
+   */
+  test("小文字入力は大文字へ変換され、ハイフンが自動付与される", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const input = screen.getByPlaceholderText("例：ABCD-1234");
+
+    await user.type(input, "xhvq");
+    // 1ブロック目（4文字）を入力し終えた時点でハイフンが付与される
+    expect(input).toHaveValue("XHVQ-");
+
+    await user.type(input, "2xck");
+    expect(input).toHaveValue("XHVQ-2XCK");
+  });
+
+  /**
+   * @test 8文字（ハイフンを含め9文字）を超えて入力できないことを確認
+   */
+  test("XXXX-XXXXを超える文字数は入力できない", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const input = screen.getByPlaceholderText("例：ABCD-1234");
+
+    await user.type(input, "XHVQ2XCKZZZ");
+
+    expect(input).toHaveValue("XHVQ-2XCK");
+  });
+
+  /**
+   * @test ショップ側でコピーした「XHVQ-2XCK」をそのままペーストしても、
+   * 「XHVQ--2XCK」のようにハイフンが二重にならず、そのままAPIへ送信されることを確認
+   */
+  test("ハイフン付きコードのペーストでハイフンが二重にならない", async () => {
+    const user = userEvent.setup();
+    const { shopApi } = await import("../api/shop-api");
+    vi.mocked(shopApi.link).mockResolvedValue(LINKED);
+    renderModal();
+    const input = screen.getByPlaceholderText("例：ABCD-1234");
+
+    await user.click(input);
+    await user.paste("XHVQ-2XCK");
+
+    expect(input).toHaveValue("XHVQ-2XCK");
+
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("option", { name: "R32 GT-R BNR32" }));
+    await user.click(screen.getByRole("button", { name: /連携する/ }));
+
+    await waitFor(() => {
+      expect(shopApi.link).toHaveBeenCalledWith({
+        vehicleId: "vehicle-1",
+        inviteCode: "XHVQ-2XCK",
+      });
+    });
+  });
+
+  /**
+   * @test 前後に空白・改行が付いたペースト、小文字、ハイフン重複が混在していても正規化されることを確認
+   */
+  test("空白・小文字・ハイフン重複を含むペーストも正規化される", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const input = screen.getByPlaceholderText("例：ABCD-1234");
+
+    await user.click(input);
+    await user.paste("  xhvq--2xck \n");
+
+    expect(input).toHaveValue("XHVQ-2XCK");
+  });
+
+  /**
+   * @test 入力済みの値を全選択して別のコードをペーストすると、置き換えられることを確認
+   */
+  test("入力済みのコードを全選択して置き換えられる", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const input = screen.getByPlaceholderText("例：ABCD-1234");
+
+    await user.click(input);
+    await user.paste("XHVQ-2XCK");
+    await user.tripleClick(input);
+    await user.paste("abcd-3efg");
+
+    expect(input).toHaveValue("ABCD-3EFG");
+  });
+
+  /**
+   * @test Backspaceでハイフンごと削除していけること（ハイフンが再付与されて消せなくならない）を確認
+   */
+  test("Backspaceでハイフンを越えて削除できる", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const input = screen.getByPlaceholderText("例：ABCD-1234");
+
+    await user.type(input, "XHVQ");
+    expect(input).toHaveValue("XHVQ-");
+
+    // ハイフンを削除しても再付与されない
+    await user.type(input, "{Backspace}");
+    expect(input).toHaveValue("XHVQ");
+
+    await user.type(input, "{Backspace}");
+    expect(input).toHaveValue("XHV");
   });
 
   /**
@@ -217,7 +323,7 @@ describe("ShopLinkModal", () => {
     const { shopApi } = await import("../api/shop-api");
     const { appToast } = await import("@/lib/toast");
     vi.mocked(shopApi.link).mockRejectedValue(
-      buildApiError(409, "SHOP_ALREADY_LINKED", "このショップとは既に連携済みです"),
+      buildApiError(409, "SHOP_ALREADY_LINKED", "この車両は既にこのショップと連携済みです"),
     );
     const { onOpenChange } = renderModal();
 
@@ -225,12 +331,12 @@ describe("ShopLinkModal", () => {
     await user.click(screen.getByRole("button", { name: /連携する/ }));
 
     expect(
-      await screen.findByText("このショップとは既に連携済みです"),
+      await screen.findByText("この車両は既にこのショップと連携済みです"),
     ).toBeInTheDocument();
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(appToast.success).not.toHaveBeenCalled();
     // 入力内容は保持され、修正して再試行できる
-    expect(screen.getByPlaceholderText("例：ABCD1234")).toHaveValue("A7X9-K2LM");
+    expect(screen.getByPlaceholderText("例：ABCD-1234")).toHaveValue("A7X9-K2LM");
     expect(screen.getByRole("button", { name: /連携する/ })).toBeEnabled();
   });
 
