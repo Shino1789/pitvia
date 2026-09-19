@@ -4,7 +4,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.principal.JwtPrincipal;
 import com.pitvia.api.common.exception.BusinessException;
 import com.pitvia.api.common.exception.ErrorCode;
@@ -45,18 +44,19 @@ public class ShopLinkService {
     /**
      * 招待コードを用いて対象車両のショップ連携を実行する
      *
+     * <p>
+     * OWNERロール専用（{@code @PreAuthorize}によりController層で制御）。
+     * </p>
+     *
      * @param principal 認証済みユーザー情報
      * @param request   ショップ連携リクエスト（対象車両ID・招待コード）
      * @return 作成された連携の情報
-     * @throws BusinessException OWNER以外のロールが呼び出した場合（403、{@code FORBIDDEN}）、
-     *                           車両が存在しない・本人所有でない場合（404、{@code VEHICLE_NOT_FOUND}）、
+     * @throws BusinessException 車両が存在しない・本人所有でない場合（404、{@code VEHICLE_NOT_FOUND}）、
      *                           招待コードが無効な場合（400、{@code INVALID_INVITE_CODE}）、
      *                           既に連携済みの場合（409、{@code SHOP_ALREADY_LINKED}）
      */
     @Transactional
     public ShopLinkResponse link(JwtPrincipal principal, ShopLinkRequest request) {
-
-        requireOwner(principal);
 
         // 対象車両の存在確認と所有権チェック
         Vehicle vehicle = vehicleAccessGuard.resolveViewableVehicle(principal, request.vehicleId());
@@ -88,18 +88,6 @@ public class ShopLinkService {
         log.info("Vehicle linked to shop. vehicleId={}, shopId={}", vehicle.getId(), shop.getId());
 
         return ShopLinkResponse.from(link);
-    }
-
-    /**
-     * OWNERロールであることを検証する
-     *
-     * @param principal 認証済みユーザー情報
-     * @throws BusinessException OWNER以外のロールの場合（403、{@code FORBIDDEN}）
-     */
-    private void requireOwner(JwtPrincipal principal) {
-        if (principal.role() != UserRole.OWNER) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
-        }
     }
 
     /**

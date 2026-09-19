@@ -1,5 +1,6 @@
 package com.pitvia.api.customer.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,8 +41,7 @@ public class CustomerController {
      * 顧客一覧を取得する
      *
      * <p>
-     * SHOPロール専用。ログインショップとAPPROVED状態で連携している車両を、所有者（顧客）単位で
-     * グルーピングして一覧取得する。
+     * ログインショップとAPPROVED状態で連携している車両を、所有者（顧客）単位でグルーピングして一覧取得する。
      * </p>
      *
      * @param principal   認証済みユーザー情報
@@ -49,6 +49,7 @@ public class CustomerController {
      * @param httpRequest HTTPリクエスト
      * @return 顧客一覧レスポンス
      */
+    @PreAuthorize("hasRole('SHOP')")
     @GetMapping
     public ApiResponse<PageResponse<CustomerSummary>> getList(
             @AuthenticationPrincipal JwtPrincipal principal,

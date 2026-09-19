@@ -2,6 +2,7 @@ package com.pitvia.api.shop.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -54,15 +55,12 @@ public class ShopController {
     /**
      * 連携済みショップ一覧を取得する
      *
-     * <p>
-     * OWNERロール専用。ログインOWNERの所有車両とAPPROVED状態で連携しているショップを一覧取得する。
-     * </p>
-     *
      * @param principal   認証済みユーザー情報
      * @param param       リクエストパラメータ
      * @param httpRequest HTTPリクエスト
      * @return ショップ一覧レスポンス
      */
+    @PreAuthorize("hasRole('OWNER')")
     @GetMapping
     public ApiResponse<PageResponse<ShopSummary>> getList(
             @AuthenticationPrincipal JwtPrincipal principal,
@@ -77,7 +75,6 @@ public class ShopController {
      * 招待コードによるショップ連携
      *
      * <p>
-     * OWNERロール専用。SHOPが発行した招待コードと対象車両IDを指定し、車両とショップの連携を作成する。
      * ベータ版ではSHOP側の承認フローが無いため、作成時点で即座に{@code APPROVED}状態となる。
      * </p>
      *
@@ -86,6 +83,7 @@ public class ShopController {
      * @param httpRequest HTTPリクエスト
      * @return 201 Created ステータスと作成された連携情報
      */
+    @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/link")
     public ResponseEntity<ApiResponse<ShopLinkResponse>> link(
             @AuthenticationPrincipal JwtPrincipal principal,
@@ -100,14 +98,14 @@ public class ShopController {
      * 現在有効な招待コードを取得する
      *
      * <p>
-     * SHOPロール専用。招待コード発行モーダルを再度開いた際に、現在有効なコードを
-     * 再表示するために使用する。有効なコードが存在しない場合は{@code data}が{@code null}になる。
+     * 有効なコードが存在しない場合は{@code data}が{@code null}になる。
      * </p>
      *
      * @param principal   認証済みユーザー情報
      * @param httpRequest HTTPリクエスト
      * @return 現在有効な招待コードレスポンス
      */
+    @PreAuthorize("hasRole('SHOP')")
     @GetMapping("/invite-code")
     public ApiResponse<ShopInviteCodeResponse> getInviteCode(
             @AuthenticationPrincipal JwtPrincipal principal,
@@ -121,7 +119,7 @@ public class ShopController {
      * 招待コードを新規発行する
      *
      * <p>
-     * SHOPロール専用。失効していない既存コードが存在する場合は、それを即時失効させたうえで
+     * 失効していない既存コードが存在する場合は、それを即時失効させたうえで
      * 新しいコードを発行する（ショップごとに同時に有効なコードは常に1件のみ）。
      * </p>
      *
@@ -129,6 +127,7 @@ public class ShopController {
      * @param httpRequest HTTPリクエスト
      * @return 201 Created ステータスと新規発行された招待コード
      */
+    @PreAuthorize("hasRole('SHOP')")
     @PostMapping("/invite-code")
     public ResponseEntity<ApiResponse<ShopInviteCodeResponse>> issueInviteCode(
             @AuthenticationPrincipal JwtPrincipal principal,

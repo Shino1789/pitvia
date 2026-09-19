@@ -4,14 +4,10 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.principal.JwtPrincipal;
-import com.pitvia.api.common.exception.BusinessException;
-import com.pitvia.api.common.exception.ErrorCode;
 import com.pitvia.api.shop.constant.ShopInviteCodeConstants;
 import com.pitvia.api.shop.dto.response.ShopInviteCodeResponse;
 import com.pitvia.api.shop.entity.Shop;
@@ -45,14 +41,15 @@ public class ShopInviteCodeService {
     /**
      * 現在有効な招待コードを取得する
      *
+     * <p>
+     * SHOPロール専用（{@code @PreAuthorize}によりController層で制御）。
+     * </p>
+     *
      * @param principal 認証済みユーザー情報
      * @return 現在有効な招待コード（存在しない場合はnull）
-     * @throws BusinessException OWNERロールが呼び出した場合（403、{@code FORBIDDEN}）
      */
     @Transactional(readOnly = true)
     public ShopInviteCodeResponse getCurrent(JwtPrincipal principal) {
-
-        requireShop(principal);
 
         return shopInviteCodeRepository
                 .findByShop_IdAndRevokedAtIsNullAndExpiresAtAfter(principal.userId(), Instant.now())
@@ -73,12 +70,9 @@ public class ShopInviteCodeService {
      *
      * @param principal 認証済みユーザー情報
      * @return 新規発行された招待コード
-     * @throws BusinessException OWNERロールが呼び出した場合（403、{@code FORBIDDEN}）
      */
     @Transactional
     public ShopInviteCodeResponse issue(JwtPrincipal principal) {
-
-        requireShop(principal);
 
         // 同一ショップからの同時リクエストを直列化するための排他ロック
         Shop shop = shopRepository.findByIdForUpdate(principal.userId())
@@ -100,18 +94,6 @@ public class ShopInviteCodeService {
         log.info("Shop invite code issued. shopId={}", principal.userId());
 
         return ShopInviteCodeResponse.from(newCode);
-    }
-
-    /**
-     * SHOPロールであることを検証する
-     *
-     * @param principal 認証済みユーザー情報
-     * @throws BusinessException OWNERロールの場合（403、{@code FORBIDDEN}）
-     */
-    private void requireShop(JwtPrincipal principal) {
-        if (principal.role() != UserRole.SHOP) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
-        }
     }
 
     /**

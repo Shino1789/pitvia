@@ -7,18 +7,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.pitvia.api.auth.constant.UserRole;
 import com.pitvia.api.auth.principal.JwtPrincipal;
 import com.pitvia.api.common.constant.PageConstants;
 import com.pitvia.api.common.dto.response.PageResponse;
-import com.pitvia.api.common.exception.BusinessException;
-import com.pitvia.api.common.exception.ErrorCode;
 import com.pitvia.api.shop.dto.param.ShopListParam;
 import com.pitvia.api.shop.dto.response.ShopLinkedVehicleSummary;
 import com.pitvia.api.shop.dto.response.ShopSummary;
@@ -49,20 +44,20 @@ public class ShopListService {
     /**
      * 連携済みショップ一覧を取得する
      *
+     * <p>
+     * OWNERロール専用（{@code @PreAuthorize}によりController層で制御）。
+     * </p>
+     *
      * @param principal 認証済みユーザー情報
      * @param param     リクエストパラメータ
      * @return ショップ一覧レスポンス（ページング付き）
-     * @throws BusinessException OWNER以外のロールが呼び出した場合（403、{@code FORBIDDEN}）
      */
     public PageResponse<ShopSummary> getList(JwtPrincipal principal, ShopListParam param) {
 
-        requireOwner(principal);
-
         String keyword = normalize(param.keyword());
 
-        // API上のページ番号は1始まりのため、Spring Data基準（0始まり）へ変換。
         // 並び替えはクエリ側のORDER BYで固定するため、Pageableにはソートを含めない
-        Pageable pageable = PageRequest.of(param.getPage() - 1, param.getSize());
+        Pageable pageable = param.toPageable();
 
         // ログインOWNERとAPPROVED状態で連携しているショップ情報を取得
         Page<ShopSummaryProjection> page = vehicleShopLinkRepository
@@ -124,18 +119,6 @@ public class ShopListService {
                 projection.getPhoneNumber(),
                 vehicles,
                 linkedVehicles.size());
-    }
-
-    /**
-     * OWNERロールであることを検証する
-     *
-     * @param principal 認証済みユーザー情報
-     * @throws BusinessException OWNER以外のロールの場合（403、{@code FORBIDDEN}）
-     */
-    private void requireOwner(JwtPrincipal principal) {
-        if (principal.role() != UserRole.OWNER) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN);
-        }
     }
 
     /**
