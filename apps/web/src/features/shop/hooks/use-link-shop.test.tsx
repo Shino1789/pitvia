@@ -88,7 +88,7 @@ describe("useLinkShop", () => {
     const { shopApi } = await import("../api/shop-api");
     const { appToast } = await import("@/lib/toast");
     vi.mocked(shopApi.link).mockRejectedValue(
-      buildApiError(409, "SHOP_ALREADY_LINKED", "このショップとは既に連携済みです"),
+      buildApiError(409, "SHOP_ALREADY_LINKED", "この車両は既にこのショップと連携済みです"),
     );
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
@@ -101,7 +101,7 @@ describe("useLinkShop", () => {
 
     expect(succeeded).toBe(false);
     await waitFor(() => {
-      expect(result.current.error).toBe("このショップとは既に連携済みです");
+      expect(result.current.error).toBe("この車両は既にこのショップと連携済みです");
     });
     expect(result.current.isLoading).toBe(false);
     expect(appToast.success).not.toHaveBeenCalled();

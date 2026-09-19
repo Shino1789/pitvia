@@ -200,7 +200,7 @@ public enum ErrorCode {
     /**
      * 指定された車両とショップは、既にactive状態で連携済み（409）
      */
-    SHOP_ALREADY_LINKED("このショップとは既に連携済みです");
+    SHOP_ALREADY_LINKED("この車両は既にこのショップと連携済みです");
 
     /**
      * クライアント向けデフォルトメッセージ

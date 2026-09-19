@@ -286,7 +286,41 @@ class ShopLinkControllerTest extends AbstractIntegrationTest {
                 .content(linkRequestJson(vehicle.getId(), inviteCode.getCode()))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error.code").value("SHOP_ALREADY_LINKED"));
+                .andExpect(jsonPath("$.error.code").value("SHOP_ALREADY_LINKED"))
+                .andExpect(jsonPath("$.error.message").value("この車両は既にこのショップと連携済みです"));
+    }
+
+    /**
+     * 同じショップと別の車両を連携する場合：正常系。
+     *
+     * <p>
+     * 重複判定は「車両×ショップ」の組み合わせ単位であり、既に連携済みのショップであっても、
+     * 別の車両であれば連携できること（エラーメッセージが示す意味と実際の判定条件の一致）を検証する。
+     * </p>
+     *
+     * @throws Exception リクエスト実行、または検証に失敗した場合
+     */
+    @Test
+    @DisplayName("ショップ連携（同じショップと別の車両）：正常系")
+    void link_sameShopDifferentVehicle_success() throws Exception {
+
+        // Arrange
+        LoginSession owner = testUserHelper.loginOwner(mockMvc);
+        LoginSession shop = testUserHelper.loginShop(mockMvc);
+        User ownerUser = findUser(owner);
+        Shop shopEntity = findShop(shop);
+        Vehicle linkedVehicle = createVehicle(ownerUser, "RX-7");
+        Vehicle anotherVehicle = createVehicle(ownerUser, "GT-R");
+        approveLink(linkedVehicle, shopEntity);
+        ShopInviteCode inviteCode = insertActiveCode(shopEntity, "LINK-0007");
+
+        // Act & Assert
+        mockMvc.perform(post(LINK_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(linkRequestJson(anotherVehicle.getId(), inviteCode.getCode()))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + owner.accessToken()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.vehicleId").value(anotherVehicle.getId().toString()));
     }
 
     /**
