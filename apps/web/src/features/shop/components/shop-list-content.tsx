@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Pagination } from "@/shared/ui/pagination";
@@ -12,6 +12,7 @@ import { ShopLinkModal } from "./shop-link-modal";
 import { useShopList } from "../hooks/use-shop-list";
 import { useHeader } from "@/shared/hooks/use-header";
 import { useQueryParams } from "@/shared/hooks/use-query-params";
+import { useKeywordSearch } from "@/shared/hooks/use-keyword-search";
 
 /** 1ページあたりの表示件数（現状は固定。件数選択UIは今回のスコープ外） */
 const DEFAULT_PAGE_SIZE = 20;
@@ -26,9 +27,9 @@ const DEFAULT_PAGE_SIZE = 20;
  */
 export function ShopListContent() {
   const { searchParams, updateParams } = useQueryParams();
+  // 検索キーワード（URL上の確定値）と、検索欄の入力・解除用の関数
+  const { keywordParam, setKeywordInput, clearKeyword } = useKeywordSearch();
 
-  // 検索キーワードをURLクエリパラメータから取得
-  const keywordParam = searchParams.get("keyword") ?? "";
   // 現在のページ番号をURLクエリパラメータから取得
   const page = Number(searchParams.get("page") ?? "1") || 1;
 
@@ -39,28 +40,8 @@ export function ShopListContent() {
     size: DEFAULT_PAGE_SIZE,
   });
 
-  // 検索欄への入力途中の値（デバウンスでURLへコミットする前の値）
-  const [keywordInput, setKeywordInput] = useState(keywordParam);
   // ショップ連携モーダルの表示状態
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-
-  // キーワード入力のデバウンス。入力が一定時間止まったらURLへ反映し、pageを1へリセットする
-  useEffect(() => {
-    const trimmed = keywordInput.trim();
-
-    // 入力値がURLパラメータと同じ場合は何もしない
-    if (trimmed === keywordParam) {
-      return;
-    }
-
-    // 400ms後にURLパラメータを更新するタイマーをセット
-    const timer = setTimeout(() => {
-      updateParams({ keyword: trimmed || null }, true);
-    }, 400);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keywordInputの変化のみで発火させるため意図的に除外
-  }, [keywordInput]);
 
   /**
    * ページ変更時のハンドラー（検索条件は維持する）
@@ -88,10 +69,7 @@ export function ShopListContent() {
           defaultValue={keywordParam}
           placeholder="ショップ名で検索"
           onChange={setKeywordInput}
-          onClear={() => {
-            setKeywordInput("");
-            updateParams({ keyword: null }, true);
-          }}
+          onClear={clearKeyword}
         />
 
         <Button
@@ -105,7 +83,7 @@ export function ShopListContent() {
         </Button>
       </div>
     );
-  }, [showActions, keywordParam, updateParams]);
+  }, [showActions, keywordParam, setKeywordInput, clearKeyword]);
 
   useHeader({ title: "ショップ管理", actions });
 
