@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryParams } from "@/shared/hooks/use-query-params";
 
 /** キーワード入力が止まってからURLへ反映するまでの待機時間（ms） */
@@ -20,6 +20,12 @@ export function useKeywordSearch() {
   // 検索欄への入力途中の値（デバウンスでURLへコミットする前の値）
   const [keywordInput, setKeywordInput] = useState(keywordParam);
 
+  // タイマー発火時点の最新のURL状態を参照するための保持領域
+  const latestRef = useRef({ keywordParam, updateParams });
+  useEffect(() => {
+    latestRef.current = { keywordParam, updateParams };
+  });
+
   // 入力が一定時間止まったらURLへ反映し、pageを1へリセットする
   useEffect(() => {
     const trimmed = keywordInput.trim();
@@ -30,7 +36,16 @@ export function useKeywordSearch() {
     }
 
     const timer = setTimeout(() => {
-      updateParams({ keyword: trimmed || null }, true);
+      const latest = latestRef.current;
+
+      // 待機中にURLが既に入力値と同じになっていた場合（クリア操作による更新済み、
+      // 戻る・進む等）は、不要な二重更新を行わない
+      if (trimmed === latest.keywordParam) {
+        return;
+      }
+
+      // 待機中に変化した他のURL条件を失わないよう、最新のupdateParamsで更新する
+      latest.updateParams({ keyword: trimmed || null }, true);
     }, KEYWORD_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
