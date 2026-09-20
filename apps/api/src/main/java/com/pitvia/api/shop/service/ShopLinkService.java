@@ -79,7 +79,6 @@ public class ShopLinkService {
                 .vehicle(vehicle)
                 .shop(shop)
                 .status(LinkStatus.PENDING)
-                .inviteCode(inviteCode.getCode())
                 .build();
         link.approve();
 

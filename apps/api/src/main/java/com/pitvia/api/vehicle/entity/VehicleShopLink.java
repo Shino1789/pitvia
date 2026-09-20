@@ -70,11 +70,6 @@ public class VehicleShopLink extends BaseEntity {
     private LinkStatus status;
 
     /**
-     * 招待 / 承認コード（連携申請用）
-     */
-    private String inviteCode;
-
-    /**
      * 連携承認日時
      */
     private Instant approvedAt;
@@ -85,7 +80,6 @@ public class VehicleShopLink extends BaseEntity {
     public void approve() {
         this.status = LinkStatus.APPROVED;
         this.approvedAt = Instant.now();
-        this.inviteCode = null; // 承認後はコードをクリア
     }
 
     /**
@@ -93,6 +87,5 @@ public class VehicleShopLink extends BaseEntity {
      */
     public void reject() {
         this.status = LinkStatus.REJECTED;
-        this.inviteCode = null;
     }
 }
