@@ -46,6 +46,11 @@ Table users {
   deleted_at timestamp [
     note: '論理削除日時'
   ]
+
+  indexes {
+    (email) [unique, name: 'uk_users_email_active', note: '部分ユニークインデックス: WHERE deleted_at IS NULL（論理削除済みユーザーのメールアドレスは再利用可）']
+    (deleted_at) [name: 'idx_users_deleted_at']
+  }
 }
 
 Table refresh_tokens {
@@ -173,6 +178,7 @@ Table shop_invite_codes {
 
   indexes {
     (shop_id)
+    (shop_id) [unique, name: 'uk_shop_invite_codes_active_per_shop', note: '部分ユニークインデックス: WHERE revoked_at IS NULL（ショップごとに有効な招待コードは常に1件のみ）']
   }
 }
 
@@ -194,6 +200,7 @@ Table manufacturers {
     note: 'メーカー名'
  ]
   sort_order int [
+    not null,
     note: '表示順'
   ]
   created_at timestamp [
@@ -309,12 +316,13 @@ Table vehicle_shop_links {
     check: `status IN ('PENDING', 'APPROVED', 'REJECTED')`,
     note: '連携状態'
   ]
-  invite_code varchar [
-    unique,
-    note: '招待コード'
-  ]
   approved_at timestamp [
     note: '承認日時'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
   ]
   created_at timestamp [
     not null,
@@ -327,8 +335,9 @@ Table vehicle_shop_links {
   deleted_at timestamp
 
   indexes {
-    (vehicle_id, status)
-    (vehicle_id, shop_id) [unique]
+    (vehicle_id, status) [name: 'idx_vehicle_shop_links_active', note: '部分インデックス: WHERE deleted_at IS NULL']
+    (vehicle_id, shop_id) [unique, name: 'uk_vehicle_shop_links_pair_active', note: '部分ユニークインデックス: WHERE deleted_at IS NULL（同一車両×ショップの重複連携を防止しつつ、論理削除後の再連携を可能にする）']
+    (shop_id, status) [name: 'idx_vehicle_shop_links_shop_status', note: '部分インデックス: WHERE deleted_at IS NULL']
   }
 
 }
@@ -351,6 +360,7 @@ Table maintenance_types {
     note: '整備種別（定期メンテナンス / 車検 / 点検 / 修理 / カスタム / チューニング / セッティング 等）'
   ]
   sort_order int [
+    not null,
     note: '表示順'
   ]
   created_at timestamp [
@@ -429,9 +439,9 @@ Table maintenance_records {
   deleted_at timestamp
 
   indexes {
-    (vehicle_id, work_date_from)
-    (created_by_user_id)
-    (shop_id, work_date_from)
+    (vehicle_id, work_date_from) [name: 'idx_maintenance_records_vehicle_date', note: '部分インデックス: work_date_from DESC / WHERE deleted_at IS NULL']
+    (created_by_user_id) [name: 'idx_maintenance_records_creator']
+    (shop_id, work_date_from) [name: 'idx_maintenance_records_shop_date', note: '部分インデックス: WHERE deleted_at IS NULL']
   }
 
 }
@@ -454,6 +464,7 @@ Table maintenance_categories {
     note: '整備カテゴリ（エンジン / 吸排気 / 冷却 / 駆動系 / 足回り / ブレーキ / 電装 / 外装 / 内装 / エアコン / 板金 / 洗浄 / その他 等）'
   ]
   sort_order int [
+    not null,
     note: '表示順'
   ]
   created_at timestamp [
@@ -563,6 +574,11 @@ Table maintenance_parts {
     not null,
     default: 0,
     note: '表示順'
+  ]
+  version int [
+    not null,
+    default: 0,
+    note: '楽観ロック用バージョン'
   ]
   created_at timestamp [
     not null,
