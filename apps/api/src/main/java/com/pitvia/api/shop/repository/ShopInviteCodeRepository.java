@@ -41,4 +41,18 @@ public interface ShopInviteCodeRepository extends JpaRepository<ShopInviteCode, 
      */
     boolean existsByCode(String code);
 
+    /**
+     * コード値からショップ招待コードを取得する（OWNER側でのショップ連携時の検証に使用）
+     *
+     * <p>
+     * 取得できても{@link com.pitvia.api.shop.entity.ShopInviteCode#isActive()}が
+     * {@code true}とは限らない（失効済み・期限切れの場合もある）ため、呼び出し側で必ず有効性を
+     * 検証すること。
+     * </p>
+     *
+     * @param code 招待コード
+     * @return 該当する招待コード（存在しない場合は空）
+     */
+    Optional<ShopInviteCode> findByCode(String code);
+
 }

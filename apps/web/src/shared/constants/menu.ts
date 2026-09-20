@@ -49,8 +49,7 @@ export const MENU_ITEMS: MenuItem[] = [
     path: ROUTES.SHOPS,
     roles: ["OWNER"],
     icon: Store,
-    // TODO: ショップ連携機能（連携済みショップ一覧画面）実装後にtrueへ戻す
-    sidebar: false,
+    sidebar: true,
   },
   {
     label: "顧客管理",

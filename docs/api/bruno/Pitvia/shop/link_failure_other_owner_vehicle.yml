@@ -1,0 +1,45 @@
+info:
+  name: ショップ連携：異常系（他人の車両ID）
+  type: http
+  seq: 33
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/link
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "vehicleId": "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+        "inviteCode": "ZZZZ-0000"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  ログインOWNER本人が所有していない車両IDを指定すると、車両が存在しない場合と区別せず
+  404 Not Found（`VEHICLE_NOT_FOUND`）が返ることを確認する（対象の存在有無を外部から
+  推測できないようにする既存の車両アクセス制御方針を踏襲）。
+
+  以下を確認する。
+  1. ステータスコードが 404 Not Found であること。
+  2. `error.code`が`"VEHICLE_NOT_FOUND"`であること。
+
+  ※`vehicleId`は`shop@example.com`（モックデータ用SHOPアカウント）のデモカー
+  （`d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44`、V1000__mock_data.sql）であり、
+  `owner@example.com`の所有車両ではない。車両所有権チェックが招待コード検証よりも
+  先に行われるため、`inviteCode`はダミー値のままで404になることを確認できる。
+
+  ※実行前に、`owner@example.com` / `password123` でログインし、トークンが保持されている
+  必要があります。

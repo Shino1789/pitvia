@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, PlusIcon } from "lucide-react";
@@ -22,6 +22,7 @@ import { VehicleFilterSelect } from "./maintenance-record-vehicle-filter";
 import { useMaintenanceRecordList } from "../hooks/use-maintenance-record-list";
 import { useHeader } from "@/shared/hooks/use-header";
 import { useQueryParams } from "@/shared/hooks/use-query-params";
+import { useKeywordSearch } from "@/shared/hooks/use-keyword-search";
 import {
   buildReturnTo,
   maintenanceRecordNewRoute,
@@ -52,6 +53,8 @@ const SORT_OPTIONS: { value: MaintenanceRecordSort; label: string }[] = [
 export function MaintenanceRecordListContent() {
   const router = useRouter();
   const { pathname, searchParams, updateParams } = useQueryParams();
+  // 検索キーワード（URL上の確定値）と、検索欄の入力・解除用の関数
+  const { keywordParam, setKeywordInput, clearKeyword } = useKeywordSearch();
 
   // 車両フィルターの選択中車両ID（未指定＝すべて）
   const vehicleId = searchParams.get("vehicleId") ?? undefined;
@@ -65,8 +68,6 @@ export function MaintenanceRecordListContent() {
   const maintenanceTypes = searchParams.getAll(
     "maintenanceType",
   ) as MaintenanceType[];
-  // 検索キーワード（URL上の確定値）
-  const keywordParam = searchParams.get("keyword") ?? "";
   // 並び替え条件
   const sort =
     (searchParams.get("sort") as MaintenanceRecordSort | null) ??
@@ -99,25 +100,6 @@ export function MaintenanceRecordListContent() {
     () => buildReturnTo(pathname, searchParams),
     [pathname, searchParams],
   );
-
-  // 検索欄への入力途中の値（デバウンスでURLへコミットする前の値）
-  const [keywordInput, setKeywordInput] = useState(keywordParam);
-
-  // キーワード入力のデバウンス。入力が一定時間止まったらURLへ反映し、pageを1へリセットする
-  useEffect(() => {
-    const trimmed = keywordInput.trim();
-
-    if (trimmed === keywordParam) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      updateParams({ keyword: trimmed || null }, true);
-    }, 400);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keywordInputの変化のみで発火させるため意図的に除外
-  }, [keywordInput]);
 
   /**
    * 車両フィルター変更時のハンドラー（pageを1へリセット）
@@ -187,10 +169,7 @@ export function MaintenanceRecordListContent() {
           defaultValue={keywordParam}
           placeholder="タイトルで検索"
           onChange={setKeywordInput}
-          onClear={() => {
-            setKeywordInput("");
-            updateParams({ keyword: null }, true);
-          }}
+          onClear={clearKeyword}
         />
 
         <Link
@@ -207,7 +186,15 @@ export function MaintenanceRecordListContent() {
         </Link>
       </div>
     );
-  }, [showActions, keywordParam, updateParams, vehicleId, viewedOwnerId, returnTo]);
+  }, [
+    showActions,
+    keywordParam,
+    setKeywordInput,
+    clearKeyword,
+    vehicleId,
+    viewedOwnerId,
+    returnTo,
+  ]);
 
   useHeader({ title, actions });
 
