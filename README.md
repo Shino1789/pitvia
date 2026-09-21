@@ -17,6 +17,12 @@ Pitvia は **🏎️ 走る楽しさ・🔧 維持する楽しさ・📊 育て�
 > β版ではAWSコスト削減のため、必要時のみTerraformで再構築しています。
 > そのため、タイミングによっては停止している場合があります。
 
+🔑 **Demo Account**
+| Role | Email | Password |
+|---|---|---|
+| OWNER | demo-owner@example.com | `password123` |
+| SHOP | demo-shop@example.com | `password123` |
+
 ---
 
 # 開発背景
