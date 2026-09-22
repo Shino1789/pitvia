@@ -207,13 +207,19 @@ OWNER / SHOPで異なるダッシュボード集計処理を Service内のif/els
 
 ---
 
-## ER図
+# インフラ構成図
+
+![architecture-diagram](docs/images/architecture.png)
+
+---
+
+# ER図
 
 ![er-diagram](docs/images/er.png)
 
 ---
 
-## ディレクトリ構成
+# ディレクトリ構成
 
 ```text
 pitvia/
@@ -273,7 +279,7 @@ pitvia/
 
 ---
 
-## ライセンス
+# ライセンス
 
 Pitvia は **オープンソースソフトウェア（OSS）ではありません**。
 
