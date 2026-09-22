@@ -1,4 +1,7 @@
-# Pitvia
+<h1>
+  <img src="./docs/images/icon.png" width="40" height="40" align="absmiddle">
+  Pitvia
+</h1>
 
 **走るクルマのための整備記録・ショップ連携アプリ**
 
