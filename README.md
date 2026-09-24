@@ -131,30 +131,47 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 ## 💻 Frontend
 
 - TypeScript
-- Next.js
-- Tailwind CSS
+- Next.js 16 / React 19
+- Tailwind CSS 4
+- shadcn/ui
+- React Hook Form / Zod
+- Zustand
+- TanStack Query
+- Axios
+- Recharts
+- Vitest / Testing Library
 
 ## ⚙️ Backend
 
-- Java
-- Spring Boot
+- Java 21
+- Spring Boot 3.5
 - Spring Security
 - Spring Data JPA
+- Flyway
+- JJWT
+- springdoc-openapi
+- JUnit / Testcontainers
 
 ## 🗄️ Database
 
-- PostgreSQL
+- PostgreSQL 17
+
+## 🪣 Storage
+
+- Amazon S3
+- MinIO（ローカル開発）
 
 ## ☁️ Infrastructure
 
 - AWS
+  - VPC
   - ALB
   - ECS / Fargate
   - RDS
-  - S3
   - ECR
   - Secrets Manager
   - CloudWatch Logs
+  - Route 53 / ACM
 - Vercel
 - Terraform
 - Docker / Docker Compose
@@ -163,9 +180,9 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 - GitHub Actions
   - CI: Frontend ESLint / Vitest、Backend JUnit
-  - CD: BackendのDocker imageをECRへPush → ECSへデプロイ
+  - CD: Docker image → ECR → ECS
 - Vercel
-  - FrontendのGitHub連携による自動デプロイ
+  - GitHub連携によるFrontend自動デプロイ
 
 ## 🛠️ 開発ツール
 
