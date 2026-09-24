@@ -41,8 +41,8 @@ INSERT INTO vehicles (id, user_id, vehicle_type, model_name, manufacturer_id, mo
 -- -----------------------------------------------------------------------------
 -- 4. VEHICLE_SHOP_LINKS (車両とショップの連携: APPROVED)
 -- -----------------------------------------------------------------------------
-INSERT INTO vehicle_shop_links (vehicle_id, shop_id, status, invite_code, approved_at, created_at, updated_at) VALUES
-('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'APPROVED', 'INV-OWNER-SHOP-01', '2025-01-10 10:00:00+09', '2025-01-10 10:00:00+09', '2025-01-10 10:00:00+09');
+INSERT INTO vehicle_shop_links (vehicle_id, shop_id, status, approved_at, created_at, updated_at) VALUES
+('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'APPROVED', '2025-01-10 10:00:00+09', '2025-01-10 10:00:00+09', '2025-01-10 10:00:00+09');
 
 -- -----------------------------------------------------------------------------
 -- 5. MAINTENANCE_RECORDS & WORK_ITEMS & PARTS (オーナー所有車両: 20件)

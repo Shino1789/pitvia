@@ -84,7 +84,7 @@ class MaintenanceRecordUpdateControllerTest extends AbstractIntegrationTest {
     /** 整備画像アップロード検証用のMinIOコンテナ */
     @Container
     static MinIOContainer minio = new MinIOContainer(
-            DockerImageName.parse("quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z")
+            DockerImageName.parse("ghcr.io/shino1789/minio:RELEASE.2024-11-07T00-52-20Z")
                     .asCompatibleSubstituteFor("minio/minio"))
             .withUserName(STORAGE_ACCESS_KEY)
             .withPassword(STORAGE_SECRET_KEY);

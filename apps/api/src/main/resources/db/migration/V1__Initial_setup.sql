@@ -269,7 +269,6 @@ CREATE TABLE vehicle_shop_links (
     vehicle_id UUID NOT NULL,
     shop_id UUID NOT NULL,
     status VARCHAR(50) NOT NULL,
-    invite_code VARCHAR(100),
     approved_at TIMESTAMPTZ,
     version INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -284,8 +283,6 @@ CREATE TABLE vehicle_shop_links (
         FOREIGN KEY(shop_id)
         REFERENCES shops(id)
         ON DELETE RESTRICT,
-    CONSTRAINT uk_vehicle_shop_links_invite_code
-        UNIQUE(invite_code),
     CONSTRAINT ck_vehicle_shop_links_status
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );
@@ -296,7 +293,6 @@ COMMENT ON COLUMN vehicle_shop_links.id IS '車両ショップ連携ID';
 COMMENT ON COLUMN vehicle_shop_links.vehicle_id IS '対象車両ID';
 COMMENT ON COLUMN vehicle_shop_links.shop_id IS '連携ショップID';
 COMMENT ON COLUMN vehicle_shop_links.status IS '連携状態';
-COMMENT ON COLUMN vehicle_shop_links.invite_code IS '招待コード';
 COMMENT ON COLUMN vehicle_shop_links.approved_at IS '承認日時';
 COMMENT ON COLUMN vehicle_shop_links.version IS '楽観ロック用バージョン';
 COMMENT ON COLUMN vehicle_shop_links.created_at IS '作成日時';

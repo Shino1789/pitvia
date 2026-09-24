@@ -69,8 +69,7 @@ class ShopLinkControllerTest extends AbstractIntegrationTest {
      *
      * <p>
      * OWNERが自分の車両と、SHOPが発行した有効な招待コードで連携できること、作成された
-     * {@code VehicleShopLink}のDB上の状態（status=APPROVED、approvedAtが設定され、
-     * inviteCodeがクリアされていること）を検証する。
+     * {@code VehicleShopLink}のDB上の状態（status=APPROVED、approvedAtが設定されていること）を検証する。
      * </p>
      *
      * @throws Exception リクエスト実行、または検証に失敗した場合
@@ -110,7 +109,6 @@ class ShopLinkControllerTest extends AbstractIntegrationTest {
         assertThat(link.getStatus()).isEqualTo(LinkStatus.APPROVED);
         assertThat(link.getShop().getId()).isEqualTo(shopEntity.getId());
         assertThat(link.getApprovedAt()).isAfterOrEqualTo(beforeRequest);
-        assertThat(link.getInviteCode()).isNull();
     }
 
     /**

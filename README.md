@@ -1,4 +1,7 @@
-# Pitvia
+<h1>
+  <img src="./docs/images/icon.png" width="40" height="40" align="absmiddle">
+  Pitvia
+</h1>
 
 **走るクルマのための整備記録・ショップ連携アプリ**
 
@@ -16,6 +19,12 @@ Pitvia は **🏎️ 走る楽しさ・🔧 維持する楽しさ・📊 育て�
 >
 > β版ではAWSコスト削減のため、必要時のみTerraformで再構築しています。
 > そのため、タイミングによっては停止している場合があります。
+
+🔑 **Demo Account**
+| Role | Email | Password |
+|---|---|---|
+| OWNER | demo-owner@example.com | `password123` |
+| SHOP | demo-shop@example.com | `password123` |
 
 ---
 
@@ -62,59 +71,47 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 # 主な機能
 
-## 1. 🔐 アカウント機能
+## 1. 🚘 車両管理
 
-- 新規登録 / ログイン
-- ロール権限管理
+ユーザーが所有する車両を登録し、
+車種・型式・年式・走行距離などを管理できます。
 
-### 権限種別
-
-- 一般ユーザー（OWNER）
-- 事業者・店舗（SHOP）
+<img src="./docs/images/demo/vehicle_1200.gif" width="600">
 
 ---
 
-## 2. 🚘 車両管理
+## 2. 🔧 整備・カスタム履歴
 
-- 複数台登録対応
-- メーカー
-- 車種
-- 型式
-- 年式
-- ミッション種別
-- 駆動方式
-- メモ
+車両ごとに整備・カスタム内容や費用、交換部品などを記録し、
+履歴を管理できます。
+
+<img src="./docs/images/demo/maintenance_1200.gif" width="600">
 
 ---
 
-## 3. 🔧 整備・カスタム履歴管理
+## 3. 💰 コスト管理
 
-- 作業日
-- 走行距離
-- 作業内容
-- 工賃
-- 交換(追加)部品
-- 部品代
-- 合計金額
-- 作業ショップ
-- 写真添付
-- メモ
+整備・カスタムにかかった費用を集計し、
+車両の維持費を確認できます。
+
+<img src="./docs/images/demo/dashboard-owner_1200.gif" width="600">
+
+※ OWNER / SHOPで権限に応じて異なるダッシュボードを表示します。
 
 ---
 
-## 4. 💰 コスト管理
+## 4. 🤝 ショップ連携
 
-- 月別維持費
-- 年別維持費
-- 修理費集計
-- カスタム費集計
-
----
-
-## 5. 🤝 ショップ連携
-
-車両単位でオーナーとショップを連携し、
+招待コードを利用してOWNERとSHOPを車両単位で連携し、
 整備履歴を双方で共有できます。
+
+**SHOP：招待コードを発行**
+
+<img src="./docs/images/demo/shop-invite_1200.gif" width="600">
+
+**OWNER：招待コードを入力**
+
+<img src="./docs/images/demo/shop-connect_1200.gif" width="600">
 
 ---
 
@@ -134,30 +131,47 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 ## 💻 Frontend
 
 - TypeScript
-- Next.js
-- Tailwind CSS
+- Next.js 16 / React 19
+- Tailwind CSS 4
+- shadcn/ui
+- React Hook Form / Zod
+- Zustand
+- TanStack Query
+- Axios
+- Recharts
+- Vitest / Testing Library
 
 ## ⚙️ Backend
 
-- Java
-- Spring Boot
+- Java 21
+- Spring Boot 3.5
 - Spring Security
 - Spring Data JPA
+- Flyway
+- JJWT
+- springdoc-openapi
+- JUnit / Testcontainers
 
 ## 🗄️ Database
 
-- PostgreSQL
+- PostgreSQL 17
+
+## 🪣 Storage
+
+- Amazon S3
+- MinIO（ローカル開発）
 
 ## ☁️ Infrastructure
 
 - AWS
+  - VPC
   - ALB
   - ECS / Fargate
   - RDS
-  - S3
   - ECR
   - Secrets Manager
   - CloudWatch Logs
+  - Route 53 / ACM
 - Vercel
 - Terraform
 - Docker / Docker Compose
@@ -166,9 +180,9 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 - GitHub Actions
   - CI: Frontend ESLint / Vitest、Backend JUnit
-  - CD: BackendのDocker imageをECRへPush → ECSへデプロイ
+  - CD: Docker image → ECR → ECS
 - Vercel
-  - FrontendのGitHub連携による自動デプロイ
+  - GitHub連携によるFrontend自動デプロイ
 
 ## 🛠️ 開発ツール
 
@@ -194,29 +208,49 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ## Why Next.js?
 
-フロントエンドとAPIを分離し、将来的なWeb / Mobile展開を考慮してNext.js + Spring Bootの構成を採用。
+フロントエンドとAPIを分離し、将来的なモバイルアプリ展開なども考慮してNext.jsを採用。<br>
+また、CSR / SSRなど、要件に応じてレンダリング戦略を選択できる点や、Middlewareによる認証状態に応じたアクセス制御を実装しやすい点に加え、React単体で構築する場合と比較して、ルーティングやビルドなど Webアプリケーションに必要な機能が統合されており、構成をシンプルにできると判断した。
+
+## Why Spring Boot?
+
+実務経験があり、これまでの知識を活かして一定の品質を保ちながら開発できると考え採用。<br>
+また、当アプリではOWNER / SHOPによる権限制御が重要な要件であるため、Spring Securityによる認証・認可基盤を活用できる点も採用理由とした。
+
+## Why JWT + Refresh Token?
+
+REST APIとしてステートレスな認証方式を採用するため、JWTによるAccess Token / Refresh Token方式を採用。<br>
+Access Tokenは有効期限を短く設定し、期限切れ時はAxios InterceptorでRefresh APIを呼び出し、クッキーに保存したRefresh Tokenを利用して認証状態を自動更新する構成とした。
+また、Refresh Token Rotation（RTR）を採用し、Refresh Tokenの再利用を抑制している。
 
 ## Why MinIO?
 
-開発環境でAWS S3を直接利用せず、S3互換APIを持つMinIOを利用することで、ローカル環境でも本番に近いストレージ構成を再現。
+ローカル環境ではAWSのコストを抑えつつ、本番環境と同じS3 APIを利用できるMinIOを採用。<br>
+環境変数によってMinIO / S3を動的に切り替えられるようにすることで、環境ごとにアプリケーションコードを変更することなく、同一のストレージインターフェースを利用できるようにした。
 
 ## Why Terraform?
 
-AWS環境を手作業で構築すると再現性が低くなるため、TerraformによるIaCを採用。
+本番β環境では、運用コスト削減のため必要なときだけ環境を構築し、それ以外は破棄する運用としている。<br>
+手作業での再構築は設定漏れや環境差異につながるため、AWS / Vercelのインフラ・プロジェクト設定をコードで管理し、同一構成をいつでも再現できるTerraformを採用した。
 
 ## Why Strategy Pattern?
 
-OWNER / SHOPで異なるダッシュボード集計処理を Service内のif/elseで増やしていくのではなく、Strategy Patternによって権限ごとの処理を分離。
+OWNER / SHOPで、ダッシュボード画面に表示する集計項目やデータ取得ロジックが異なるため、ロールごとの処理の切替をServiceクラスのif/elseで制御するのではなく、共通インターフェースを定義し、Strategy Patternを採用して分離した。これにより、新たなロール（ADMINなど）を追加する場合も、既存Serviceのロジックを変更せず、新しいStrategy実装クラスを追加するだけで対応できる設計としている。
 
 ---
 
-## ER図
+# インフラ構成図
+
+![architecture-diagram](docs/images/architecture.png)
+
+---
+
+# ER図
 
 ![er-diagram](docs/images/er.png)
 
 ---
 
-## ディレクトリ構成
+# ディレクトリ構成
 
 ```text
 pitvia/
@@ -273,3 +307,20 @@ pitvia/
 ```
 
 ※ 詳細設計については docs 配下を参照
+
+---
+
+# ライセンス
+
+Pitvia は **オープンソースソフトウェア（OSS）ではありません**。
+
+採用選考・技術評価を目的として、ソースコードを公開しています。
+
+- ✅ 許可: 閲覧、採用選考・技術評価を目的としたクローン・ローカル実行
+- ❌ 禁止: 無断での複製・改変・再配布・商用利用・サービス提供
+
+詳細な利用条件については [LICENSE](./LICENSE) を参照してください。
+
+© 2026 Shino1789. All rights reserved.
+
+なお、サードパーティ製ライブラリには、それぞれのライセンスが適用されます。
