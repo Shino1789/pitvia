@@ -191,19 +191,33 @@ Pitvia は、そうしたユーザー向けに設計されたサービスです�
 
 ## Why Next.js?
 
-フロントエンドとAPIを分離し、将来的なWeb / Mobile展開を考慮してNext.js + Spring Bootの構成を採用。
+フロントエンドとAPIを分離し、将来的なモバイルアプリ展開なども考慮してNext.jsを採用。<br>
+また、CSR / SSRなど、要件に応じてレンダリング戦略を選択できる点や、Middlewareによる認証状態に応じたアクセス制御を実装しやすい点に加え、React単体で構築する場合と比較して、ルーティングやビルドなど Webアプリケーションに必要な機能が統合されており、構成をシンプルにできると判断した。
+
+## Why Spring Boot?
+
+実務経験があり、これまでの知識を活かして一定の品質を保ちながら開発できると考え採用。<br>
+また、当アプリではOWNER / SHOPによる権限制御が重要な要件であるため、Spring Securityによる認証・認可基盤を活用できる点も採用理由とした。
+
+## Why JWT + Refresh Token?
+
+REST APIとしてステートレスな認証方式を採用するため、JWTによるAccess Token / Refresh Token方式を採用。<br>
+Access Tokenは有効期限を短く設定し、期限切れ時はAxios InterceptorでRefresh APIを呼び出し、クッキーに保存したRefresh Tokenを利用して認証状態を自動更新する構成とした。
+また、Refresh Token Rotation（RTR）を採用し、Refresh Tokenの再利用を抑制している。
 
 ## Why MinIO?
 
-開発環境でAWS S3を直接利用せず、S3互換APIを持つMinIOを利用することで、ローカル環境でも本番に近いストレージ構成を再現。
+ローカル環境ではAWSのコストを抑えつつ、本番環境と同じS3 APIを利用できるMinIOを採用。<br>
+環境変数によってMinIO / S3を動的に切り替えられるようにすることで、環境ごとにアプリケーションコードを変更することなく、同一のストレージインターフェースを利用できるようにした。
 
 ## Why Terraform?
 
-AWS環境を手作業で構築すると再現性が低くなるため、TerraformによるIaCを採用。
+本番β環境では、運用コスト削減のため必要なときだけ環境を構築し、それ以外は破棄する運用としている。<br>
+手作業での再構築は設定漏れや環境差異につながるため、AWS / Vercelのインフラ・プロジェクト設定をコードで管理し、同一構成をいつでも再現できるTerraformを採用した。
 
 ## Why Strategy Pattern?
 
-OWNER / SHOPで異なるダッシュボード集計処理を Service内のif/elseで増やしていくのではなく、Strategy Patternによって権限ごとの処理を分離。
+OWNER / SHOPで、ダッシュボード画面に表示する集計項目やデータ取得ロジックが異なるため、ロールごとの処理の切替をServiceクラスのif/elseで制御するのではなく、共通インターフェースを定義し、Strategy Patternを採用して分離した。これにより、新たなロール（ADMINなど）を追加する場合も、既存Serviceのロジックを変更せず、新しいStrategy実装クラスを追加するだけで対応できる設計としている。
 
 ---
 
