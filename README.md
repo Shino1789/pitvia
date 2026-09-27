@@ -261,7 +261,7 @@ pitvia/
     ├── .env.example
     ├── docker-compose.dev.yml
     ├── .github/
-    │   ├── pull_request_template.md
+    │   ├── PULL_REQUEST_TEMPLATE/
     │   └── workflows/
     │       ├── test.yml      # CI: フロント(ESLint+Vitest) / バックエンド(JUnit)
     │       └── deploy.yml    # CD: ECR push → ECS Task Definition更新 → 安定化確認

@@ -238,4 +238,16 @@ Vitest + Testing Library。テストは対象ファイルと同じディレク�
 
 - commit / push / merge、ブランチの作成・削除は、ユーザーの指示があるまで行わない。
 - コミットメッセージは `prefix: 日本語の1行`（`feat` / `fix` / `refactor` / `test` / `docs` / `chore` / `ci`）。
-- ブランチ名は `feature|fix|chore|docs/{Issue番号}-{名前}`。`develop` への PR → `main`。
+- ブランチ名は `feature|fix|refactor|chore|docs/{Issue番号}-{名前}`。変更内容に応じて適切な prefix を使用する。
+
+## Pull Request
+
+PRテンプレートはマージ先に応じて使い分ける。
+
+- `develop` への PR → `.github/PULL_REQUEST_TEMPLATE/develop.md` を使用し、タイトルは変更内容に応じた Conventional Commits 系の prefix を使用する（feat / fix / refactor / test / docs / chore / ci等）
+- `main` への PR → `.github/PULL_REQUEST_TEMPLATE/release.md` を使用し、タイトルは `release: ` を prefix とする
+
+GitHubのPR作成画面では、対象のテンプレートを手動で選択する。
+
+- Develop PRでは、Issue・変更内容・動作確認・影響範囲を記載する。
+- Release PRでは、リリース内容・含まれるPR・リリース前後の確認事項を記載する。
