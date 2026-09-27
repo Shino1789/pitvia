@@ -1,8 +1,11 @@
 package com.pitvia.api.vehicle.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +13,9 @@ import org.springframework.data.repository.query.Param;
 import com.pitvia.api.vehicle.entity.Vehicle;
 import com.pitvia.api.vehicle.entity.VehicleShopLink;
 import com.pitvia.api.vehicle.enums.LinkStatus;
+import com.pitvia.api.vehicle.repository.projection.CustomerSummaryProjection;
+import com.pitvia.api.vehicle.repository.projection.LinkedVehicleSummaryProjection;
+import com.pitvia.api.vehicle.repository.projection.ShopSummaryProjection;
 
 /**
  * 車両ショップ連携情報テーブル (vehicle_shop_links) に対するデータアクセスを管理するリポジトリ
@@ -90,5 +96,171 @@ public interface VehicleShopLinkRepository extends JpaRepository<VehicleShopLink
      * @return 該当する連携が存在すればtrue
      */
     boolean existsByShop_IdAndVehicle_IdAndStatus(UUID shopId, UUID vehicleId, LinkStatus status);
+
+    /**
+     * ショップと連携（APPROVED）中の顧客（オーナー）を、キーワード・ページングつきで取得する
+     *
+     * <p>
+     * 「顧客」は、ログインショップとAPPROVED状態で車両連携している所有者（オーナー）単位で
+     * グルーピングして構成する（オーナーの全件取得ではなく、あくまで連携関係から導出する）。
+     * </p>
+     *
+     * <p>
+     * {@code lastMaintenanceDate}は、対象オーナーの連携車両のうち
+     * <b>ログインショップ自身が実施した</b>整備履歴（{@code mr.shop.id = :shopId}）に限定して
+     * 集計する。他ショップ・OWNER自身によるDIY整備履歴は含まない。連携車両のサムネイル
+     * （最大3件・総数）は本メソッドの結果には含めず、{@link #findApprovedVehiclesByShopAndOwnerIn}で
+     * 別途取得する（N+1を避けるため、対象ページのオーナーIDをまとめて1回で引く）。
+     * </p>
+     *
+     * @param shopId   ショップユーザーID
+     * @param keyword  顧客名（ユーザー名）の部分一致キーワード（任意。未指定時は絞り込みなし）
+     * @param pageable ページング情報（ソートは無視される）
+     * @return 顧客一覧（ページング付き）
+     */
+    @Query(value = """
+            SELECT owner.id AS ownerId,
+                   owner.userName AS ownerName,
+                   owner.iconKey AS ownerIconKey,
+                   MAX(mr.workDateFrom) AS lastMaintenanceDate
+            FROM VehicleShopLink vsl
+            JOIN vsl.vehicle v
+            JOIN v.user owner
+            LEFT JOIN MaintenanceRecord mr
+                ON mr.vehicle = v
+                AND mr.shop.id = :shopId
+                AND mr.isDraft = false
+            WHERE vsl.shop.id = :shopId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND (:keyword IS NULL OR LOWER(owner.userName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            GROUP BY owner.id, owner.userName, owner.iconKey
+            ORDER BY MAX(mr.workDateFrom) DESC NULLS LAST, owner.userName ASC, owner.id ASC
+            """, countQuery = """
+            SELECT COUNT(DISTINCT owner.id)
+            FROM VehicleShopLink vsl
+            JOIN vsl.vehicle v
+            JOIN v.user owner
+            WHERE vsl.shop.id = :shopId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND (:keyword IS NULL OR LOWER(owner.userName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            """)
+    Page<CustomerSummaryProjection> findCustomerSummaries(
+            @Param("shopId") UUID shopId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    /**
+     * ショップと連携（APPROVED）が確認できる、指定オーナー群の所有車両一覧をまとめて取得する
+     *
+     * <p>
+     * {@link #findCustomerSummaries}で取得した顧客一覧（1ページ分）の連携車両サムネイル表示
+     * （最大3件・残数）を、オーナーごとに1件ずつ問い合わせるN+1を避けてまとめて取得するために
+     * 使用する。呼び出し側で{@code vehicle.getUser().getId()}によりオーナーごとにグルーピングする。
+     * </p>
+     *
+     * @param shopId   ショップユーザーID
+     * @param ownerIds 対象オーナーのユーザーID群
+     * @return 車両一覧（オーナーID、登録日時降順）
+     */
+    @Query("""
+            SELECT v
+            FROM VehicleShopLink vsl
+            JOIN vsl.vehicle v
+            JOIN FETCH v.user owner
+            WHERE vsl.shop.id = :shopId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND owner.id IN :ownerIds
+            ORDER BY owner.id, v.createdAt DESC
+            """)
+    List<Vehicle> findApprovedVehiclesByShopAndOwnerIn(
+            @Param("shopId") UUID shopId,
+            @Param("ownerIds") Collection<UUID> ownerIds);
+
+    /**
+     * 指定された車両とショップの間に、論理削除されていない連携が既に存在するかを判定する
+     *
+     * @param vehicleId 対象車両ID
+     * @param shopId    対象ショップID
+     * @return 既に連携が存在すればtrue
+     */
+    boolean existsByVehicle_IdAndShop_Id(UUID vehicleId, UUID shopId);
+
+    /**
+     * OWNERが連携（APPROVED）中のショップ一覧を、キーワード・ページングつきで取得する
+     *
+     * <p>
+     * 「連携先ショップ」は、ログインOWNERの所有車両とAPPROVED状態で連携しているショップ単位で
+     * グルーピングして構成する。{@link #findCustomerSummaries}のOWNER/SHOPを入れ替えた対称的な
+     * クエリであり、並び順は「最終連携日時（{@code approvedAt}の最大値）降順 → ショップ名昇順 →
+     * ショップID昇順」という、Issue #48のCustomerListServiceと同じ考え方（主要ソートキー＋名前＋ID
+     * によるページング順序の安定化）で構成する。連携車両のサムネイル（最大3件・総数）は本メソッドの
+     * 結果には含めず、{@link #findLinkedVehicleSummariesByOwnerAndShopIn}で別途取得する
+     * （N+1を避けるため、対象ページのショップIDをまとめて1回で引く）。
+     * </p>
+     *
+     * @param ownerId  OWNERのユーザーID
+     * @param keyword  ショップ名（ユーザー名）の部分一致キーワード（任意。未指定時は絞り込みなし）
+     * @param pageable ページング情報（ソートは無視される）
+     * @return 連携先ショップ一覧（ページング付き）
+     */
+    @Query(value = """
+            SELECT shop.id AS shopId,
+                   shopUser.userName AS shopName,
+                   shopUser.iconKey AS shopIconKey,
+                   shop.address AS address,
+                   shop.phoneNumber AS phoneNumber,
+                   MAX(vsl.approvedAt) AS lastLinkedAt
+            FROM VehicleShopLink vsl
+            JOIN vsl.shop shop
+            JOIN shop.user shopUser
+            WHERE vsl.vehicle.user.id = :ownerId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND (:keyword IS NULL OR LOWER(shopUser.userName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            GROUP BY shop.id, shopUser.userName, shopUser.iconKey, shop.address, shop.phoneNumber
+            ORDER BY MAX(vsl.approvedAt) DESC NULLS LAST, shopUser.userName ASC, shop.id ASC
+            """, countQuery = """
+            SELECT COUNT(DISTINCT shop.id)
+            FROM VehicleShopLink vsl
+            JOIN vsl.shop shop
+            JOIN shop.user shopUser
+            WHERE vsl.vehicle.user.id = :ownerId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND (:keyword IS NULL OR LOWER(shopUser.userName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+            """)
+    Page<ShopSummaryProjection> findLinkedShopSummaries(
+            @Param("ownerId") UUID ownerId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    /**
+     * OWNERと連携（APPROVED）が確認できる、指定ショップ群ごとの連携車両一覧をまとめて取得する
+     *
+     * <p>
+     * {@link #findLinkedShopSummaries}で取得したショップ一覧（1ページ分）の連携車両サムネイル表示
+     * （最大3件・残数）を、ショップごとに1件ずつ問い合わせるN+1を避けてまとめて取得するために使用する。
+     * 1台の車両が複数ショップと連携し得るため、{@link #findApprovedVehiclesByShopAndOwnerIn}のように
+     * {@code Vehicle}エンティティをオーナーIDでグルーピングする方式は使えず、{@code shopId}を
+     * フラットに含むプロジェクションとして取得し、呼び出し側で{@code shopId}によりグルーピングする。
+     * </p>
+     *
+     * @param ownerId OWNERのユーザーID
+     * @param shopIds 対象ショップのユーザーID群
+     * @return ショップID・登録日時降順の連携車両サマリー一覧
+     */
+    @Query("""
+            SELECT vsl.shop.id AS shopId,
+                   v.id AS vehicleId,
+                   v.modelName AS vehicleModelName,
+                   v.imageKey AS vehicleImageKey
+            FROM VehicleShopLink vsl
+            JOIN vsl.vehicle v
+            WHERE v.user.id = :ownerId
+              AND vsl.status = com.pitvia.api.vehicle.enums.LinkStatus.APPROVED
+              AND vsl.shop.id IN :shopIds
+            ORDER BY vsl.shop.id, v.createdAt DESC
+            """)
+    List<LinkedVehicleSummaryProjection> findLinkedVehicleSummariesByOwnerAndShopIn(
+            @Param("ownerId") UUID ownerId,
+            @Param("shopIds") Collection<UUID> shopIds);
 
 }

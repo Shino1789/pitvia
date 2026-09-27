@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -75,8 +74,7 @@ public class MaintenanceRecordListService {
         Set<String> normalizedTypeCodes = normalize(param.maintenanceType());
         String normalizedKeyword = normalize(param.keyword());
 
-        // API上のページ番号は1始まりのため、Spring Data基準（0始まり）へ変換
-        Pageable pageable = PageRequest.of(param.getPage() - 1, param.getSize(), resolveSort(param.getSort()));
+        Pageable pageable = param.toPageable().withSort(resolveSort(param.getSort()));
 
         // vehicleId指定時：その車両の整備履歴に限定
         if (vehicleId != null) {

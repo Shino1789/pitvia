@@ -1,0 +1,46 @@
+info:
+  name: 招待コード発行：正常系
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/invite-code
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |
+        let body = res.body;
+
+        if (typeof body === "string") {
+          body = JSON.parse(body);
+        }
+
+        if (res.status === 201 && body.data?.code) {
+          bru.setEnvVar("inviteCode", body.data.code);
+          console.log("inviteCode saved:", body.data.code);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  SHOPが招待コードを新規発行する。
+
+  以下を確認する。
+  1. ステータスコードが 201 Created であること。
+  2. `data.code`が「英数字4文字-英数字4文字」形式（例: "A7X9-K2LM"）であること。
+  3. `data.expiresAt`が現在時刻からおよそ24時間後になっていること。
+
+  発行された`code`は`inviteCode`環境変数へ自動保存され、後続のシナリオ
+  （`invite_code_get_success.yml`・`invite_code_reissue_revokes_previous.yml`）で使用する。
+
+  ※実行前に、SHOPアカウントでログインし、トークンが保持されている必要があります。

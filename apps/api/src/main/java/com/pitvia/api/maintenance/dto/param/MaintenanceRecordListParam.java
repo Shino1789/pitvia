@@ -3,6 +3,7 @@ package com.pitvia.api.maintenance.dto.param;
 import java.util.Set;
 import java.util.UUID;
 
+import com.pitvia.api.common.dto.param.PageableListParam;
 import com.pitvia.api.maintenance.constant.MaintenanceRecordSort;
 
 import jakarta.validation.constraints.Max;
@@ -49,7 +50,7 @@ public record MaintenanceRecordListParam(
         /**
          * 1ページあたりの件数（未指定時は{@link #getSize()}でデフォルト値を返す）
          */
-        @Min(1) @Max(100) Integer size) {
+        @Min(1) @Max(100) Integer size) implements PageableListParam {
 
     /**
      * ページ番号のデフォルト値
@@ -67,6 +68,7 @@ public record MaintenanceRecordListParam(
      *
      * @return ページ番号（1始まり）
      */
+    @Override
     public int getPage() {
         return page == null ? DEFAULT_PAGE : page;
     }
@@ -77,6 +79,7 @@ public record MaintenanceRecordListParam(
      *
      * @return 1ページあたりの件数
      */
+    @Override
     public int getSize() {
         return size == null ? DEFAULT_SIZE : size;
     }

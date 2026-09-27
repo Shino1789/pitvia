@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
 import { ErrorState } from "@/shared/components/state/error-state";
+import { SearchBar } from "@/shared/components/search-bar";
 import { VehicleListSkeleton } from "./vehicle-list-skeleton";
 import { VehicleCard } from "./vehicle-card";
 import { useVehicleList } from "../hooks/use-vehicle-list";
@@ -28,8 +28,7 @@ export function VehicleListContent() {
 
   const { data, isPending, isError, refetch } = useVehicleList(ownerId);
 
-  // 検索バーの開閉状態と入力中のキーワードを管理するstate
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // 検索キーワード入力値を管理するstate（デバウンス無し・即時のクライアント側絞り込みのため）
   const [keyword, setKeyword] = useState("");
 
   // ownerId指定時は対象オーナーの表示名を、未指定時は固定タイトルを表示する
@@ -40,8 +39,9 @@ export function VehicleListContent() {
 
   // ヘッダー右側アクションエリアの要素生成
   //
-  // - 不必要な AppHeader の再レンダリング防止のため useMemo で保持
-  // - 1文字入力ごとに actions が再生成されると、日本語入力が途中で中断されて、文字化けが発生するため、keyword はあえて依存配列に含めず Input は非制御で扱う
+  // 不必要な AppHeader の再レンダリング防止のため useMemo で保持。SearchBarは非制御Inputで
+  // keyword自体を保持しないため、keywordはここでは参照せず依存配列にも含まれない
+  // （1文字入力ごとにactionsが再生成されると、日本語入力が途中で中断され文字化けが発生するため）。
   const actions = useMemo(() => {
     if (!showActions) {
       return undefined;
@@ -49,39 +49,11 @@ export function VehicleListContent() {
 
     return (
       <div className="flex items-center gap-2">
-        {isSearchOpen ? (
-          <div className="flex items-center gap-1">
-            <Input
-              autoFocus
-              placeholder="車両名で検索"
-              onChange={(e) => setKeyword(e.target.value)}
-              className="h-8 w-36 sm:w-56"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              aria-label="検索を閉じる"
-              onClick={() => {
-                setIsSearchOpen(false);
-                setKeyword("");
-              }}
-            >
-              <XIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="車両名で検索"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <SearchIcon className="h-4 w-4" />
-          </Button>
-        )}
+        <SearchBar
+          onChange={setKeyword}
+          onClear={() => setKeyword("")}
+          placeholder="車両名で検索"
+        />
 
         {/* 自分自身の一覧を見ている場合のみ、車両登録への導線を表示する */}
         {!ownerId && (
@@ -94,7 +66,7 @@ export function VehicleListContent() {
         )}
       </div>
     );
-  }, [showActions, isSearchOpen, ownerId]);
+  }, [showActions, ownerId]);
 
   useHeader({ title, actions });
 

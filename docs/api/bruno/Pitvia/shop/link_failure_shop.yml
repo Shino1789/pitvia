@@ -1,0 +1,35 @@
+info:
+  name: ショップ連携：異常系（SHOPロール）
+  type: http
+  seq: 34
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/link
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+        "inviteCode": "ANY-CODE1"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【異常系テスト】
+  ショップ連携APIはOWNERロール専用のため、SHOPロールでアクセスすると
+  403 Forbidden（`FORBIDDEN`）が返ることを確認する。
+
+  ※実行前に、SHOPアカウント（`auth/login_success_shop.yml`等）でログインし、
+  トークンが保持されている必要があります。

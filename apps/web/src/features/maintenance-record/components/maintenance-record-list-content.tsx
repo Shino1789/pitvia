@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeftIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeftIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
 import {
   Select,
   SelectContent,
@@ -15,12 +14,15 @@ import {
 } from "@/shared/ui/select";
 import { Pagination } from "@/shared/ui/pagination";
 import { ErrorState } from "@/shared/components/state/error-state";
+import { SearchBar } from "@/shared/components/search-bar";
 import { MaintenanceRecordListSkeleton } from "./maintenance-record-list-skeleton";
 import { MaintenanceRecordCard } from "./maintenance-record-card";
 import { MaintenanceTypeFilter } from "./maintenance-type-filter";
 import { VehicleFilterSelect } from "./maintenance-record-vehicle-filter";
 import { useMaintenanceRecordList } from "../hooks/use-maintenance-record-list";
 import { useHeader } from "@/shared/hooks/use-header";
+import { useQueryParams } from "@/shared/hooks/use-query-params";
+import { useKeywordSearch } from "@/shared/hooks/use-keyword-search";
 import {
   buildReturnTo,
   maintenanceRecordNewRoute,
@@ -50,8 +52,9 @@ const SORT_OPTIONS: { value: MaintenanceRecordSort; label: string }[] = [
  */
 export function MaintenanceRecordListContent() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { pathname, searchParams, updateParams } = useQueryParams();
+  // 検索キーワード（URL上の確定値）と、検索欄の入力・解除用の関数
+  const { keywordParam, setKeywordInput, clearKeyword } = useKeywordSearch();
 
   // 車両フィルターの選択中車両ID（未指定＝すべて）
   const vehicleId = searchParams.get("vehicleId") ?? undefined;
@@ -65,8 +68,6 @@ export function MaintenanceRecordListContent() {
   const maintenanceTypes = searchParams.getAll(
     "maintenanceType",
   ) as MaintenanceType[];
-  // 検索キーワード（URL上の確定値）
-  const keywordParam = searchParams.get("keyword") ?? "";
   // 並び替え条件
   const sort =
     (searchParams.get("sort") as MaintenanceRecordSort | null) ??
@@ -99,61 +100,6 @@ export function MaintenanceRecordListContent() {
     () => buildReturnTo(pathname, searchParams),
     [pathname, searchParams],
   );
-
-  // 検索バーの開閉状態（URLに既にkeywordが設定されている場合は開いた状態から始める）
-  const [isSearchOpen, setIsSearchOpen] = useState(() => !!keywordParam);
-  // 検索欄への入力途中の値（デバウンスでURLへコミットする前の値）
-  const [keywordInput, setKeywordInput] = useState(keywordParam);
-
-  /**
-   * 現在のURLクエリパラメータを起点に、指定キーのみを更新したURLへ遷移する
-   *
-   * @param updates   更新するクエリパラメータ（値がnullの場合はキー自体を削除）
-   * @param resetPage trueの場合、pageパラメータをリセットする
-   */
-  const updateParams = useCallback(
-    (updates: Record<string, string | string[] | null>, resetPage: boolean) => {
-      const next = new URLSearchParams(searchParams.toString());
-
-      Object.entries(updates).forEach(([key, value]) => {
-        next.delete(key);
-        if (value === null) {
-          return;
-        }
-        if (Array.isArray(value)) {
-          value.forEach((v) => next.append(key, v));
-        } else {
-          next.set(key, value);
-        }
-      });
-
-      if (resetPage) {
-        next.delete("page");
-      }
-
-      const query = next.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [router, pathname, searchParams],
-  );
-
-  // キーワード入力のデバウンス。入力が一定時間止まったらURLへ反映し、pageを1へリセットする
-  useEffect(() => {
-    const trimmed = keywordInput.trim();
-
-    if (trimmed === keywordParam) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      updateParams({ keyword: trimmed || null }, true);
-    }, 400);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keywordInputの変化のみで発火させるため意図的に除外
-  }, [keywordInput]);
 
   /**
    * 車両フィルター変更時のハンドラー（pageを1へリセット）
@@ -218,41 +164,13 @@ export function MaintenanceRecordListContent() {
 
     return (
       <div className="flex items-center gap-2">
-        {isSearchOpen ? (
-          <div className="flex items-center gap-1">
-            <Input
-              autoFocus
-              defaultValue={keywordParam}
-              placeholder="タイトルで検索"
-              onChange={(e) => setKeywordInput(e.target.value)}
-              className="h-8 w-36 sm:w-56"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              aria-label="検索を閉じる"
-              onClick={() => {
-                setIsSearchOpen(false);
-                setKeywordInput("");
-                updateParams({ keyword: null }, true);
-              }}
-            >
-              <XIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="タイトルで検索"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <SearchIcon className="h-4 w-4" />
-          </Button>
-        )}
+        <SearchBar
+          defaultOpen={!!keywordParam}
+          defaultValue={keywordParam}
+          placeholder="タイトルで検索"
+          onChange={setKeywordInput}
+          onClear={clearKeyword}
+        />
 
         <Link
           href={maintenanceRecordNewRoute({
@@ -270,9 +188,9 @@ export function MaintenanceRecordListContent() {
     );
   }, [
     showActions,
-    isSearchOpen,
     keywordParam,
-    updateParams,
+    setKeywordInput,
+    clearKeyword,
     vehicleId,
     viewedOwnerId,
     returnTo,

@@ -1,0 +1,51 @@
+info:
+  name: ショップ連携：正常系（OWNER）
+  type: http
+  seq: 30
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/shops/link
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "vehicleId": "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+        "inviteCode": "{{inviteCode}}"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  OWNERが、新規SHOPが発行した招待コードを入力して、自分の車両とショップを連携する。
+
+  以下を確認する。
+  1. ステータスコードが 201 Created であること。
+  2. `data.shopId`が連携先ショップのIDであること。
+  3. `data.status`が`"APPROVED"`であること（ベータ版はSHOP側の承認フローが無く即時承認）。
+  4. `data.approvedAt`が設定されていること。
+  5. 続けて`shop/list_success_owner.yml`相当のGETを実行すると、一覧に新しいショップが
+     追加されていること。
+
+  ※`vehicleId`は`owner@example.com`（モックデータ用OWNERアカウント）の車両
+  （V1000__mock_data.sql）を使用する。この車両はモックデータ上で別のショップ
+  （`shop@example.com`）と既に連携済みだが、まだ連携していない新規ショップと
+  連携する分には問題ない。
+
+  【実行前提】
+  1. 新規SHOPアカウントを登録・ログインし（`auth/register_success_shop.yml`相当、
+     モックの`shop@example.com`とは別アカウント）、`shop/invite_code_issue_success.yml`
+     を実行して招待コードを発行する（`inviteCode`環境変数へ自動保存される）。
+  2. `owner@example.com` / `password123` でログインし直し、トークンを`accessToken`へ
+     設定したうえで本リクエストを実行する。

@@ -1,0 +1,252 @@
+Pitvia Proprietary License (View and Evaluation Only) - Version 1.0
+
+Copyright (c) 2026 Shino1789. All rights reserved.
+
+THIS IS NOT AN OPEN SOURCE LICENSE.
+The source code in this repository is published so that it can be viewed and
+evaluated. Publication does not grant you the right to copy, modify,
+redistribute, commercially use, or operate it as a service.
+
+(A Japanese version follows the English version. See Section 11.)
+
+===============================================================================
+ENGLISH VERSION
+===============================================================================
+
+1. Definitions
+
+   "Licensor" means Shino1789, the copyright holder of Pitvia.
+
+   "Pitvia Materials" means the source code, configuration files, database
+   schemas and migrations, API specifications, tests, scripts, infrastructure
+   definitions, documentation, images, logos, icons and all other materials in
+   this repository that are created by the Licensor, including materials
+   generated with the assistance of AI tools and adopted by the Licensor.
+
+   "Evaluation Purpose" means reviewing the Licensor's work for recruitment or
+   technical assessment, such as a hiring decision, a job selection process or
+   a technical interview, by a prospective employer, a recruiter, or a person
+   acting on their behalf. It does not include any commercial use of the
+   Pitvia Materials.
+
+   "Third-Party Components" means software, libraries, frameworks, fonts,
+   icons and other materials that are authored by third parties, including
+   dependencies and any code derived from them (for example, shadcn/ui, Radix
+   UI and Lucide).
+
+2. Permitted Use
+
+   The Licensor grants you a limited, non-exclusive, non-transferable,
+   revocable and royalty-free permission to do only the following with the
+   Pitvia Materials:
+
+   (a) view the Pitvia Materials on GitHub;
+   (b) examine the Pitvia Materials for the Evaluation Purpose;
+   (c) clone this repository to your own local device for the Evaluation
+       Purpose; and
+   (d) build, run and test the Pitvia Materials locally on your own device for
+       the Evaluation Purpose.
+
+   Once the evaluation has ended, you must delete the local copies made under
+   (c) within a reasonable period.
+
+   Nothing in this License limits the rights that GitHub's Terms of Service
+   give users to view and fork public repositories on the GitHub platform.
+
+3. Prohibited Use
+
+   Unless you have obtained the Licensor's prior written permission, you must
+   not do any of the following:
+
+   (a) copy or reproduce the Pitvia Materials, in whole or in part, except as
+       expressly permitted in Section 2;
+   (b) modify, adapt, translate or create derivative works of the Pitvia
+       Materials, or publish any modified version;
+   (c) redistribute, publish, upload, mirror, sell, sublicense, rent or lease
+       the Pitvia Materials, or otherwise make them available to any third
+       party, except as permitted by GitHub's Terms of Service as described in
+       Section 2;
+   (d) use the Pitvia Materials for any commercial purpose;
+   (e) incorporate the Pitvia Materials, in whole or in part, into any other
+       product, service or software, including your own or your organization's;
+   (f) provide any service to third parties that uses or is based on the
+       Pitvia Materials, including copying Pitvia and publishing or operating
+       it as a SaaS or web service, whether free of charge or for a fee;
+   (g) use the name "Pitvia", or any logo, icon, image or other brand asset
+       included in the Pitvia Materials, without permission; or
+   (h) remove or alter any copyright notice or this License from the Pitvia
+       Materials.
+
+4. Third-Party Components
+
+   This License applies only to the Pitvia Materials. It does not apply to
+   Third-Party Components. Third-Party Components remain subject to their own
+   licenses, and nothing in this License changes, restricts, or grants any
+   rights in them. The Licensor does not claim ownership of Third-Party
+   Components, and nothing in this License limits the rights you have under
+   the licenses of Third-Party Components.
+
+5. Ownership; No Implied Rights
+
+   The Pitvia Materials are owned by the Licensor and are protected by
+   copyright law. Except for the permission expressly stated in Section 2, no
+   license or right, express or implied, is granted, including any right under
+   patents or trademarks. This License is not an open source license, and the
+   Pitvia Materials are not licensed under any open source license.
+
+6. Termination
+
+   This License terminates automatically if you breach any of its terms. The
+   Licensor may also revoke the permission in Section 2 at any time. Upon
+   termination or revocation, you must stop all use of the Pitvia Materials
+   and delete all copies in your possession. Sections 3 to 5 and 7 to 10
+   survive termination.
+
+7. Disclaimer of Warranty
+
+   THE PITVIA MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+
+8. Limitation of Liability
+
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR IS NOT LIABLE FOR ANY
+   DAMAGES ARISING OUT OF OR IN CONNECTION WITH THE PITVIA MATERIALS OR THEIR
+   USE.
+
+9. Future Versions
+
+   The Licensor may publish later versions of the Pitvia Materials under
+   different terms. This License applies to the version of the Pitvia Materials
+   in which it appears.
+
+10. Governing Law; Permission Requests
+
+    This License is governed by the laws of Japan. To ask for permission to do
+    anything this License does not allow, contact the Licensor through the
+    GitHub profile: https://github.com/Shino1789
+
+11. Languages
+
+    This License is provided in English and Japanese. If the two versions
+    conflict, the Japanese version prevails.
+
+===============================================================================
+日本語版
+===============================================================================
+
+Pitvia 独自ライセンス（閲覧・評価目的限定） バージョン 1.0
+
+Copyright (c) 2026 Shino1789. All rights reserved.
+
+これはオープンソースライセンスではありません。
+このリポジトリのソースコードは、閲覧および評価のために公開されています。
+公開されていることは、複製、改変、再配布、商用利用、およびサービスとしての
+運営を許可することを意味しません。
+
+第1条（定義）
+
+  「許諾者」とは、Pitvia の著作権者である Shino1789 をいいます。
+
+  「Pitvia 素材」とは、このリポジトリに含まれる、許諾者が作成したソースコード、
+  設定ファイル、データベーススキーマおよびマイグレーション、API 仕様、テスト、
+  スクリプト、インフラ定義、ドキュメント、画像、ロゴ、アイコンその他一切の
+  素材（AI ツールの支援により生成され、許諾者が採用したものを含みます）を
+  いいます。
+
+  「評価目的」とは、採用予定企業、採用担当者、またはそれらの依頼を受けた者が、
+  採用の可否の判断、選考、技術面接等のために許諾者の成果物を確認することを
+  いいます。Pitvia 素材の商用利用は含みません。
+
+  「サードパーティ・コンポーネント」とは、第三者が作成したソフトウェア、
+  ライブラリ、フレームワーク、フォント、アイコンその他の素材（依存ライブラリ、
+  およびそれらに由来するコードを含み、たとえば shadcn/ui、Radix UI、Lucide が
+  含まれます）をいいます。
+
+第2条（許可される利用）
+
+  許諾者は、あなたに対し、Pitvia 素材について次の行為に限り、非独占的・譲渡不可・
+  撤回可能・無償の許可を与えます。
+
+  (a) GitHub 上で Pitvia 素材を閲覧すること
+  (b) 評価目的で Pitvia 素材の内容を確認すること
+  (c) 評価目的で、このリポジトリを自己の端末にクローンすること
+  (d) 評価目的で、自己の端末上で Pitvia 素材をビルド、実行およびテストすること
+
+  評価が終了したときは、(c) により作成したローカルの複製を、合理的な期間内に
+  削除しなければなりません。
+
+  このライセンスのいかなる規定も、GitHub 利用規約がユーザーに与える、GitHub
+  プラットフォーム上で公開リポジトリを閲覧およびフォークする権利を制限するもの
+  ではありません。
+
+第3条（禁止される行為）
+
+  許諾者の事前の書面による許可なく、次の行為をしてはなりません。
+
+  (a) 第2条で明示的に許可された場合を除き、Pitvia 素材の全部または一部を複製する
+      こと
+  (b) Pitvia 素材を改変、翻案、翻訳し、もしくはその二次的著作物を作成すること、
+      または改変したものを公開すること
+  (c) 第2条に定める GitHub 利用規約により認められる場合を除き、Pitvia 素材を
+      再配布、公開、アップロード、ミラーリング、販売、サブライセンス、賃貸もしくは
+      貸与し、またはその他の方法で第三者が利用できる状態に置くこと
+  (d) Pitvia 素材を商用目的で利用すること
+  (e) 自己または所属組織のものを含め、他の製品、サービスまたはソフトウェアに
+      Pitvia 素材の全部または一部を組み込むこと
+  (f) Pitvia 素材を利用しまたはこれに基づくサービスを第三者に提供すること
+      （Pitvia を複製して SaaS 等のサービスとして公開または運営することを含み、
+      有償か無償かを問いません）
+  (g) 許可なく、「Pitvia」の名称、または Pitvia 素材に含まれるロゴ、アイコン、
+      画像その他のブランド資産を使用すること
+  (h) Pitvia 素材から著作権表示またはこのライセンスを削除または変更すること
+
+第4条（サードパーティ・コンポーネント）
+
+  このライセンスは Pitvia 素材にのみ適用され、サードパーティ・コンポーネントには
+  適用されません。サードパーティ・コンポーネントには、それぞれのライセンスが適用
+  されます。このライセンスは、それらの権利を変更、制限または付与するものでは
+  ありません。許諾者は、サードパーティ・コンポーネントの権利を有すると主張する
+  ものではなく、このライセンスは、サードパーティ・コンポーネントのライセンスに
+  基づきあなたが有する権利を制限するものではありません。
+
+第5条（権利の帰属・黙示の許諾の否定）
+
+  Pitvia 素材は許諾者に帰属し、著作権法により保護されます。第2条に明示された
+  許可を除き、特許権および商標権を含め、明示または黙示を問わず、いかなるライセンス
+  または権利も付与されません。このライセンスはオープンソースライセンスではなく、
+  Pitvia 素材は、いかなるオープンソースライセンスの下でも許諾されていません。
+
+第6条（終了）
+
+  あなたがこのライセンスの条項に違反した場合、このライセンスは自動的に終了します。
+  また、許諾者は、第2条の許可をいつでも撤回することができます。終了または撤回が
+  あったときは、Pitvia 素材のすべての利用を中止し、保有するすべての複製を削除
+  しなければなりません。第3条から第5条まで、および第7条から第10条までは、終了後も
+  有効です。
+
+第7条（保証の否認）
+
+  Pitvia 素材は「現状有姿」で提供され、商品性、特定目的への適合性、および権利
+  非侵害を含め、明示または黙示を問わず、いかなる種類の保証も付されません。
+
+第8条（責任の制限）
+
+  法令上許される最大限の範囲で、許諾者は、Pitvia 素材またはその利用に起因または
+  関連して生じるいかなる損害についても、責任を負いません。
+
+第9条（将来のバージョン）
+
+  許諾者は、Pitvia 素材の将来のバージョンを、異なる条件で公開することがあります。
+  このライセンスは、これが付されている Pitvia 素材のバージョンに適用されます。
+
+第10条（準拠法・許諾の申請）
+
+  このライセンスは日本法に準拠します。このライセンスが許可していない行為について
+  許可を求める場合は、GitHub のプロフィール https://github.com/Shino1789 を通じて
+  許諾者に連絡してください。
+
+第11条（言語）
+
+  このライセンスは英語版と日本語版で提供されます。両者に相違がある場合は、日本語版が
+  優先します。

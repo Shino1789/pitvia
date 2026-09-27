@@ -8,6 +8,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -226,6 +227,25 @@ public class GlobalExceptionHandler {
                         ex.getErrorCode(),
                         ex.getMessage(),
                         request));
+    }
+
+    /**
+     * Spring SecurityのMethod Security（{@code @PreAuthorize}等）による認可拒否をキャッチ
+     *
+     * @param ex      アクセス拒否例外
+     * @param request HTTPリクエスト
+     * @return 403 Forbidden のレスポンスエンティティ
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        log.warn("Access denied path={} message={}", request.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(responseFactory.error(ErrorCode.FORBIDDEN, request));
     }
 
     /**

@@ -1,0 +1,28 @@
+info:
+  name: 招待コード取得：正常系
+  type: http
+  seq: 11
+
+http:
+  method: GET
+  url: http://localhost:8080/api/v1/shops/invite-code
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  【正常系テスト】
+  現在有効な招待コードを取得する。招待コード発行モーダルを再度開いた際の
+  「現在有効なコードの再表示」用途を想定したAPI。
+
+  `data.code`が、直前に`invite_code_issue_success.yml`で発行・保存した
+  `{{inviteCode}}`と一致することを確認する。
+
+  ※実行前に `invite_code_issue_success.yml` を実行し、招待コードを発行しておく必要があります
+  （同一のSHOPアカウントでログイン済みであること）。
